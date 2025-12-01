@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="测试">
+      <UniqueIdentifier>{89eb7cd0-5b39-4004-b40b-1907c1a8816c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\Core">
+      <UniqueIdentifier>{ae1515fd-1c30-4a9f-a35d-501d7a5b8735}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\Algorithms">
+      <UniqueIdentifier>{d4b522f1-d300-4fed-b4f9-c486216d868a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\Utils">
+      <UniqueIdentifier>{179cb3aa-fa41-49b0-a752-550298b9e5e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Core">
+      <UniqueIdentifier>{e2cbd674-8c59-45de-a4b5-c1734b609baa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Algorithms">
+      <UniqueIdentifier>{96685d85-d8a2-4312-84ec-ce0ebcd8de08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Utils">
+      <UniqueIdentifier>{7e2f2866-61bc-493d-a15c-110f1ab345fe}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Shift.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Staff.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Task.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="SchedulingAlgorithm.h">
+      <Filter>头文件\Algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="DateTimeUtils.h">
+      <Filter>头文件\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="StringUtils.h">
+      <Filter>头文件\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GateCounterInfo.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="TravelTime.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="VehicleInfo.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="TemporaryTask.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="FlightSchedule.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Shift.cpp">
+      <Filter>源文件\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Staff.cpp">
+      <Filter>源文件\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Task.cpp">
+      <Filter>源文件\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="DateTimeUtils.cpp">
+      <Filter>源文件\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="StringUtils.cpp">
+      <Filter>源文件\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="main_test.cpp">
+      <Filter>测试</Filter>
+    </ClCompile>
+    <ClCompile Include="SchedulingAlgorithm.cpp">
+      <Filter>源文件\Algorithms</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
