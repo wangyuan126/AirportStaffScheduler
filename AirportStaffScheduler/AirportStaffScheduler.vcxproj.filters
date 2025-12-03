@@ -45,9 +45,6 @@
     <ClInclude Include="Task.h">
       <Filter>头文件\Core</Filter>
     </ClInclude>
-    <ClInclude Include="SchedulingAlgorithm.h">
-      <Filter>头文件\Algorithms</Filter>
-    </ClInclude>
     <ClInclude Include="DateTimeUtils.h">
       <Filter>头文件\Utils</Filter>
     </ClInclude>
@@ -72,6 +69,9 @@
     <ClInclude Include="BaseSchedulingAlgorithm.h">
       <Filter>头文件\Algorithms</Filter>
     </ClInclude>
+    <ClInclude Include="CheckInSchedulingAlgorithm.h">
+      <Filter>头文件\Algorithms</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Staff.cpp">
@@ -89,7 +89,7 @@
     <ClCompile Include="main_test.cpp">
       <Filter>测试</Filter>
     </ClCompile>
-    <ClCompile Include="SchedulingAlgorithm.cpp">
+    <ClCompile Include="CheckInSchedulingAlgorithm.cpp">
       <Filter>源文件\Algorithms</Filter>
     </ClCompile>
   </ItemGroup>
