@@ -4,27 +4,6 @@
 
 using namespace AirportStaffScheduler;
 
-void SchedulingAlgorithm::populateShiftQualifications() {
-    // 构建 staff ID -> 资质 的映射
-    std::unordered_map<std::string, std::vector<std::string>> staffIdToQuals;
-    for (const auto& staff : staffList_) {
-        staffIdToQuals[staff.getStaffId()] = staff.getQualifications();
-    }
-
-    // 为每个班次设置资质
-    for (auto& shift : shifts_) {
-        const std::string& staffId = shift.getStaffId();
-        auto it = staffIdToQuals.find(staffId);
-        if (it != staffIdToQuals.end()) {
-            shift.setQualifications(it->second);
-        }
-        else {
-            // 可选：警告或设为空集合
-            shift.setQualifications({});
-        }
-    }
-}
-
 void SchedulingAlgorithm::assignTasksToShifts() {
     // TODO: 实现任务分配逻辑
     // - 遍历 tasks_
@@ -32,8 +11,6 @@ void SchedulingAlgorithm::assignTasksToShifts() {
     // - 修改 task 的班次ID 或关联 shift 对象
 
     // 顺序派工算法示例
-
-    populateShiftQualifications();
     // 1. 任务按开始时间排序
     std::sort(tasks_.begin(), tasks_.end(),
         [](const Task& a, const Task& b) {
@@ -41,10 +18,10 @@ void SchedulingAlgorithm::assignTasksToShifts() {
         });
 
     // 2. 初始化 shiftPtrs_（如果尚未初始化）
-    if (shiftPtrs_.empty()) {
-        shiftPtrs_.reserve(shifts_.size());
-        for (auto& shift : shifts_) {
-            shiftPtrs_.push_back(&shift);
+    if (staffPtrs_.empty()) {
+        staffPtrs_.reserve(staffList_.size());
+        for (auto& shift : staffList_) {
+            staffPtrs_.push_back(&shift);
         }
     }
 
@@ -57,37 +34,37 @@ void SchedulingAlgorithm::assignTasksToShifts() {
     // 3. 遍历任务
     for (auto& task : tasks_) {
         const auto& requiredQuals = task.getRequiredQualifications();
-        Shift* selectedShift = nullptr;
+        Staff* selectedStaff = nullptr;
         // 从最早空闲的班次开始找
-        for (Shift* shift : shiftPtrs_) {
+        for (Staff* shift : staffPtrs_) {
             if (shift->hasAllQualifications(requiredQuals)) {
-                selectedShift = shift;
+                selectedStaff = shift;
                 break;
             }
         }
 
-        if (!selectedShift) {
+        if (!selectedStaff) {
             // TODO: 处理无匹配班次
             continue;
         }
 
         // 分配任务
-        selectedShift->assignTask(task);
-        task.setAssignedShiftId(selectedShift->getShiftId());
+        selectedStaff->assignTask(task);
+        task.setAssignedStaffId(selectedStaff->getStaffId());
 
         // 更新 shiftPtrs_：移动该班次到新位置
-        auto it = std::find(shiftPtrs_.begin(), shiftPtrs_.end(), selectedShift);
-        if (it != shiftPtrs_.end()) {
-            Shift* ptr = *it;
-            shiftPtrs_.erase(it);
+        auto it = std::find(staffPtrs_.begin(), staffPtrs_.end(), selectedStaff);
+        if (it != staffPtrs_.end()) {
+            Staff* ptr = *it;
+            staffPtrs_.erase(it);
 
             auto insertPos = std::lower_bound(
-                shiftPtrs_.begin(), shiftPtrs_.end(), ptr,
-                [](const Shift* a, const Shift* b) {
+                staffPtrs_.begin(), staffPtrs_.end(), ptr,
+                [](const Staff* a, const Staff* b) {
                     return a->getLatestEndTime() < b->getLatestEndTime();
                 }
             );
-            shiftPtrs_.insert(insertPos, ptr);
+            staffPtrs_.insert(insertPos, ptr);
         }
     }
 }
