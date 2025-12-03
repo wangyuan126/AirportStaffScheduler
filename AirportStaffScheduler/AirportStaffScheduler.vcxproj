@@ -22,11 +22,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BaseSchedulingAlgorithm.h" />
     <ClInclude Include="FlightSchedule.h" />
     <ClInclude Include="GateCounterInfo.h" />
     <ClInclude Include="DateTimeUtils.h" />
     <ClInclude Include="SchedulingAlgorithm.h" />
-    <ClInclude Include="Shift.h" />
     <ClInclude Include="Staff.h" />
     <ClInclude Include="StringUtils.h" />
     <ClInclude Include="Task.h" />
@@ -38,7 +38,6 @@
     <ClCompile Include="DateTimeUtils.cpp" />
     <ClCompile Include="main_test.cpp" />
     <ClCompile Include="SchedulingAlgorithm.cpp" />
-    <ClCompile Include="Shift.cpp" />
     <ClCompile Include="Staff.cpp" />
     <ClCompile Include="StringUtils.cpp" />
     <ClCompile Include="Task.cpp" />

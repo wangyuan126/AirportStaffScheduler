@@ -17,28 +17,22 @@ void SchedulingAlgorithm::assignTasksToShifts() {
             return a.getTaskStartTime() < b.getTaskStartTime();
         });
 
-    // 2. 初始化 shiftPtrs_（如果尚未初始化）
+    // 2. 初始化 staffPtrs_（如果尚未初始化）
     if (staffPtrs_.empty()) {
         staffPtrs_.reserve(staffList_.size());
-        for (auto& shift : staffList_) {
-            staffPtrs_.push_back(&shift);
+        for (auto& staff : staffList_) {
+            staffPtrs_.push_back(&staff);
         }
     }
-
-    // 按 latestEndTime 排序（初始值为班次 startTime）
-    /*std::sort(shiftPtrs_.begin(), shiftPtrs_.end(),
-        [](const Shift* a, const Shift* b) {
-            return a->getLatestEndTime() < b->getLatestEndTime();
-        });*/
 
     // 3. 遍历任务
     for (auto& task : tasks_) {
         const auto& requiredQuals = task.getRequiredQualifications();
         Staff* selectedStaff = nullptr;
-        // 从最早空闲的班次开始找
-        for (Staff* shift : staffPtrs_) {
-            if (shift->hasAllQualifications(requiredQuals)) {
-                selectedStaff = shift;
+        // 从最早空闲的员工开始找
+        for (Staff* staff : staffPtrs_) {
+            if (staff->hasAllQualifications(requiredQuals)) {
+                selectedStaff = staff;
                 break;
             }
         }
@@ -52,7 +46,7 @@ void SchedulingAlgorithm::assignTasksToShifts() {
         selectedStaff->assignTask(task);
         task.setAssignedStaffId(selectedStaff->getStaffId());
 
-        // 更新 shiftPtrs_：移动该班次到新位置
+        // 更新 shiftPtrs_：移动该员工到新位置
         auto it = std::find(staffPtrs_.begin(), staffPtrs_.end(), selectedStaff);
         if (it != staffPtrs_.end()) {
             Staff* ptr = *it;

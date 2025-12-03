@@ -39,9 +39,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Shift.h">
-      <Filter>头文件\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Staff.h">
       <Filter>头文件\Core</Filter>
     </ClInclude>
@@ -72,11 +69,11 @@
     <ClInclude Include="FlightSchedule.h">
       <Filter>头文件\Core</Filter>
     </ClInclude>
+    <ClInclude Include="BaseSchedulingAlgorithm.h">
+      <Filter>头文件\Algorithms</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Shift.cpp">
-      <Filter>源文件\Core</Filter>
-    </ClCompile>
     <ClCompile Include="Staff.cpp">
       <Filter>源文件\Core</Filter>
     </ClCompile>
