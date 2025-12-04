@@ -27,6 +27,7 @@
     <ClInclude Include="FlightSchedule.h" />
     <ClInclude Include="GateCounterInfo.h" />
     <ClInclude Include="DateTimeUtils.h" />
+    <ClInclude Include="Shift.h" />
     <ClInclude Include="Staff.h" />
     <ClInclude Include="StringUtils.h" />
     <ClInclude Include="Task.h" />

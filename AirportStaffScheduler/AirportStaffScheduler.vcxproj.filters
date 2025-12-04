@@ -72,6 +72,9 @@
     <ClInclude Include="CheckInSchedulingAlgorithm.h">
       <Filter>头文件\Algorithms</Filter>
     </ClInclude>
+    <ClInclude Include="Shift.h">
+      <Filter>头文件\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Staff.cpp">

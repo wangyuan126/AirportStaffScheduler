@@ -11,14 +11,15 @@ namespace AirportStaffScheduler {
         CheckInSchedulingAlgorithm(
             std::vector<Task> tasks,
             std::vector<Staff> staffList,
+            std::vector<Shift> shiftList,
             std::vector<TemporaryTask> temporaryTasks
         )
-            : BaseSchedulingAlgorithm(std::move(tasks), std::move(staffList), std::move(temporaryTasks))
+            : BaseSchedulingAlgorithm(std::move(tasks), std::move(staffList), std::move(shiftList), std::move(temporaryTasks))
         {}
 
     protected:
         void preprocessTasks() override;
-        void assignTasksToStaffImpl() override;
+        void assignTasksToShiftImpl() override;
         void validateAssignmentResult() override;
 
     private:

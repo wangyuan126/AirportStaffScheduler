@@ -54,7 +54,7 @@ namespace AirportStaffScheduler {
             , linkedTaskId_("")
             , genderRequirement_("")
             , isLocked_(isLocked)
-            , assignedStaffId_("")
+            , assignedShiftId_("")
             , counterNumber_("")
             , relatedAirline_("")
             , requiredVehicleType_("")
@@ -96,7 +96,7 @@ namespace AirportStaffScheduler {
         const std::string& getGenderRequirement() const { return genderRequirement_; }
         bool isLocked() const { return isLocked_; }
 
-        const std::string& getAssignedStaffId() const { return assignedStaffId_; }
+        const std::string& getAssignedShiftId() const { return assignedShiftId_; }
         const std::string& getCounterNumber() const { return counterNumber_; }
         const std::string& getRelatedAirline() const { return relatedAirline_; }
         const std::string& getRequiredVehicleType() const { return requiredVehicleType_; }
@@ -130,7 +130,7 @@ namespace AirportStaffScheduler {
         void setLinkedTaskId(const std::string& id) { linkedTaskId_ = id; }
         void setGenderRequirement(const std::string& gender) { genderRequirement_ = gender; }
         void setLocked(bool locked) { isLocked_ = locked; }
-        void setAssignedStaffId(const std::string& shiftId) { assignedStaffId_ = shiftId; }
+        void setAssignedShiftId(const std::string& shiftId) { assignedShiftId_ = shiftId; }
         void setCounterNumber(const std::string& counter) { counterNumber_ = counter; }
         void setRelatedAirline(const std::string& airline) { relatedAirline_ = airline; }
         void setRequiredVehicleType(const std::string& vehicleType) { requiredVehicleType_ = vehicleType; }
@@ -168,7 +168,7 @@ namespace AirportStaffScheduler {
         std::string boardingGate_;
         std::string linkedTaskId_;
         std::string genderRequirement_;   // "男" / "女" / ""（无要求）
-        std::string assignedStaffId_;
+        std::string assignedShiftId_;
         std::string counterNumber_;       // 值机柜台编号
         std::string relatedAirline_;      // 航司代码或名称
         std::string requiredVehicleType_; 

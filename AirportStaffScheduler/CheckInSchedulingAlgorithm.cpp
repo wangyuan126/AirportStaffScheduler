@@ -10,11 +10,11 @@ namespace AirportStaffScheduler {
         
     }
 
-    void CheckInSchedulingAlgorithm::assignTasksToStaffImpl() {
+    void CheckInSchedulingAlgorithm::assignTasksToShiftImpl() {
         // 顺序派工示例
         const int numTasks = static_cast<int>(tasks_.size());
-        const int numStaff = static_cast<int>(staffList_.size());
-        if (numTasks == 0 || numStaff == 0) return;
+        const int numShift = static_cast<int>(shiftList_.size());
+        if (numTasks == 0 || numShift == 0) return;
 
         // 步骤1: 创建任务索引代理，并按开始时间排序
         std::vector<int> taskIndices(numTasks);
@@ -24,9 +24,9 @@ namespace AirportStaffScheduler {
                 return tasks_[a].getTaskStartTime() < tasks_[b].getTaskStartTime();
             });
 
-        // 步骤2: 创建员工索引代理
-        std::vector<int> staffIndices(numStaff);
-        std::iota(staffIndices.begin(), staffIndices.end(), 0);
+        // 步骤2: 创建班次索引代理
+        std::vector<int> shiftIndices(numShift);
+        std::iota(shiftIndices.begin(), shiftIndices.end(), 0);
 
         // 步骤3: 遍历每个任务（按时间顺序）
         for (int taskIdx : taskIndices) {
@@ -36,38 +36,40 @@ namespace AirportStaffScheduler {
             const auto& requiredQuals = task.getRequiredQualifications();
 
             // 在 staffIndices 中找第一个满足条件的员工
-            int selectedStaffIdx = -1;
-            for (int staffIdx : staffIndices) {
-                const auto& staff = staffList_[staffIdx];
+            int selectedShiftIdx = -1;
+            for (int shiftIdx : shiftIndices) {
+                const auto& shift = shiftList_[shiftIdx];
+                const auto& staff = staffList_[shiftToStaffIndex_[shiftIdx]];
                 // 检查资质
                 if (staff.hasAllQualifications(requiredQuals)) {
-                    selectedStaffIdx = staffIdx;
+                    selectedShiftIdx = shiftIdx;
                     break;
                 }
             }
 
-            if (selectedStaffIdx == -1) {
+            if (selectedShiftIdx == -1) {
                 // TODO: 记录未分配任务（可扩展为告警/降级策略）
                 continue;
             }
 
-            auto it = std::find(staffIndices.begin(), staffIndices.end(), selectedStaffIdx);
+            assignTaskToShift(taskIdx, selectedShiftIdx);
+
+            auto it = std::find(shiftIndices.begin(), shiftIndices.end(), selectedShiftIdx);
             // Step 2: 移除该索引
             int movedStaffIdx = *it;
-            staffIndices.erase(it);
+            shiftIndices.erase(it);
 
             // Step 3: 找到新的插入位置（保持按 latestEndTime 升序）
             auto insertPos = std::lower_bound(
-                staffIndices.begin(),
-                staffIndices.end(),
+                shiftIndices.begin(),
+                shiftIndices.end(),
                 movedStaffIdx,
                 [this](int a, int b) {
-                    // 比较 staffList_[a].latestEndTime < staffList_[b].latestEndTime
-                    return staffList_[a].getLatestEndTime() < staffList_[b].getLatestEndTime();
+                    return shiftList_[a].getLatestEndTime() < shiftList_[b].getLatestEndTime();
                 }
             );
             // Step 4: 插入
-            staffIndices.insert(insertPos, movedStaffIdx);
+            shiftIndices.insert(insertPos, movedStaffIdx);
         }
     }
 
