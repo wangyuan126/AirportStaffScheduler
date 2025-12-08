@@ -1,0 +1,31 @@
+ {
+  // 配置 Windows 终端配置文件
+  "terminal.integrated.profiles.windows": {
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\Sysnative\\cmd.exe",
+        "${env:windir}\\System32\\cmd.exe"
+      ],
+      "args": [],
+      "icon": "terminal-cmd"
+    },
+    "PowerShell": {
+      "path": [
+        "${env:windir}\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "${env:windir}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+      ],
+      "args": [],
+      "icon": "terminal-powershell"
+    },
+    "Git Bash": {
+      "path": "C:\\Program Files\\Git\\bin\\bash.exe", // 若装了Git，取消注释并确认路径
+      "icon": "terminal-bash"
+    }
+  },
+  // 设置默认终端为 cmd（优先保证可用）
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  // 可选：禁用终端渲染加速（解决部分空白/卡顿）
+  "terminal.integrated.gpuAcceleration": "off",
+  // 可选：确保终端编码正确
+  "terminal.integrated.encoding": "utf8"
+}
