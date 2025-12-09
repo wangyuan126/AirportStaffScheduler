@@ -1,6 +1,6 @@
 /**
  * @file task_definition.cpp
- * @brief ÈÎÎñ¶¨ÒåÀàÊµÏÖ
+ * @brief ä»»åŠ¡å®šä¹‰ç±»å®ç°
  */
 
 #include "task_definition.h"
@@ -32,10 +32,10 @@ TaskDefinition::~TaskDefinition()
 
 void TaskDefinition::addAssignedEmployeeId(const std::string& employee_id)
 {
-    // ¼ì²éÊÇ·ñÒÑ´æÔÚ
+    // æ£€æŸ¥æ˜¯å¦å·²å­˜åœ¨
     for (const auto& id : assigned_employee_ids_) {
         if (id == employee_id) {
-            return;  // ÒÑ¾­´æÔÚ£¬²»ÖØ¸´Ìí¼Ó
+            return;  // å·²ç»å­˜åœ¨ï¼Œä¸é‡å¤æ·»åŠ 
         }
     }
     assigned_employee_ids_.push_back(employee_id);
@@ -45,61 +45,61 @@ void TaskDefinition::addAssignedEmployeeId(const std::string& employee_id)
 bool TaskDefinition::removeAssignedEmployeeId(const std::string& employee_id, 
                                                const std::vector<Shift>& shifts)
 {
-    // ÏÈ¼ì²éÊÇ·ñÊÇ¹Ì¶¨ÈËÑ¡
+    // å…ˆæ£€æŸ¥æ˜¯å¦æ˜¯å›ºå®šäººé€‰
     if (isFixedPerson(employee_id, shifts)) {
-        return false;  // ÊÇ¹Ì¶¨ÈËÑ¡£¬²»ÄÜÒÆ³ı£¬·µ»Øfalse
+        return false;  // æ˜¯å›ºå®šäººé€‰ï¼Œä¸èƒ½ç§»é™¤ï¼Œè¿”å›false
     }
     
-    // ²»ÊÇ¹Ì¶¨ÈËÑ¡£¬Ö´ĞĞÒÆ³ı²Ù×÷
+    // ä¸æ˜¯å›ºå®šäººé€‰ï¼Œæ‰§è¡Œç§»é™¤æ“ä½œ
     auto it = std::find(assigned_employee_ids_.begin(), assigned_employee_ids_.end(), employee_id);
     if (it != assigned_employee_ids_.end()) {
         assigned_employee_ids_.erase(it);
         is_assigned_ = !assigned_employee_ids_.empty();
         return true;
     }
-    return false;  // Î´·ÖÅäµ½´ËÈÎÎñ
+    return false;  // æœªåˆ†é…åˆ°æ­¤ä»»åŠ¡
 }
 
 bool TaskDefinition::isFixedPerson(const std::string& employee_id, 
                                     const std::vector<Shift>& shifts) const
 {
-    // »ñÈ¡ÈÎÎñµÄ¹Ì¶¨ÈËÑ¡ÅäÖÃ
+    // è·å–ä»»åŠ¡çš„å›ºå®šäººé€‰é…ç½®
     const auto& fixed_persons = TaskConfig::getInstance().getFixedPersonsByType(task_type_);
     if (fixed_persons.empty()) {
-        return false;  // Ã»ÓĞ¹Ì¶¨ÈËÑ¡ÅäÖÃ
+        return false;  // æ²¡æœ‰å›ºå®šäººé€‰é…ç½®
     }
     
-    // ÔÚ°à´ÎÁĞ±íÖĞÕÒµ½¸ÃÔ±¹¤ËùÔÚµÄ°à´Î
+    // åœ¨ç­æ¬¡åˆ—è¡¨ä¸­æ‰¾åˆ°è¯¥å‘˜å·¥æ‰€åœ¨çš„ç­æ¬¡
     for (const auto& shift : shifts) {
         const auto& position_map = shift.getPositionToEmployeeId();
         
-        // ±éÀú¸Ã°à´ÎµÄËùÓĞÎ»ÖÃ£¬²éÕÒÔ±¹¤
+        // éå†è¯¥ç­æ¬¡çš„æ‰€æœ‰ä½ç½®ï¼ŒæŸ¥æ‰¾å‘˜å·¥
         for (const auto& pos_pair : position_map) {
             if (pos_pair.second == employee_id) {
                 int32_t position = pos_pair.first;
                 int32_t shift_type = shift.getShiftType();
                 
-                // ½«ShiftType×ª»»ÎªShiftCategory
+                // å°†ShiftTypeè½¬æ¢ä¸ºShiftCategory
                 ShiftCategory category;
                 if (shift_type == 1) {  // MAIN
                     category = ShiftCategory::MAIN;
                 } else if (shift_type == 2) {  // SUB
                     category = ShiftCategory::SUB;
                 } else {
-                    continue;  // RESTÀàĞÍ²»¿¼ÂÇ
+                    continue;  // RESTç±»å‹ä¸è€ƒè™‘
                 }
                 
-                // ¼ì²é¸ÃÎ»ÖÃÊÇ·ñÆ¥Åä¹Ì¶¨ÈËÑ¡ÅäÖÃ
+                // æ£€æŸ¥è¯¥ä½ç½®æ˜¯å¦åŒ¹é…å›ºå®šäººé€‰é…ç½®
                 for (const auto& fixed_info : fixed_persons) {
                     if (fixed_info.shift_category == category && fixed_info.position == position) {
-                        return true;  // ÊÇ¹Ì¶¨ÈËÑ¡
+                        return true;  // æ˜¯å›ºå®šäººé€‰
                     }
                 }
             }
         }
     }
     
-    return false;  // ²»ÊÇ¹Ì¶¨ÈËÑ¡
+    return false;  // ä¸æ˜¯å›ºå®šäººé€‰
 }
 
 bool TaskDefinition::isAssignedToEmployee(const std::string& employee_id) const

@@ -1,6 +1,6 @@
 /**
  * @file shift.cpp
- * @brief °à´ÎÀàÊµÏÖ
+ * @brief ç­æ¬¡ç±»å®ç°
  */
 
 #include "shift.h"

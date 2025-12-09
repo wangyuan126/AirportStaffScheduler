@@ -1,8 +1,8 @@
 /**
  * @file shift.h
- * @brief °à´ÎÀà
+ * @brief ç­æ¬¡ç±»
  * 
- * ¶¨ÒåÅÅ°àÏµÍ³ÖĞµÄ°à´ÎĞÅÏ¢
+ * å®šä¹‰æ’ç­ç³»ç»Ÿä¸­çš„ç­æ¬¡ä¿¡æ¯
  */
 
 #ifndef VIP_FIRST_CLASS_SHIFT_H
@@ -15,74 +15,74 @@
 namespace vip_first_class {
 
 /**
- * @brief °à´ÎÀàĞÍÃ¶¾Ù
+ * @brief ç­æ¬¡ç±»å‹æšä¸¾
  */
 enum class ShiftType {
-    REST = 0,    ///< ĞİÏ¢
-    MAIN = 1,    ///< Ö÷°à
-    SUB = 2      ///< ¸±°à
+    REST = 0,    ///< ä¼‘æ¯
+    MAIN = 1,    ///< ä¸»ç­
+    SUB = 2      ///< å‰¯ç­
 };
 
 /**
- * @brief °à´ÎÀà
+ * @brief ç­æ¬¡ç±»
  * 
- * ¼ÇÂ¼°à´ÎÀàĞÍÒÔ¼°Î»ÖÃµ½ÈËÔ±IDµÄÓ³Éä
+ * è®°å½•ç­æ¬¡ç±»å‹ä»¥åŠä½ç½®åˆ°äººå‘˜IDçš„æ˜ å°„
  */
 class Shift {
 public:
     /**
-     * @brief ¹¹Ôìº¯Êı
+     * @brief æ„é€ å‡½æ•°
      */
     Shift();
     
     /**
-     * @brief Îö¹¹º¯Êı
+     * @brief ææ„å‡½æ•°
      */
     ~Shift();
     
     /**
-     * @brief »ñÈ¡°à´ÎÀàĞÍ
-     * @return °à´ÎÀàĞÍ£¨0ÎªĞİÏ¢£¬1ÎªÖ÷°à£¬2Îª¸±°à£©
+     * @brief è·å–ç­æ¬¡ç±»å‹
+     * @return ç­æ¬¡ç±»å‹ï¼ˆ0ä¸ºä¼‘æ¯ï¼Œ1ä¸ºä¸»ç­ï¼Œ2ä¸ºå‰¯ç­ï¼‰
      */
     int32_t getShiftType() const { return shift_type_; }
     
     /**
-     * @brief ÉèÖÃ°à´ÎÀàĞÍ
-     * @param type °à´ÎÀàĞÍ£¨0ÎªĞİÏ¢£¬1ÎªÖ÷°à£¬2Îª¸±°à£©
+     * @brief è®¾ç½®ç­æ¬¡ç±»å‹
+     * @param type ç­æ¬¡ç±»å‹ï¼ˆ0ä¸ºä¼‘æ¯ï¼Œ1ä¸ºä¸»ç­ï¼Œ2ä¸ºå‰¯ç­ï¼‰
      */
     void setShiftType(int32_t type) { shift_type_ = type; }
     
     /**
-     * @brief ÉèÖÃ°à´ÎÀàĞÍ£¨Ê¹ÓÃÃ¶¾Ù£©
-     * @param type °à´ÎÀàĞÍÃ¶¾ÙÖµ
+     * @brief è®¾ç½®ç­æ¬¡ç±»å‹ï¼ˆä½¿ç”¨æšä¸¾ï¼‰
+     * @param type ç­æ¬¡ç±»å‹æšä¸¾å€¼
      */
     void setShiftTypeEnum(ShiftType type) { shift_type_ = static_cast<int32_t>(type); }
     
     /**
-     * @brief »ñÈ¡Î»ÖÃµ½ÈËÔ±IDµÄÓ³Éä
-     * @return Î»ÖÃµ½ÈËÔ±IDÓ³ÉäµÄ³£Á¿ÒıÓÃ£¨¼üÎªÎ»ÖÃ±àºÅ£¬ÖµÎªÈËÔ±ID£©
+     * @brief è·å–ä½ç½®åˆ°äººå‘˜IDçš„æ˜ å°„
+     * @return ä½ç½®åˆ°äººå‘˜IDæ˜ å°„çš„å¸¸é‡å¼•ç”¨ï¼ˆé”®ä¸ºä½ç½®ç¼–å·ï¼Œå€¼ä¸ºäººå‘˜IDï¼‰
      */
     const std::map<int32_t, std::string>& getPositionToEmployeeId() const { return position_to_employee_id_; }
     
     /**
-     * @brief »ñÈ¡Î»ÖÃµ½ÈËÔ±IDµÄÓ³Éä£¨·Ç³£Á¿°æ±¾£©
-     * @return Î»ÖÃµ½ÈËÔ±IDÓ³ÉäµÄÒıÓÃ
+     * @brief è·å–ä½ç½®åˆ°äººå‘˜IDçš„æ˜ å°„ï¼ˆéå¸¸é‡ç‰ˆæœ¬ï¼‰
+     * @return ä½ç½®åˆ°äººå‘˜IDæ˜ å°„çš„å¼•ç”¨
      */
     std::map<int32_t, std::string>& getPositionToEmployeeId() { return position_to_employee_id_; }
     
     /**
-     * @brief ÉèÖÃÖ¸¶¨Î»ÖÃµÄÈËÔ±ID
-     * @param position Î»ÖÃ±àºÅ£¨ÈçÖ÷°à1Îª1£¬¸±°à2Îª2µÈ£©
-     * @param employee_id ÈËÔ±ID
+     * @brief è®¾ç½®æŒ‡å®šä½ç½®çš„äººå‘˜ID
+     * @param position ä½ç½®ç¼–å·ï¼ˆå¦‚ä¸»ç­1ä¸º1ï¼Œå‰¯ç­2ä¸º2ç­‰ï¼‰
+     * @param employee_id äººå‘˜ID
      */
     void setEmployeeIdAtPosition(int32_t position, const std::string& employee_id) {
         position_to_employee_id_[position] = employee_id;
     }
     
     /**
-     * @brief »ñÈ¡Ö¸¶¨Î»ÖÃµÄÈËÔ±ID
-     * @param position Î»ÖÃ±àºÅ
-     * @return ÈËÔ±ID£¬Èç¹û¸ÃÎ»ÖÃÃ»ÓĞ·ÖÅäÈËÔ±Ôò·µ»Ø¿Õ×Ö·û´®
+     * @brief è·å–æŒ‡å®šä½ç½®çš„äººå‘˜ID
+     * @param position ä½ç½®ç¼–å·
+     * @return äººå‘˜IDï¼Œå¦‚æœè¯¥ä½ç½®æ²¡æœ‰åˆ†é…äººå‘˜åˆ™è¿”å›ç©ºå­—ç¬¦ä¸²
      */
     std::string getEmployeeIdAtPosition(int32_t position) const {
         auto it = position_to_employee_id_.find(position);
@@ -90,40 +90,40 @@ public:
     }
     
     /**
-     * @brief ÒÆ³ıÖ¸¶¨Î»ÖÃµÄÈËÔ±·ÖÅä
-     * @param position Î»ÖÃ±àºÅ
+     * @brief ç§»é™¤æŒ‡å®šä½ç½®çš„äººå‘˜åˆ†é…
+     * @param position ä½ç½®ç¼–å·
      */
     void removeEmployeeAtPosition(int32_t position) {
         position_to_employee_id_.erase(position);
     }
     
     /**
-     * @brief ¼ì²éÖ¸¶¨Î»ÖÃÊÇ·ñÒÑ·ÖÅäÈËÔ±
-     * @param position Î»ÖÃ±àºÅ
-     * @return true±íÊ¾ÒÑ·ÖÅä£¬false±íÊ¾Î´·ÖÅä
+     * @brief æ£€æŸ¥æŒ‡å®šä½ç½®æ˜¯å¦å·²åˆ†é…äººå‘˜
+     * @param position ä½ç½®ç¼–å·
+     * @return trueè¡¨ç¤ºå·²åˆ†é…ï¼Œfalseè¡¨ç¤ºæœªåˆ†é…
      */
     bool hasEmployeeAtPosition(int32_t position) const {
         return position_to_employee_id_.find(position) != position_to_employee_id_.end();
     }
     
     /**
-     * @brief Çå³ıËùÓĞÈËÔ±·ÖÅä
+     * @brief æ¸…é™¤æ‰€æœ‰äººå‘˜åˆ†é…
      */
     void clearAllAssignments() {
         position_to_employee_id_.clear();
     }
     
     /**
-     * @brief »ñÈ¡ÒÑ·ÖÅäÎ»ÖÃµÄÊıÁ¿
-     * @return ÒÑ·ÖÅäÎ»ÖÃµÄÊıÁ¿
+     * @brief è·å–å·²åˆ†é…ä½ç½®çš„æ•°é‡
+     * @return å·²åˆ†é…ä½ç½®çš„æ•°é‡
      */
     size_t getAssignedPositionCount() const {
         return position_to_employee_id_.size();
     }
 
 private:
-    int32_t shift_type_;                                      ///< °à´ÎÀàĞÍ£¨0ÎªĞİÏ¢£¬1ÎªÖ÷°à£¬2Îª¸±°à£©
-    std::map<int32_t, std::string> position_to_employee_id_; ///< Î»ÖÃµ½ÈËÔ±IDµÄÓ³Éä£¨¼üÎªÎ»ÖÃ±àºÅ£¬ÖµÎªÈËÔ±ID£©
+    int32_t shift_type_;                                      ///< ç­æ¬¡ç±»å‹ï¼ˆ0ä¸ºä¼‘æ¯ï¼Œ1ä¸ºä¸»ç­ï¼Œ2ä¸ºå‰¯ç­ï¼‰
+    std::map<int32_t, std::string> position_to_employee_id_; ///< ä½ç½®åˆ°äººå‘˜IDçš„æ˜ å°„ï¼ˆé”®ä¸ºä½ç½®ç¼–å·ï¼Œå€¼ä¸ºäººå‘˜IDï¼‰
 };
 
 }  // namespace vip_first_class

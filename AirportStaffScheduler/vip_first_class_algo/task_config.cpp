@@ -1,6 +1,6 @@
 /**
  * @file task_config.cpp
- * @brief ÈÎÎñÅäÖÃÀàÊµÏÖ
+ * @brief ä»»åŠ¡é…ç½®ç±»å®ç°
  */
 
 #include "task_config.h"
@@ -17,7 +17,7 @@ namespace vip_first_class {
 
 using namespace std;
 
-// ¾²Ì¬¿ÕÁĞ±í¶¨Òå
+// é™æ€ç©ºåˆ—è¡¨å®šä¹‰
 const vector<FixedPersonInfo> TaskConfig::empty_list_;
 const vector<string> TaskConfig::empty_employee_list_;
 
@@ -39,41 +39,41 @@ TaskConfig::~TaskConfig()
 
 void TaskConfig::initializeDefaultConfig()
 {
-    // Çå¿ÕÏÖÓĞÅäÖÃ
+    // æ¸…ç©ºç°æœ‰é…ç½®
     clear();
     
-    // Ê¹ÓÃÈÎÎñÀàĞÍÃ¶¾ÙÖµ×÷ÎªIDµÄ»ù´¡
-    // 1. µ÷¶È£º½ö¹Ì¶¨Ö÷1
+    // ä½¿ç”¨ä»»åŠ¡ç±»å‹æšä¸¾å€¼ä½œä¸ºIDçš„åŸºç¡€
+    // 1. è°ƒåº¦ï¼šä»…å›ºå®šä¸»1
     int64_t task_id = static_cast<int64_t>(TaskType::DISPATCH);
     task_type_to_id_[TaskType::DISPATCH] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::MAIN, 1));
     
-    // 2. ¹ú¼ÊÇ°Ì¨Ôç°à£º½ö¹Ì¶¨¸±1
+    // 2. å›½é™…å‰å°æ—©ç­ï¼šä»…å›ºå®šå‰¯1
     task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_FRONT_DESK_EARLY);
     task_type_to_id_[TaskType::INTERNATIONAL_FRONT_DESK_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 1));
     
-    // 3. ¹ú¼ÊÇ°Ì¨Íí°à£º½ö¹Ì¶¨¸±2
+    // 3. å›½é™…å‰å°æ™šç­ï¼šä»…å›ºå®šå‰¯2
     task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_FRONT_DESK_LATE);
     task_type_to_id_[TaskType::INTERNATIONAL_FRONT_DESK_LATE] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 2));
     
-    // 4. ¹ú¼ÊÌüÄÚÔç°à£º½ö¹Ì¶¨¸±3
+    // 4. å›½é™…å…å†…æ—©ç­ï¼šä»…å›ºå®šå‰¯3
     task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_HALL_EARLY);
     task_type_to_id_[TaskType::INTERNATIONAL_HALL_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 3));
     
-    // 5. ¹ú¼ÊÌüÄÚÍí°à£º¹Ì¶¨¸±5
+    // 5. å›½é™…å…å†…æ™šç­ï¼šå›ºå®šå‰¯5
     task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_HALL_LATE);
     task_type_to_id_[TaskType::INTERNATIONAL_HALL_LATE] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 5));
     
-    // 6. ¹úÄÚÌüÄÚÔç°à£º¹Ì¶¨¸±4
+    // 6. å›½å†…å…å†…æ—©ç­ï¼šå›ºå®šå‰¯4
     task_id = static_cast<int64_t>(TaskType::DOMESTIC_HALL_EARLY);
     task_type_to_id_[TaskType::DOMESTIC_HALL_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 4));
     
-    // 7. ¹úÄÚÇ°Ì¨Ôç°à£ºÓĞ¸±6ºÍÖ÷5
+    // 7. å›½å†…å‰å°æ—©ç­ï¼šæœ‰å‰¯6å’Œä¸»5
     task_id = static_cast<int64_t>(TaskType::DOMESTIC_FRONT_DESK_EARLY);
     task_type_to_id_[TaskType::DOMESTIC_FRONT_DESK_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 6));
@@ -109,11 +109,11 @@ void TaskConfig::addFixedPersonByType(TaskType task_type, const FixedPersonInfo&
 {
     int64_t task_id = static_cast<int64_t>(task_type);
     
-    // Èç¹ûÀàĞÍ»¹Ã»ÓĞÓ³Éäµ½ID£¬´´½¨Ó³Éä
+    // å¦‚æœç±»å‹è¿˜æ²¡æœ‰æ˜ å°„åˆ°IDï¼Œåˆ›å»ºæ˜ å°„
     if (task_type_to_id_.find(task_type) == task_type_to_id_.end()) {
         task_type_to_id_[task_type] = task_id;
     } else {
-        // Èç¹ûÒÑÓĞÓ³Éä£¬Ê¹ÓÃÒÑ´æÔÚµÄID
+        // å¦‚æœå·²æœ‰æ˜ å°„ï¼Œä½¿ç”¨å·²å­˜åœ¨çš„ID
         task_id = task_type_to_id_[task_type];
     }
     
@@ -161,7 +161,7 @@ int32_t TaskConfig::getTaskPriority(TaskType task_type) const
     if (it != task_type_to_priority_.end()) {
         return it->second;
     }
-    return 0;  // Ä¬ÈÏÓÅÏÈ¼¶Îª0
+    return 0;  // é»˜è®¤ä¼˜å…ˆçº§ä¸º0
 }
 
 void TaskConfig::setTaskPriority(TaskType task_type, int32_t priority)
@@ -171,19 +171,19 @@ void TaskConfig::setTaskPriority(TaskType task_type, int32_t priority)
 
 void TaskConfig::initializeTaskPriorities()
 {
-    // ÓÅÏÈ¼¶Ë³Ğò£ºµ÷¶ÈÀà > Íâ³¡ > ÌüÄÚ > Ç°Ì¨Ğ­Öú
-    // ÊıÖµÔ½´óÓÅÏÈ¼¶Ô½¸ß
+    // ä¼˜å…ˆçº§é¡ºåºï¼šè°ƒåº¦ç±» > å¤–åœº > å…å†… > å‰å°ååŠ©
+    // æ•°å€¼è¶Šå¤§ä¼˜å…ˆçº§è¶Šé«˜
     
-    // µ÷¶ÈÀà£ºÓÅÏÈ¼¶100£¨×î¸ß£©
+    // è°ƒåº¦ç±»ï¼šä¼˜å…ˆçº§100ï¼ˆæœ€é«˜ï¼‰
     setTaskPriority(TaskType::DISPATCH, 100);
 
-    // ÆäËûÇ°Ì¨ÈÎÎñ£ºÓÅÏÈ¼¶Óëµ÷¶ÈÏàÍ¬
+    // å…¶ä»–å‰å°ä»»åŠ¡ï¼šä¼˜å…ˆçº§ä¸è°ƒåº¦ç›¸åŒ
     setTaskPriority(TaskType::DOMESTIC_FRONT_DESK, 100);
     setTaskPriority(TaskType::DOMESTIC_FRONT_DESK_EARLY, 100);
     setTaskPriority(TaskType::INTERNATIONAL_FRONT_DESK_EARLY, 100);
     setTaskPriority(TaskType::INTERNATIONAL_FRONT_DESK_LATE, 100);
     
-    // Íâ³¡Àà£ºÓÅÏÈ¼¶80
+    // å¤–åœºç±»ï¼šä¼˜å…ˆçº§80
     setTaskPriority(TaskType::EXTERNAL_DOMESTIC_DEPARTURE_FEW, 80);
     setTaskPriority(TaskType::EXTERNAL_DOMESTIC_DEPARTURE_MANY, 80);
     setTaskPriority(TaskType::EXTERNAL_DOMESTIC_ARRIVAL_FEW, 80);
@@ -193,7 +193,7 @@ void TaskConfig::initializeTaskPriorities()
     setTaskPriority(TaskType::EXTERNAL_INTERNATIONAL_ARRIVAL_FEW, 80);
     setTaskPriority(TaskType::EXTERNAL_INTERNATIONAL_ARRIVAL_MANY, 80);
     
-    // ÌüÄÚÀà£ºÓÅÏÈ¼¶60
+    // å…å†…ç±»ï¼šä¼˜å…ˆçº§60
     setTaskPriority(TaskType::INTERNATIONAL_HALL_EARLY, 60);
     setTaskPriority(TaskType::INTERNATIONAL_HALL_LATE, 60);
     setTaskPriority(TaskType::DOMESTIC_HALL_EARLY, 60);
@@ -211,11 +211,11 @@ void TaskConfig::initializeTaskPriorities()
     setTaskPriority(TaskType::DOMESTIC_HALL_1930_2030, 60);
     setTaskPriority(TaskType::DOMESTIC_HALL_2030_AFTER, 60);
     
-    // Ç°Ì¨Ğ­ÖúÀà£ºÓÅÏÈ¼¶40£¨×îµÍ£©
+    // å‰å°ååŠ©ç±»ï¼šä¼˜å…ˆçº§40ï¼ˆæœ€ä½ï¼‰
     setTaskPriority(TaskType::DOMESTIC_FRONT_DESK_ASSIST, 40);
     setTaskPriority(TaskType::DOMESTIC_FRONT_DESK_ASSIST2, 40);
     
-    // ²Ù×÷¼äÀà£ºÓÅÏÈ¼¶30
+    // æ“ä½œé—´ç±»ï¼šä¼˜å…ˆçº§30
     setTaskPriority(TaskType::OPERATION_ROOM, 30);
 }
 
@@ -224,7 +224,7 @@ void TaskConfig::setHallMaintenanceFixedPersons(const vector<Shift>& shifts,
 {
     hall_maintenance_fixed_persons_.clear();
     
-    // ÊÕ¼¯ËùÓĞÓĞ¹Ì¶¨ÈÎÎñµÄÔ±¹¤ID
+    // æ”¶é›†æ‰€æœ‰æœ‰å›ºå®šä»»åŠ¡çš„å‘˜å·¥ID
     set<string> employees_with_fixed_tasks;
     for (const auto& task : all_tasks) {
         const auto& fixed_persons = getFixedPersonsByType(task.getTaskType());
@@ -246,10 +246,10 @@ void TaskConfig::setHallMaintenanceFixedPersons(const vector<Shift>& shifts,
         }
     }
     
-    // ÊÕ¼¯ËùÓĞÖ÷°àÔ±¹¤£¨Ã»ÓĞ¹Ì¶¨ÈÎÎñµÄ£©
+    // æ”¶é›†æ‰€æœ‰ä¸»ç­å‘˜å·¥ï¼ˆæ²¡æœ‰å›ºå®šä»»åŠ¡çš„ï¼‰
     vector<string> main_shift_candidates;
     for (const auto& shift : shifts) {
-        if (shift.getShiftType() == 1) {  // Ö÷°à
+        if (shift.getShiftType() == 1) {  // ä¸»ç­
             const auto& position_map = shift.getPositionToEmployeeId();
             for (const auto& pos_pair : position_map) {
                 const string& employee_id = pos_pair.second;
@@ -260,11 +260,11 @@ void TaskConfig::setHallMaintenanceFixedPersons(const vector<Shift>& shifts,
         }
     }
     
-    // ÊÕ¼¯ËùÓĞ¸±°àÔ±¹¤£¨Ã»ÓĞ¹Ì¶¨ÈÎÎñµÄ£©
+    // æ”¶é›†æ‰€æœ‰å‰¯ç­å‘˜å·¥ï¼ˆæ²¡æœ‰å›ºå®šä»»åŠ¡çš„ï¼‰
     vector<string> sub_shift_candidates_no_fixed;
     vector<string> sub_shift_candidates_with_fixed;
     for (const auto& shift : shifts) {
-        if (shift.getShiftType() == 2) {  // ¸±°à
+        if (shift.getShiftType() == 2) {  // å‰¯ç­
             const auto& position_map = shift.getPositionToEmployeeId();
             for (const auto& pos_pair : position_map) {
                 const string& employee_id = pos_pair.second;
@@ -277,19 +277,19 @@ void TaskConfig::setHallMaintenanceFixedPersons(const vector<Shift>& shifts,
         }
     }
     
-    // °´ÕÕÓÅÏÈ¼¶Ñ¡Ôñ£ºÓÅÏÈÖ÷°à£¬Ö÷°à²»×ãÊ±´Ó¸±°àÃ»ÓĞ¹Ì¶¨ÈÎÎñµÄÈËÑ¡ÖĞÑ¡£¬·ñÔòÑ¡¸±°àÓĞ¹Ì¶¨ÈÎÎñµÄÈË
-    // Ñ¡Ôñ4¸öÈË
+    // æŒ‰ç…§ä¼˜å…ˆçº§é€‰æ‹©ï¼šä¼˜å…ˆä¸»ç­ï¼Œä¸»ç­ä¸è¶³æ—¶ä»å‰¯ç­æ²¡æœ‰å›ºå®šä»»åŠ¡çš„äººé€‰ä¸­é€‰ï¼Œå¦åˆ™é€‰å‰¯ç­æœ‰å›ºå®šä»»åŠ¡çš„äºº
+    // é€‰æ‹©4ä¸ªäºº
     for (size_t i = 0; i < 4 && i < main_shift_candidates.size(); ++i) {
         hall_maintenance_fixed_persons_.push_back(main_shift_candidates[i]);
     }
     
-    // Èç¹ûÖ÷°à²»×ã£¬´Ó¸±°àÃ»ÓĞ¹Ì¶¨ÈÎÎñµÄÈËÑ¡ÖĞÑ¡
+    // å¦‚æœä¸»ç­ä¸è¶³ï¼Œä»å‰¯ç­æ²¡æœ‰å›ºå®šä»»åŠ¡çš„äººé€‰ä¸­é€‰
     size_t remaining = 4 - hall_maintenance_fixed_persons_.size();
     for (size_t i = 0; i < remaining && i < sub_shift_candidates_no_fixed.size(); ++i) {
         hall_maintenance_fixed_persons_.push_back(sub_shift_candidates_no_fixed[i]);
     }
     
-    // Èç¹û»¹²»¹»£¬´Ó¸±°àÓĞ¹Ì¶¨ÈÎÎñµÄÈËÑ¡ÖĞÑ¡
+    // å¦‚æœè¿˜ä¸å¤Ÿï¼Œä»å‰¯ç­æœ‰å›ºå®šä»»åŠ¡çš„äººé€‰ä¸­é€‰
     remaining = 4 - hall_maintenance_fixed_persons_.size();
     for (size_t i = 0; i < remaining && i < sub_shift_candidates_with_fixed.size(); ++i) {
         hall_maintenance_fixed_persons_.push_back(sub_shift_candidates_with_fixed[i]);

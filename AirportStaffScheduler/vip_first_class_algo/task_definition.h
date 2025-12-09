@@ -1,8 +1,8 @@
 /**
  * @file task_definition.h
- * @brief ÈÎÎñ¶¨ÒåÀà
+ * @brief ä»»åŠ¡å®šä¹‰ç±»
  * 
- * ¶¨ÒåÅÅ°àÏµÍ³ÖĞµÄÈÎÎñ»ù±¾ĞÅÏ¢
+ * å®šä¹‰æ’ç­ç³»ç»Ÿä¸­çš„ä»»åŠ¡åŸºæœ¬ä¿¡æ¯
  */
 
 #ifndef VIP_FIRST_CLASS_TASK_DEFINITION_H
@@ -18,240 +18,240 @@
 namespace vip_first_class {
 
 /**
- * @brief ÈÎÎñ¶¨ÒåÀà
+ * @brief ä»»åŠ¡å®šä¹‰ç±»
  * 
- * ÃèÊöÒ»¸öÈÎÎñµÄ»ù±¾ĞÅÏ¢ºÍÒªÇó
+ * æè¿°ä¸€ä¸ªä»»åŠ¡çš„åŸºæœ¬ä¿¡æ¯å’Œè¦æ±‚
  */
 class TaskDefinition {
 public:
     /**
-     * @brief ¹¹Ôìº¯Êı
+     * @brief æ„é€ å‡½æ•°
      */
     TaskDefinition();
     
     /**
-     * @brief Îö¹¹º¯Êı
+     * @brief ææ„å‡½æ•°
      */
     ~TaskDefinition();
     
     /**
-     * @brief »ñÈ¡ÈÎÎñID
-     * @return ÈÎÎñID
+     * @brief è·å–ä»»åŠ¡ID
+     * @return ä»»åŠ¡ID
      */
     int64_t getTaskId() const { return task_id_; }
     
     /**
-     * @brief ÉèÖÃÈÎÎñID
-     * @param id ÈÎÎñID
+     * @brief è®¾ç½®ä»»åŠ¡ID
+     * @param id ä»»åŠ¡ID
      */
     void setTaskId(int64_t id) { task_id_ = id; }
     
     /**
-     * @brief »ñÈ¡ÈÎÎñÃû³Æ
-     * @return ÈÎÎñÃû³Æ
+     * @brief è·å–ä»»åŠ¡åç§°
+     * @return ä»»åŠ¡åç§°
      */
     const std::string& getTaskName() const { return task_name_; }
     
     /**
-     * @brief ÉèÖÃÈÎÎñÃû³Æ
-     * @param name ÈÎÎñÃû³Æ
+     * @brief è®¾ç½®ä»»åŠ¡åç§°
+     * @param name ä»»åŠ¡åç§°
      */
     void setTaskName(const std::string& name) { task_name_ = name; }
     
     /**
-     * @brief ÊÇ·ñÓÅÏÈÖ÷°à
-     * @return true±íÊ¾ÓÅÏÈÖ÷°à£¬false±íÊ¾²»ÓÅÏÈÖ÷°à
+     * @brief æ˜¯å¦ä¼˜å…ˆä¸»ç­
+     * @return trueè¡¨ç¤ºä¼˜å…ˆä¸»ç­ï¼Œfalseè¡¨ç¤ºä¸ä¼˜å…ˆä¸»ç­
      */
     bool isPreferMainShift() const { return prefer_main_shift_; }
     
     /**
-     * @brief ÉèÖÃÊÇ·ñÓÅÏÈÖ÷°à
-     * @param prefer true±íÊ¾ÓÅÏÈÖ÷°à£¬false±íÊ¾²»ÓÅÏÈÖ÷°à
+     * @brief è®¾ç½®æ˜¯å¦ä¼˜å…ˆä¸»ç­
+     * @param prefer trueè¡¨ç¤ºä¼˜å…ˆä¸»ç­ï¼Œfalseè¡¨ç¤ºä¸ä¼˜å…ˆä¸»ç­
      */
     void setPreferMainShift(bool prefer) { prefer_main_shift_ = prefer; }
     
     /**
-     * @brief »ñÈ¡ÈÎÎñ¿ªÊ¼Ê±¼ä
-     * @return ÈÎÎñ¿ªÊ¼Ê±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
+     * @brief è·å–ä»»åŠ¡å¼€å§‹æ—¶é—´
+     * @return ä»»åŠ¡å¼€å§‹æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
      */
     int64_t getStartTime() const { return start_time_; }
     
     /**
-     * @brief ÉèÖÃÈÎÎñ¿ªÊ¼Ê±¼ä
-     * @param time ÈÎÎñ¿ªÊ¼Ê±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
+     * @brief è®¾ç½®ä»»åŠ¡å¼€å§‹æ—¶é—´
+     * @param time ä»»åŠ¡å¼€å§‹æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
      */
     void setStartTime(int64_t time) { start_time_ = time; }
     
     /**
-     * @brief »ñÈ¡ÈÎÎñ½áÊøÊ±¼ä
-     * @return ÈÎÎñ½áÊøÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
+     * @brief è·å–ä»»åŠ¡ç»“æŸæ—¶é—´
+     * @return ä»»åŠ¡ç»“æŸæ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
      */
     int64_t getEndTime() const { return end_time_; }
     
     /**
-     * @brief ÉèÖÃÈÎÎñ½áÊøÊ±¼ä
-     * @param time ÈÎÎñ½áÊøÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£¬Èç¹ûÎªº½ºóÔòÉèÎªÌØÊâÖµ£©
+     * @brief è®¾ç½®ä»»åŠ¡ç»“æŸæ—¶é—´
+     * @param time ä»»åŠ¡ç»“æŸæ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼Œå¦‚æœä¸ºèˆªååˆ™è®¾ä¸ºç‰¹æ®Šå€¼ï¼‰
      */
     void setEndTime(int64_t time) { end_time_ = time; }
     
     /**
-     * @brief ¼ì²é½áÊøÊ±¼äÊÇ·ñÎªº½ºó
-     * @return true±íÊ¾½áÊøÊ±¼äÎªº½ºó£¨ĞèÒªÔÚÔËĞĞÊ±È·¶¨£©£¬false±íÊ¾¹Ì¶¨Ê±¼ä
+     * @brief æ£€æŸ¥ç»“æŸæ—¶é—´æ˜¯å¦ä¸ºèˆªå
+     * @return trueè¡¨ç¤ºç»“æŸæ—¶é—´ä¸ºèˆªåï¼ˆéœ€è¦åœ¨è¿è¡Œæ—¶ç¡®å®šï¼‰ï¼Œfalseè¡¨ç¤ºå›ºå®šæ—¶é—´
      */
     bool isAfterFlight() const { return end_time_ < 0; }
     
     /**
-     * @brief ÉèÖÃ½áÊøÊ±¼äÎªº½ºó
+     * @brief è®¾ç½®ç»“æŸæ—¶é—´ä¸ºèˆªå
      */
     void setAfterFlight() { end_time_ = -1; }
     
     /**
-     * @brief »ñÈ¡ĞèÒªµÄ×ÊÖÊÀàĞÍ
-     * @return ×ÊÖÊÀàĞÍ£¨Î»ÑÚÂë£¬²Î¼ûQualificationType£©
+     * @brief è·å–éœ€è¦çš„èµ„è´¨ç±»å‹
+     * @return èµ„è´¨ç±»å‹ï¼ˆä½æ©ç ï¼Œå‚è§QualificationTypeï¼‰
      */
     int32_t getRequiredQualification() const { return required_qualification_; }
     
     /**
-     * @brief ÉèÖÃĞèÒªµÄ×ÊÖÊÀàĞÍ
-     * @param qualification ×ÊÖÊÀàĞÍ£¨Î»ÑÚÂë£©
+     * @brief è®¾ç½®éœ€è¦çš„èµ„è´¨ç±»å‹
+     * @param qualification èµ„è´¨ç±»å‹ï¼ˆä½æ©ç ï¼‰
      */
     void setRequiredQualification(int32_t qualification) { required_qualification_ = qualification; }
     
     /**
-     * @brief »ñÈ¡ÈÎÎñÀàĞÍ
-     * @return ÈÎÎñÀàĞÍ
+     * @brief è·å–ä»»åŠ¡ç±»å‹
+     * @return ä»»åŠ¡ç±»å‹
      */
     TaskType getTaskType() const { return task_type_; }
     
     /**
-     * @brief ÉèÖÃÈÎÎñÀàĞÍ
-     * @param type ÈÎÎñÀàĞÍ
+     * @brief è®¾ç½®ä»»åŠ¡ç±»å‹
+     * @param type ä»»åŠ¡ç±»å‹
      */
     void setTaskType(TaskType type) { task_type_ = type; }
     
     /**
-     * @brief ÊÇ·ñ¿ÉÒÔÓÉĞÂÔ±¹¤µ£ÈÎ
-     * @return true±íÊ¾¿ÉÒÔÓÉĞÂÔ±¹¤µ£ÈÎ£¬false±íÊ¾²»¿ÉÒÔ
+     * @brief æ˜¯å¦å¯ä»¥ç”±æ–°å‘˜å·¥æ‹…ä»»
+     * @return trueè¡¨ç¤ºå¯ä»¥ç”±æ–°å‘˜å·¥æ‹…ä»»ï¼Œfalseè¡¨ç¤ºä¸å¯ä»¥
      */
     bool canNewEmployee() const { return can_new_employee_; }
     
     /**
-     * @brief ÉèÖÃÊÇ·ñ¿ÉÒÔÓÉĞÂÔ±¹¤µ£ÈÎ
-     * @param can true±íÊ¾¿ÉÒÔÓÉĞÂÔ±¹¤µ£ÈÎ£¬false±íÊ¾²»¿ÉÒÔ
+     * @brief è®¾ç½®æ˜¯å¦å¯ä»¥ç”±æ–°å‘˜å·¥æ‹…ä»»
+     * @param can trueè¡¨ç¤ºå¯ä»¥ç”±æ–°å‘˜å·¥æ‹…ä»»ï¼Œfalseè¡¨ç¤ºä¸å¯ä»¥
      */
     void setCanNewEmployee(bool can) { can_new_employee_ = can; }
     
     /**
-     * @brief ÊÇ·ñÔÊĞíÈÎÎñÖØµş
-     * @return true±íÊ¾ÔÊĞíÖØµş£¬false±íÊ¾²»ÔÊĞíÖØµş
+     * @brief æ˜¯å¦å…è®¸ä»»åŠ¡é‡å 
+     * @return trueè¡¨ç¤ºå…è®¸é‡å ï¼Œfalseè¡¨ç¤ºä¸å…è®¸é‡å 
      */
     bool allowOverlap() const { return allow_overlap_; }
     
     /**
-     * @brief ÉèÖÃÊÇ·ñÔÊĞíÈÎÎñÖØµş
-     * @param allow true±íÊ¾ÔÊĞíÖØµş£¬false±íÊ¾²»ÔÊĞíÖØµş
+     * @brief è®¾ç½®æ˜¯å¦å…è®¸ä»»åŠ¡é‡å 
+     * @param allow trueè¡¨ç¤ºå…è®¸é‡å ï¼Œfalseè¡¨ç¤ºä¸å…è®¸é‡å 
      */
     void setAllowOverlap(bool allow) { allow_overlap_ = allow; }
     
     /**
-     * @brief »ñÈ¡×î´óÈÎÎñÖØµşÊ±¼ä
-     * @return ×î´óÖØµşÊ±¼ä£¨Ãë£©
+     * @brief è·å–æœ€å¤§ä»»åŠ¡é‡å æ—¶é—´
+     * @return æœ€å¤§é‡å æ—¶é—´ï¼ˆç§’ï¼‰
      */
     int64_t getMaxOverlapTime() const { return max_overlap_time_; }
     
     /**
-     * @brief ÉèÖÃ×î´óÈÎÎñÖØµşÊ±¼ä
-     * @param time ×î´óÖØµşÊ±¼ä£¨Ãë£©
+     * @brief è®¾ç½®æœ€å¤§ä»»åŠ¡é‡å æ—¶é—´
+     * @param time æœ€å¤§é‡å æ—¶é—´ï¼ˆç§’ï¼‰
      */
     void setMaxOverlapTime(int64_t time) { max_overlap_time_ = time; }
     
     /**
-     * @brief ÊÇ·ñÒÑ¾­·ÖÅä
-     * @return true±íÊ¾ÒÑ¾­·ÖÅä£¬false±íÊ¾Î´·ÖÅä
+     * @brief æ˜¯å¦å·²ç»åˆ†é…
+     * @return trueè¡¨ç¤ºå·²ç»åˆ†é…ï¼Œfalseè¡¨ç¤ºæœªåˆ†é…
      */
     bool isAssigned() const { return is_assigned_; }
     
     /**
-     * @brief ÉèÖÃÊÇ·ñÒÑ¾­·ÖÅä
-     * @param assigned true±íÊ¾ÒÑ¾­·ÖÅä£¬false±íÊ¾Î´·ÖÅä
+     * @brief è®¾ç½®æ˜¯å¦å·²ç»åˆ†é…
+     * @param assigned trueè¡¨ç¤ºå·²ç»åˆ†é…ï¼Œfalseè¡¨ç¤ºæœªåˆ†é…
      */
     void setAssigned(bool assigned) { is_assigned_ = assigned; }
     
     /**
-     * @brief ÊÇ·ñÈ±ÉÙÈËÊÖ
-     * @return true±íÊ¾È±ÉÙÈËÊÖ£¬false±íÊ¾²»È±ÉÙ
+     * @brief æ˜¯å¦ç¼ºå°‘äººæ‰‹
+     * @return trueè¡¨ç¤ºç¼ºå°‘äººæ‰‹ï¼Œfalseè¡¨ç¤ºä¸ç¼ºå°‘
      */
     bool isShortStaffed() const { return is_short_staffed_; }
     
     /**
-     * @brief ÉèÖÃÊÇ·ñÈ±ÉÙÈËÊÖ
-     * @param short_staffed true±íÊ¾È±ÉÙÈËÊÖ£¬false±íÊ¾²»È±ÉÙ
+     * @brief è®¾ç½®æ˜¯å¦ç¼ºå°‘äººæ‰‹
+     * @param short_staffed trueè¡¨ç¤ºç¼ºå°‘äººæ‰‹ï¼Œfalseè¡¨ç¤ºä¸ç¼ºå°‘
      */
     void setShortStaffed(bool short_staffed) { is_short_staffed_ = short_staffed; }
     
     /**
-     * @brief »ñÈ¡·ÖÅäµÄÈËÔ±IDÁĞ±í
-     * @return ÈËÔ±IDÁĞ±íµÄ³£Á¿ÒıÓÃ
+     * @brief è·å–åˆ†é…çš„äººå‘˜IDåˆ—è¡¨
+     * @return äººå‘˜IDåˆ—è¡¨çš„å¸¸é‡å¼•ç”¨
      */
     const std::vector<std::string>& getAssignedEmployeeIds() const { return assigned_employee_ids_; }
     
     /**
-     * @brief »ñÈ¡·ÖÅäµÄÈËÔ±IDÁĞ±í£¨·Ç³£Á¿°æ±¾£©
-     * @return ÈËÔ±IDÁĞ±íµÄÒıÓÃ
+     * @brief è·å–åˆ†é…çš„äººå‘˜IDåˆ—è¡¨ï¼ˆéå¸¸é‡ç‰ˆæœ¬ï¼‰
+     * @return äººå‘˜IDåˆ—è¡¨çš„å¼•ç”¨
      */
     std::vector<std::string>& getAssignedEmployeeIds() { return assigned_employee_ids_; }
     
     /**
-     * @brief Ìí¼Ó·ÖÅäµÄÈËÔ±ID
-     * @param employee_id ÈËÔ±ID
+     * @brief æ·»åŠ åˆ†é…çš„äººå‘˜ID
+     * @param employee_id äººå‘˜ID
      */
     void addAssignedEmployeeId(const std::string& employee_id);
     
     /**
-     * @brief ÒÆ³ı·ÖÅäµÄÈËÔ±ID
-     * @param employee_id ÈËÔ±ID
-     * @param shifts °à´ÎÁĞ±í£¬ÓÃÓÚ¼ì²éÊÇ·ñÊÇ¹Ì¶¨ÈËÑ¡
-     * @return Èç¹û¸ÃÈËÔ±ÊÇ¹Ì¶¨ÈËÑ¡Ôò·µ»Øfalse£¬·ñÔòÖ´ĞĞÒÆ³ı²Ù×÷£¬ÒÆ³ı³É¹¦·µ»Øtrue£¬Î´·ÖÅä·µ»Øfalse
+     * @brief ç§»é™¤åˆ†é…çš„äººå‘˜ID
+     * @param employee_id äººå‘˜ID
+     * @param shifts ç­æ¬¡åˆ—è¡¨ï¼Œç”¨äºæ£€æŸ¥æ˜¯å¦æ˜¯å›ºå®šäººé€‰
+     * @return å¦‚æœè¯¥äººå‘˜æ˜¯å›ºå®šäººé€‰åˆ™è¿”å›falseï¼Œå¦åˆ™æ‰§è¡Œç§»é™¤æ“ä½œï¼Œç§»é™¤æˆåŠŸè¿”å›trueï¼Œæœªåˆ†é…è¿”å›false
      */
     bool removeAssignedEmployeeId(const std::string& employee_id, 
                                    const std::vector<Shift>& shifts);
     
     /**
-     * @brief ¼ì²éÔ±¹¤ÊÇ·ñÊÇÈÎÎñµÄ¹Ì¶¨ÈËÑ¡
-     * @param employee_id ÈËÔ±ID
-     * @param shifts °à´ÎÁĞ±í
-     * @return true±íÊ¾ÊÇ¹Ì¶¨ÈËÑ¡£¬false±íÊ¾²»ÊÇ
+     * @brief æ£€æŸ¥å‘˜å·¥æ˜¯å¦æ˜¯ä»»åŠ¡çš„å›ºå®šäººé€‰
+     * @param employee_id äººå‘˜ID
+     * @param shifts ç­æ¬¡åˆ—è¡¨
+     * @return trueè¡¨ç¤ºæ˜¯å›ºå®šäººé€‰ï¼Œfalseè¡¨ç¤ºä¸æ˜¯
      */
     bool isFixedPerson(const std::string& employee_id, 
                        const std::vector<Shift>& shifts) const;
     
     /**
-     * @brief ¼ì²éÊÇ·ñÒÑ·ÖÅä¸øÖ¸¶¨ÈËÔ±
-     * @param employee_id ÈËÔ±ID
-     * @return true±íÊ¾ÒÑ·ÖÅä£¬false±íÊ¾Î´·ÖÅä
+     * @brief æ£€æŸ¥æ˜¯å¦å·²åˆ†é…ç»™æŒ‡å®šäººå‘˜
+     * @param employee_id äººå‘˜ID
+     * @return trueè¡¨ç¤ºå·²åˆ†é…ï¼Œfalseè¡¨ç¤ºæœªåˆ†é…
      */
     bool isAssignedToEmployee(const std::string& employee_id) const;
     
     /**
-     * @brief »ñÈ¡·ÖÅäµÄÈËÔ±ÊıÁ¿
-     * @return ·ÖÅäµÄÈËÔ±ÊıÁ¿
+     * @brief è·å–åˆ†é…çš„äººå‘˜æ•°é‡
+     * @return åˆ†é…çš„äººå‘˜æ•°é‡
      */
     size_t getAssignedEmployeeCount() const { return assigned_employee_ids_.size(); }
     
     /**
-     * @brief »ñÈ¡ĞèÒªµÄÈËÔ±ÊıÁ¿
-     * @return ĞèÒªµÄÈËÔ±ÊıÁ¿
+     * @brief è·å–éœ€è¦çš„äººå‘˜æ•°é‡
+     * @return éœ€è¦çš„äººå‘˜æ•°é‡
      */
     int32_t getRequiredCount() const { return required_count_; }
     
     /**
-     * @brief ÉèÖÃĞèÒªµÄÈËÔ±ÊıÁ¿
-     * @param count ĞèÒªµÄÈËÔ±ÊıÁ¿
+     * @brief è®¾ç½®éœ€è¦çš„äººå‘˜æ•°é‡
+     * @param count éœ€è¦çš„äººå‘˜æ•°é‡
      */
     void setRequiredCount(int32_t count) { required_count_ = count; }
     
     /**
-     * @brief Çå³ıËùÓĞÈËÔ±·ÖÅä
+     * @brief æ¸…é™¤æ‰€æœ‰äººå‘˜åˆ†é…
      */
     void clearAssignedEmployees() {
         assigned_employee_ids_.clear();
@@ -259,20 +259,20 @@ public:
     }
 
 private:
-    int64_t task_id_;                    ///< ÈÎÎñID
-    std::string task_name_;              ///< ÈÎÎñÃû³Æ
-    TaskType task_type_;                 ///< ÈÎÎñÀàĞÍ
-    bool prefer_main_shift_;             ///< ÊÇ·ñÓÅÏÈÖ÷°à
-    int64_t start_time_;                 ///< ÈÎÎñ¿ªÊ¼Ê±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
-    int64_t end_time_;                   ///< ÈÎÎñ½áÊøÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£¬-1±íÊ¾º½ºó£©
-    int32_t required_qualification_;     ///< ĞèÒªµÄ×ÊÖÊÀàĞÍ£¨Î»ÑÚÂë£©
-    bool can_new_employee_;              ///< ÊÇ·ñ¿ÉÒÔÓÉĞÂÔ±¹¤µ£ÈÎ
-    bool allow_overlap_;                 ///< ÊÇ·ñÔÊĞíÈÎÎñÖØµş
-    int64_t max_overlap_time_;           ///< ×î´óÈÎÎñÖØµşÊ±¼ä£¨Ãë£©
-    int32_t required_count_;             ///< ĞèÒªµÄÈËÔ±ÊıÁ¿
-    bool is_assigned_;                   ///< ÊÇ·ñÒÑ¾­·ÖÅä
-    bool is_short_staffed_;              ///< ÊÇ·ñÈ±ÉÙÈËÊÖ
-    std::vector<std::string> assigned_employee_ids_;  ///< ·ÖÅäµÄÈËÔ±IDÁĞ±í
+    int64_t task_id_;                    ///< ä»»åŠ¡ID
+    std::string task_name_;              ///< ä»»åŠ¡åç§°
+    TaskType task_type_;                 ///< ä»»åŠ¡ç±»å‹
+    bool prefer_main_shift_;             ///< æ˜¯å¦ä¼˜å…ˆä¸»ç­
+    int64_t start_time_;                 ///< ä»»åŠ¡å¼€å§‹æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
+    int64_t end_time_;                   ///< ä»»åŠ¡ç»“æŸæ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼Œ-1è¡¨ç¤ºèˆªåï¼‰
+    int32_t required_qualification_;     ///< éœ€è¦çš„èµ„è´¨ç±»å‹ï¼ˆä½æ©ç ï¼‰
+    bool can_new_employee_;              ///< æ˜¯å¦å¯ä»¥ç”±æ–°å‘˜å·¥æ‹…ä»»
+    bool allow_overlap_;                 ///< æ˜¯å¦å…è®¸ä»»åŠ¡é‡å 
+    int64_t max_overlap_time_;           ///< æœ€å¤§ä»»åŠ¡é‡å æ—¶é—´ï¼ˆç§’ï¼‰
+    int32_t required_count_;             ///< éœ€è¦çš„äººå‘˜æ•°é‡
+    bool is_assigned_;                   ///< æ˜¯å¦å·²ç»åˆ†é…
+    bool is_short_staffed_;              ///< æ˜¯å¦ç¼ºå°‘äººæ‰‹
+    std::vector<std::string> assigned_employee_ids_;  ///< åˆ†é…çš„äººå‘˜IDåˆ—è¡¨
 };
 
 }  // namespace vip_first_class

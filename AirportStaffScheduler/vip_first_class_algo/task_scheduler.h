@@ -1,8 +1,8 @@
 /**
  * @file task_scheduler.h
- * @brief ÈÎÎñµ÷¶ÈÀà
+ * @brief ä»»åŠ¡è°ƒåº¦ç±»
  * 
- * ¶¨ÒåÅÅ°àÏµÍ³ÖĞµÄÈÎÎñµ÷¶È¹¦ÄÜ
+ * å®šä¹‰æ’ç­ç³»ç»Ÿä¸­çš„ä»»åŠ¡è°ƒåº¦åŠŸèƒ½
  */
 
 #ifndef VIP_FIRST_CLASS_TASK_SCHEDULER_H
@@ -19,67 +19,67 @@ namespace vip_first_class {
 using namespace std;
 
 /**
- * @brief ÈÎÎñµ÷¶ÈÀà
+ * @brief ä»»åŠ¡è°ƒåº¦ç±»
  * 
- * ¸ºÔğ½«ÈÎÎñÁĞ±í·ÖÅä¸ø°à´ÎÖĞµÄÈËÔ±
+ * è´Ÿè´£å°†ä»»åŠ¡åˆ—è¡¨åˆ†é…ç»™ç­æ¬¡ä¸­çš„äººå‘˜
  */
 class TaskScheduler {
 public:
     /**
-     * @brief ¹¹Ôìº¯Êı
+     * @brief æ„é€ å‡½æ•°
      */
     TaskScheduler();
     
     /**
-     * @brief Îö¹¹º¯Êı
+     * @brief ææ„å‡½æ•°
      */
     ~TaskScheduler();
     
     /**
-     * @brief µ÷¶ÈÈÎÎñ
-     * @param tasks ÈÎÎñÁĞ±í
-     * @param shifts °à´ÎÁĞ±í£¬±íÊ¾½ñÈÕÉÏ°àµÄÇé¿ö
+     * @brief è°ƒåº¦ä»»åŠ¡
+     * @param tasks ä»»åŠ¡åˆ—è¡¨
+     * @param shifts ç­æ¬¡åˆ—è¡¨ï¼Œè¡¨ç¤ºä»Šæ—¥ä¸Šç­çš„æƒ…å†µ
      */
     void scheduleTasks(vector<TaskDefinition>& tasks, 
                        const vector<Shift>& shifts);
     
     /**
-     * @brief ÖØÖÃµÚÒ»´ÎÖµÊØ´ÎÊıÍ³¼Æ£¨ÓÃÓÚĞÂµÄÒ»Ìì£©
+     * @brief é‡ç½®ç¬¬ä¸€æ¬¡å€¼å®ˆæ¬¡æ•°ç»Ÿè®¡ï¼ˆç”¨äºæ–°çš„ä¸€å¤©ï¼‰
      */
     static void resetFirstShiftCounts();
     
     /**
-     * @brief »ñÈ¡Ô±¹¤×÷ÎªµÚÒ»´ÎÖµÊØµÄ´ÎÊı
-     * @param employee_id Ô±¹¤ID
-     * @return ×÷ÎªµÚÒ»´ÎÖµÊØµÄ´ÎÊı
+     * @brief è·å–å‘˜å·¥ä½œä¸ºç¬¬ä¸€æ¬¡å€¼å®ˆçš„æ¬¡æ•°
+     * @param employee_id å‘˜å·¥ID
+     * @return ä½œä¸ºç¬¬ä¸€æ¬¡å€¼å®ˆçš„æ¬¡æ•°
      */
     static int32_t getFirstShiftCount(const string& employee_id);
     
     /**
-     * @brief Ôö¼ÓÔ±¹¤×÷ÎªµÚÒ»´ÎÖµÊØµÄ´ÎÊı
-     * @param employee_id Ô±¹¤ID
+     * @brief å¢åŠ å‘˜å·¥ä½œä¸ºç¬¬ä¸€æ¬¡å€¼å®ˆçš„æ¬¡æ•°
+     * @param employee_id å‘˜å·¥ID
      */
     static void incrementFirstShiftCount(const string& employee_id);
 
 private:
     /**
-     * @brief ·ÖÅäÌüÄÚ±£ÕÏÈÎÎñ£¨4ÈË£¬2ÈËÒ»×éÂÖÁ÷ÖµÊØ£©
-     * @param tasks ÈÎÎñÁĞ±í
-     * @param shifts °à´ÎÁĞ±í
-     * @param task_ptr_map ÈÎÎñIDµ½TaskDefinitionÖ¸ÕëµÄÓ³Éä
+     * @brief åˆ†é…å…å†…ä¿éšœä»»åŠ¡ï¼ˆ4äººï¼Œ2äººä¸€ç»„è½®æµå€¼å®ˆï¼‰
+     * @param tasks ä»»åŠ¡åˆ—è¡¨
+     * @param shifts ç­æ¬¡åˆ—è¡¨
+     * @param task_ptr_map ä»»åŠ¡IDåˆ°TaskDefinitionæŒ‡é’ˆçš„æ˜ å°„
      */
     void scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
                                       const vector<Shift>& shifts,
                                       map<int64_t, TaskDefinition*>& task_ptr_map);
     
     /**
-     * @brief Îª²»ÖµÊØµÄÔ±¹¤·ÖÅä²Ù×÷¼äÈÎÎñ
-     * @param tasks ÈÎÎñÁĞ±í
-     * @param shifts °à´ÎÁĞ±í
-     * @param task_ptr_map ÈÎÎñIDµ½TaskDefinitionÖ¸ÕëµÄÓ³Éä
-     * @param on_duty_employees ÕıÔÚÖµÊØµÄÔ±¹¤IDÁĞ±í
-     * @param time_slot_start Ê±¼ä¶Î¿ªÊ¼Ê±¼ä
-     * @param time_slot_end Ê±¼ä¶Î½áÊøÊ±¼ä
+     * @brief ä¸ºä¸å€¼å®ˆçš„å‘˜å·¥åˆ†é…æ“ä½œé—´ä»»åŠ¡
+     * @param tasks ä»»åŠ¡åˆ—è¡¨
+     * @param shifts ç­æ¬¡åˆ—è¡¨
+     * @param task_ptr_map ä»»åŠ¡IDåˆ°TaskDefinitionæŒ‡é’ˆçš„æ˜ å°„
+     * @param on_duty_employees æ­£åœ¨å€¼å®ˆçš„å‘˜å·¥IDåˆ—è¡¨
+     * @param time_slot_start æ—¶é—´æ®µå¼€å§‹æ—¶é—´
+     * @param time_slot_end æ—¶é—´æ®µç»“æŸæ—¶é—´
      */
     void scheduleOperationRoomTasks(vector<TaskDefinition>& tasks,
                                     const vector<Shift>& shifts,
@@ -88,7 +88,7 @@ private:
                                     int64_t time_slot_start,
                                     int64_t time_slot_end);
     
-    // ¾²Ì¬³ÉÔ±£º¸ú×ÙÃ¿¸öÔ±¹¤×÷ÎªµÚÒ»´ÎÖµÊØµÄ´ÎÊı£¨È«¾Ö×Ö¶Î£©
+    // é™æ€æˆå‘˜ï¼šè·Ÿè¸ªæ¯ä¸ªå‘˜å·¥ä½œä¸ºç¬¬ä¸€æ¬¡å€¼å®ˆçš„æ¬¡æ•°ï¼ˆå…¨å±€å­—æ®µï¼‰
     static map<string, int32_t> first_shift_counts_;
 };
 

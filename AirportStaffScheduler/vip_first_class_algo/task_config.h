@@ -1,8 +1,8 @@
 /**
  * @file task_config.h
- * @brief ÈÎÎñÅäÖÃÀà
+ * @brief ä»»åŠ¡é…ç½®ç±»
  * 
- * ¶¨ÒåÈÎÎñµÄ¹Ì¶¨ÈËÑ¡ÅäÖÃĞÅÏ¢
+ * å®šä¹‰ä»»åŠ¡çš„å›ºå®šäººé€‰é…ç½®ä¿¡æ¯
  */
 
 #ifndef VIP_FIRST_CLASS_TASK_CONFIG_H
@@ -18,24 +18,24 @@ namespace vip_first_class {
 
 using namespace std;
 
-// Ç°ÏòÉùÃ÷
+// å‰å‘å£°æ˜
 class Shift;
 class TaskDefinition;
 
 /**
- * @brief °à´ÎÀàĞÍÃ¶¾Ù£¨ÓÃÓÚ¹Ì¶¨ÈËÑ¡£©
+ * @brief ç­æ¬¡ç±»å‹æšä¸¾ï¼ˆç”¨äºå›ºå®šäººé€‰ï¼‰
  */
 enum class ShiftCategory {
-    MAIN = 0,   ///< Ö÷°à
-    SUB = 1     ///< ¸±°à
+    MAIN = 0,   ///< ä¸»ç­
+    SUB = 1     ///< å‰¯ç­
 };
 
 /**
- * @brief ¹Ì¶¨ÈËÑ¡ĞÅÏ¢½á¹¹
+ * @brief å›ºå®šäººé€‰ä¿¡æ¯ç»“æ„
  */
 struct FixedPersonInfo {
-    ShiftCategory shift_category;  ///< °à´ÎÀàĞÍ£¨Ö÷°à/¸±°à£©
-    int32_t position;              ///< ¹Ì¶¨ÈËÑ¡µÄÎ»ÖÃ£¨µÚ¼¸¸öÈË£¬´Ó1¿ªÊ¼£©
+    ShiftCategory shift_category;  ///< ç­æ¬¡ç±»å‹ï¼ˆä¸»ç­/å‰¯ç­ï¼‰
+    int32_t position;              ///< å›ºå®šäººé€‰çš„ä½ç½®ï¼ˆç¬¬å‡ ä¸ªäººï¼Œä»1å¼€å§‹ï¼‰
     
     FixedPersonInfo() : shift_category(ShiftCategory::MAIN), position(0) {}
     FixedPersonInfo(ShiftCategory category, int32_t pos) 
@@ -43,161 +43,161 @@ struct FixedPersonInfo {
 };
 
 /**
- * @brief ÈÎÎñÅäÖÃÀà£¨µ¥ÀıÄ£Ê½£©
+ * @brief ä»»åŠ¡é…ç½®ç±»ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰
  * 
- * ¹ÜÀíÈÎÎñµÄ¹Ì¶¨ÈËÑ¡ÅäÖÃ
+ * ç®¡ç†ä»»åŠ¡çš„å›ºå®šäººé€‰é…ç½®
  */
 class TaskConfig {
 public:
     /**
-     * @brief »ñÈ¡µ¥ÀıÊµÀı
-     * @return TaskConfigµ¥ÀıÒıÓÃ
+     * @brief è·å–å•ä¾‹å®ä¾‹
+     * @return TaskConfigå•ä¾‹å¼•ç”¨
      */
     static TaskConfig& getInstance();
     
     /**
-     * @brief ³õÊ¼»¯Ä¬ÈÏÅäÖÃ
+     * @brief åˆå§‹åŒ–é»˜è®¤é…ç½®
      * 
-     * ¸ù¾İÒµÎñĞèÇó³õÊ¼»¯ÈÎÎñ¹Ì¶¨ÈËÑ¡ÅäÖÃ
+     * æ ¹æ®ä¸šåŠ¡éœ€æ±‚åˆå§‹åŒ–ä»»åŠ¡å›ºå®šäººé€‰é…ç½®
      */
     void initializeDefaultConfig();
     
     /**
-     * @brief ¸ù¾İÈÎÎñID»ñÈ¡¹Ì¶¨ÈËÑ¡ÁĞ±í
-     * @param task_id ÈÎÎñID
-     * @return ¹Ì¶¨ÈËÑ¡ĞÅÏ¢ÁĞ±íµÄ³£Á¿ÒıÓÃ
+     * @brief æ ¹æ®ä»»åŠ¡IDè·å–å›ºå®šäººé€‰åˆ—è¡¨
+     * @param task_id ä»»åŠ¡ID
+     * @return å›ºå®šäººé€‰ä¿¡æ¯åˆ—è¡¨çš„å¸¸é‡å¼•ç”¨
      */
     const vector<FixedPersonInfo>& getFixedPersons(int64_t task_id) const;
     
     /**
-     * @brief ¸ù¾İÈÎÎñÀàĞÍ»ñÈ¡¹Ì¶¨ÈËÑ¡ÁĞ±í
-     * @param task_type ÈÎÎñÀàĞÍ
-     * @return ¹Ì¶¨ÈËÑ¡ĞÅÏ¢ÁĞ±íµÄ³£Á¿ÒıÓÃ
+     * @brief æ ¹æ®ä»»åŠ¡ç±»å‹è·å–å›ºå®šäººé€‰åˆ—è¡¨
+     * @param task_type ä»»åŠ¡ç±»å‹
+     * @return å›ºå®šäººé€‰ä¿¡æ¯åˆ—è¡¨çš„å¸¸é‡å¼•ç”¨
      */
     const vector<FixedPersonInfo>& getFixedPersonsByType(TaskType task_type) const;
     
     /**
-     * @brief Ìí¼ÓÈÎÎñ¹Ì¶¨ÈËÑ¡ÅäÖÃ
-     * @param task_id ÈÎÎñID
-     * @param fixed_person ¹Ì¶¨ÈËÑ¡ĞÅÏ¢
+     * @brief æ·»åŠ ä»»åŠ¡å›ºå®šäººé€‰é…ç½®
+     * @param task_id ä»»åŠ¡ID
+     * @param fixed_person å›ºå®šäººé€‰ä¿¡æ¯
      */
     void addFixedPerson(int64_t task_id, const FixedPersonInfo& fixed_person);
     
     /**
-     * @brief Ìí¼ÓÈÎÎñ¹Ì¶¨ÈËÑ¡ÅäÖÃ£¨Í¨¹ıÈÎÎñÀàĞÍ£©
-     * @param task_type ÈÎÎñÀàĞÍ
-     * @param fixed_person ¹Ì¶¨ÈËÑ¡ĞÅÏ¢
+     * @brief æ·»åŠ ä»»åŠ¡å›ºå®šäººé€‰é…ç½®ï¼ˆé€šè¿‡ä»»åŠ¡ç±»å‹ï¼‰
+     * @param task_type ä»»åŠ¡ç±»å‹
+     * @param fixed_person å›ºå®šäººé€‰ä¿¡æ¯
      */
     void addFixedPersonByType(TaskType task_type, const FixedPersonInfo& fixed_person);
     
     /**
-     * @brief ÉèÖÃÈÎÎñÀàĞÍµ½ÈÎÎñIDµÄÓ³Éä
-     * @param task_type ÈÎÎñÀàĞÍ
-     * @param task_id ÈÎÎñID
+     * @brief è®¾ç½®ä»»åŠ¡ç±»å‹åˆ°ä»»åŠ¡IDçš„æ˜ å°„
+     * @param task_type ä»»åŠ¡ç±»å‹
+     * @param task_id ä»»åŠ¡ID
      */
     void setTaskTypeToId(TaskType task_type, int64_t task_id);
     
     /**
-     * @brief ¸ù¾İÈÎÎñÀàĞÍ»ñÈ¡ÈÎÎñID
-     * @param task_type ÈÎÎñÀàĞÍ
-     * @return ÈÎÎñID£¬Èç¹û²»´æÔÚÔò·µ»Ø0
+     * @brief æ ¹æ®ä»»åŠ¡ç±»å‹è·å–ä»»åŠ¡ID
+     * @param task_type ä»»åŠ¡ç±»å‹
+     * @return ä»»åŠ¡IDï¼Œå¦‚æœä¸å­˜åœ¨åˆ™è¿”å›0
      */
     int64_t getTaskIdByType(TaskType task_type) const;
     
     /**
-     * @brief ¼ì²éÈÎÎñÊÇ·ñÓĞ¹Ì¶¨ÈËÑ¡ÅäÖÃ
-     * @param task_id ÈÎÎñID
-     * @return true±íÊ¾ÓĞÅäÖÃ£¬false±íÊ¾Ã»ÓĞÅäÖÃ
+     * @brief æ£€æŸ¥ä»»åŠ¡æ˜¯å¦æœ‰å›ºå®šäººé€‰é…ç½®
+     * @param task_id ä»»åŠ¡ID
+     * @return trueè¡¨ç¤ºæœ‰é…ç½®ï¼Œfalseè¡¨ç¤ºæ²¡æœ‰é…ç½®
      */
     bool hasFixedPersonConfig(int64_t task_id) const;
     
     /**
-     * @brief ¼ì²éÈÎÎñÊÇ·ñÓĞ¹Ì¶¨ÈËÑ¡ÅäÖÃ£¨Í¨¹ıÈÎÎñÀàĞÍ£©
-     * @param task_type ÈÎÎñÀàĞÍ
-     * @return true±íÊ¾ÓĞÅäÖÃ£¬false±íÊ¾Ã»ÓĞÅäÖÃ
+     * @brief æ£€æŸ¥ä»»åŠ¡æ˜¯å¦æœ‰å›ºå®šäººé€‰é…ç½®ï¼ˆé€šè¿‡ä»»åŠ¡ç±»å‹ï¼‰
+     * @param task_type ä»»åŠ¡ç±»å‹
+     * @return trueè¡¨ç¤ºæœ‰é…ç½®ï¼Œfalseè¡¨ç¤ºæ²¡æœ‰é…ç½®
      */
     bool hasFixedPersonConfigByType(TaskType task_type) const;
     
     /**
-     * @brief Çå³ıËùÓĞÅäÖÃ
+     * @brief æ¸…é™¤æ‰€æœ‰é…ç½®
      */
     void clear();
     
     /**
-     * @brief »ñÈ¡ÈÎÎñÓÅÏÈ¼¶
-     * @param task_type ÈÎÎñÀàĞÍ
-     * @return ÈÎÎñÓÅÏÈ¼¶£¬ÊıÖµÔ½´óÓÅÏÈ¼¶Ô½¸ß
+     * @brief è·å–ä»»åŠ¡ä¼˜å…ˆçº§
+     * @param task_type ä»»åŠ¡ç±»å‹
+     * @return ä»»åŠ¡ä¼˜å…ˆçº§ï¼Œæ•°å€¼è¶Šå¤§ä¼˜å…ˆçº§è¶Šé«˜
      */
     int32_t getTaskPriority(TaskType task_type) const;
     
     /**
-     * @brief ÉèÖÃÈÎÎñÓÅÏÈ¼¶
-     * @param task_type ÈÎÎñÀàĞÍ
-     * @param priority ÓÅÏÈ¼¶£¬ÊıÖµÔ½´óÓÅÏÈ¼¶Ô½¸ß
+     * @brief è®¾ç½®ä»»åŠ¡ä¼˜å…ˆçº§
+     * @param task_type ä»»åŠ¡ç±»å‹
+     * @param priority ä¼˜å…ˆçº§ï¼Œæ•°å€¼è¶Šå¤§ä¼˜å…ˆçº§è¶Šé«˜
      */
     void setTaskPriority(TaskType task_type, int32_t priority);
     
     /**
-     * @brief ³õÊ¼»¯ÈÎÎñÓÅÏÈ¼¶ÅäÖÃ
+     * @brief åˆå§‹åŒ–ä»»åŠ¡ä¼˜å…ˆçº§é…ç½®
      * 
-     * ¸ù¾İÒµÎñĞèÇó³õÊ¼»¯ËùÓĞÈÎÎñµÄÓÅÏÈ¼¶
-     * ÓÅÏÈ¼¶Ë³Ğò£ºµ÷¶ÈÀà > Íâ³¡ > ÌüÄÚ > Ç°Ì¨Ğ­Öú
+     * æ ¹æ®ä¸šåŠ¡éœ€æ±‚åˆå§‹åŒ–æ‰€æœ‰ä»»åŠ¡çš„ä¼˜å…ˆçº§
+     * ä¼˜å…ˆçº§é¡ºåºï¼šè°ƒåº¦ç±» > å¤–åœº > å…å†… > å‰å°ååŠ©
      */
     void initializeTaskPriorities();
     
     /**
-     * @brief ¶¯Ì¬Éè¶¨ÌüÄÚ±£ÕÏÈÎÎñµÄ4¸ö¹Ì¶¨ÈËÑ¡
+     * @brief åŠ¨æ€è®¾å®šå…å†…ä¿éšœä»»åŠ¡çš„4ä¸ªå›ºå®šäººé€‰
      * 
-     * Âß¼­£º·ÇÓĞ¹Ì¶¨ÈÎÎñµÄÈË£¬ÓÅÏÈÖ÷°à£¬Èç¹ûÓĞÖ÷°à²»×ã£¬Ôò´Ó¸±°àÃ»ÓĞ¹Ì¶¨ÈÎÎñµÄÈËÑ¡ÖĞÑ¡£¬·ñÔòÑ¡¸±°àÓĞ¹Ì¶¨ÈÎÎñµÄÈË
-     * @param shifts °à´ÎÁĞ±í£¬ÓÃÓÚ²éÕÒÔ±¹¤
-     * @param all_tasks ËùÓĞÈÎÎñÁĞ±í£¬ÓÃÓÚÅĞ¶ÏÔ±¹¤ÊÇ·ñÓĞ¹Ì¶¨ÈÎÎñ
+     * é€»è¾‘ï¼šéæœ‰å›ºå®šä»»åŠ¡çš„äººï¼Œä¼˜å…ˆä¸»ç­ï¼Œå¦‚æœæœ‰ä¸»ç­ä¸è¶³ï¼Œåˆ™ä»å‰¯ç­æ²¡æœ‰å›ºå®šä»»åŠ¡çš„äººé€‰ä¸­é€‰ï¼Œå¦åˆ™é€‰å‰¯ç­æœ‰å›ºå®šä»»åŠ¡çš„äºº
+     * @param shifts ç­æ¬¡åˆ—è¡¨ï¼Œç”¨äºæŸ¥æ‰¾å‘˜å·¥
+     * @param all_tasks æ‰€æœ‰ä»»åŠ¡åˆ—è¡¨ï¼Œç”¨äºåˆ¤æ–­å‘˜å·¥æ˜¯å¦æœ‰å›ºå®šä»»åŠ¡
      */
     void setHallMaintenanceFixedPersons(const vector<Shift>& shifts, 
                                         const vector<TaskDefinition>& all_tasks);
     
     /**
-     * @brief »ñÈ¡ÌüÄÚ±£ÕÏÈÎÎñµÄ¹Ì¶¨ÈËÑ¡ÁĞ±í
-     * @return ÌüÄÚ±£ÕÏÈÎÎñ¹Ì¶¨ÈËÑ¡µÄÔ±¹¤IDÁĞ±í
+     * @brief è·å–å…å†…ä¿éšœä»»åŠ¡çš„å›ºå®šäººé€‰åˆ—è¡¨
+     * @return å…å†…ä¿éšœä»»åŠ¡å›ºå®šäººé€‰çš„å‘˜å·¥IDåˆ—è¡¨
      */
     const vector<string>& getHallMaintenanceFixedPersons() const;
 
 private:
     /**
-     * @brief Ë½ÓĞ¹¹Ôìº¯Êı£¨µ¥ÀıÄ£Ê½£©
+     * @brief ç§æœ‰æ„é€ å‡½æ•°ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰
      */
     TaskConfig();
     
     /**
-     * @brief Ë½ÓĞÎö¹¹º¯Êı
+     * @brief ç§æœ‰ææ„å‡½æ•°
      */
     ~TaskConfig();
     
     /**
-     * @brief ½ûÖ¹¿½±´¹¹Ôì
+     * @brief ç¦æ­¢æ‹·è´æ„é€ 
      */
     TaskConfig(const TaskConfig&) = delete;
     
     /**
-     * @brief ½ûÖ¹¸³Öµ²Ù×÷
+     * @brief ç¦æ­¢èµ‹å€¼æ“ä½œ
      */
     TaskConfig& operator=(const TaskConfig&) = delete;
     
-    // ÈÎÎñIDµ½¹Ì¶¨ÈËÑ¡ÁĞ±íµÄÓ³Éä
+    // ä»»åŠ¡IDåˆ°å›ºå®šäººé€‰åˆ—è¡¨çš„æ˜ å°„
     map<int64_t, vector<FixedPersonInfo>> task_id_to_fixed_persons_;
     
-    // ÈÎÎñÀàĞÍµ½ÈÎÎñIDµÄÓ³Éä£¨ÓÃÓÚÍ¨¹ıÀàĞÍ²éÕÒ£©
+    // ä»»åŠ¡ç±»å‹åˆ°ä»»åŠ¡IDçš„æ˜ å°„ï¼ˆç”¨äºé€šè¿‡ç±»å‹æŸ¥æ‰¾ï¼‰
     map<TaskType, int64_t> task_type_to_id_;
     
-    // ÈÎÎñÀàĞÍµ½ÓÅÏÈ¼¶µÄÓ³Éä£¨ÊıÖµÔ½´óÓÅÏÈ¼¶Ô½¸ß£©
+    // ä»»åŠ¡ç±»å‹åˆ°ä¼˜å…ˆçº§çš„æ˜ å°„ï¼ˆæ•°å€¼è¶Šå¤§ä¼˜å…ˆçº§è¶Šé«˜ï¼‰
     map<TaskType, int32_t> task_type_to_priority_;
     
-    // ¿ÕµÄ¹Ì¶¨ÈËÑ¡ÁĞ±í£¨ÓÃÓÚ·µ»ØÄ¬ÈÏÖµ£©
+    // ç©ºçš„å›ºå®šäººé€‰åˆ—è¡¨ï¼ˆç”¨äºè¿”å›é»˜è®¤å€¼ï¼‰
     static const vector<FixedPersonInfo> empty_list_;
     
-    // ÌüÄÚ±£ÕÏÈÎÎñµÄ¹Ì¶¨ÈËÑ¡ÁĞ±í£¨4¸öÈË£©
+    // å…å†…ä¿éšœä»»åŠ¡çš„å›ºå®šäººé€‰åˆ—è¡¨ï¼ˆ4ä¸ªäººï¼‰
     vector<string> hall_maintenance_fixed_persons_;
     
-    // ¿ÕµÄÔ±¹¤IDÁĞ±í£¨ÓÃÓÚ·µ»ØÄ¬ÈÏÖµ£©
+    // ç©ºçš„å‘˜å·¥IDåˆ—è¡¨ï¼ˆç”¨äºè¿”å›é»˜è®¤å€¼ï¼‰
     static const vector<string> empty_employee_list_;
 };
 

@@ -1,6 +1,6 @@
 /**
  * @file employee_info.cpp
- * @brief Ô±¹¤ĞÅÏ¢ÀàÊµÏÖ
+ * @brief å‘˜å·¥ä¿¡æ¯ç±»å®ç°
  */
 
 #include "employee_info.h"
@@ -22,10 +22,10 @@ EmployeeInfo::~EmployeeInfo()
 
 void EmployeeInfo::addAssignedTaskId(int64_t task_id)
 {
-    // ¼ì²éÊÇ·ñÒÑ´æÔÚ
+    // æ£€æŸ¥æ˜¯å¦å·²å­˜åœ¨
     for (int64_t id : assigned_task_ids_) {
         if (id == task_id) {
-            return;  // ÒÑ¾­´æÔÚ£¬²»ÖØ¸´Ìí¼Ó
+            return;  // å·²ç»å­˜åœ¨ï¼Œä¸é‡å¤æ·»åŠ 
         }
     }
     assigned_task_ids_.push_back(task_id);

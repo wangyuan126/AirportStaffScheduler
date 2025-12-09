@@ -1,8 +1,8 @@
 /**
  * @file employee_info.h
- * @brief Ô±¹¤ĞÅÏ¢Àà
+ * @brief å‘˜å·¥ä¿¡æ¯ç±»
  * 
- * ¶¨ÒåÅÅ°àÏµÍ³ÖĞµÄÔ±¹¤ÏêÏ¸ĞÅÏ¢ºÍÍ³¼ÆÊı¾İ
+ * å®šä¹‰æ’ç­ç³»ç»Ÿä¸­çš„å‘˜å·¥è¯¦ç»†ä¿¡æ¯å’Œç»Ÿè®¡æ•°æ®
  */
 
 #ifndef VIP_FIRST_CLASS_EMPLOYEE_INFO_H
@@ -18,136 +18,136 @@ namespace vip_first_class {
 using namespace std;
 
 /**
- * @brief ×ÊÖÊÀàĞÍÃ¶¾Ù£¨Î»ÑÚÂë£©
+ * @brief èµ„è´¨ç±»å‹æšä¸¾ï¼ˆä½æ©ç ï¼‰
  */
 enum class QualificationMask {
-    HALL_INTERNAL = 1,    ///< ÌüÄÚ×ÊÖÊ
-    EXTERNAL = 2,         ///< Íâ³¡×ÊÖÊ
-    FRONT_DESK = 4,       ///< Ç°Ì¨×ÊÖÊ
-    DISPATCH = 8          ///< µ÷¶È×ÊÖÊ
+    HALL_INTERNAL = 1,    ///< å…å†…èµ„è´¨
+    EXTERNAL = 2,         ///< å¤–åœºèµ„è´¨
+    FRONT_DESK = 4,       ///< å‰å°èµ„è´¨
+    DISPATCH = 8          ///< è°ƒåº¦èµ„è´¨
 };
 
 /**
- * @brief Ô±¹¤ĞÅÏ¢Àà
+ * @brief å‘˜å·¥ä¿¡æ¯ç±»
  * 
- * ¼ÇÂ¼Ô±¹¤µÄ×ÊÖÊ¡¢¹¤×÷Ê±³¤ºÍÍ³¼ÆĞÅÏ¢
+ * è®°å½•å‘˜å·¥çš„èµ„è´¨ã€å·¥ä½œæ—¶é•¿å’Œç»Ÿè®¡ä¿¡æ¯
  */
 class EmployeeInfo {
 public:
     /**
-     * @brief ¹¹Ôìº¯Êı
+     * @brief æ„é€ å‡½æ•°
      */
     EmployeeInfo();
     
     /**
-     * @brief Îö¹¹º¯Êı
+     * @brief ææ„å‡½æ•°
      */
     ~EmployeeInfo();
     
     /**
-     * @brief »ñÈ¡Ô±¹¤ID
-     * @return Ô±¹¤ID
+     * @brief è·å–å‘˜å·¥ID
+     * @return å‘˜å·¥ID
      */
     const string& getEmployeeId() const { return employee_id_; }
     
     /**
-     * @brief ÉèÖÃÔ±¹¤ID
-     * @param id Ô±¹¤ID
+     * @brief è®¾ç½®å‘˜å·¥ID
+     * @param id å‘˜å·¥ID
      */
     void setEmployeeId(const string& id) { employee_id_ = id; }
     
     /**
-     * @brief »ñÈ¡Ô±¹¤ĞÕÃû
-     * @return Ô±¹¤ĞÕÃû
+     * @brief è·å–å‘˜å·¥å§“å
+     * @return å‘˜å·¥å§“å
      */
     const string& getEmployeeName() const { return employee_name_; }
     
     /**
-     * @brief ÉèÖÃÔ±¹¤ĞÕÃû
-     * @param name Ô±¹¤ĞÕÃû
+     * @brief è®¾ç½®å‘˜å·¥å§“å
+     * @param name å‘˜å·¥å§“å
      */
     void setEmployeeName(const string& name) { employee_name_ = name; }
     
     /**
-     * @brief »ñÈ¡×ÊÖÊÑÚÂë
-     * @return ×ÊÖÊÑÚÂë£¨Î»ÑÚÂë£¬²Î¼ûQualificationMask£©
+     * @brief è·å–èµ„è´¨æ©ç 
+     * @return èµ„è´¨æ©ç ï¼ˆä½æ©ç ï¼Œå‚è§QualificationMaskï¼‰
      */
     int32_t getQualificationMask() const { return qualification_mask_; }
     
     /**
-     * @brief ÉèÖÃ×ÊÖÊÑÚÂë
-     * @param mask ×ÊÖÊÑÚÂë£¨Î»ÑÚÂë£©
+     * @brief è®¾ç½®èµ„è´¨æ©ç 
+     * @param mask èµ„è´¨æ©ç ï¼ˆä½æ©ç ï¼‰
      */
     void setQualificationMask(int32_t mask) { qualification_mask_ = mask; }
     
     /**
-     * @brief Ìí¼Ó×ÊÖÊ
-     * @param qual ×ÊÖÊÀàĞÍ£¨QualificationMaskÃ¶¾ÙÖµ£©
+     * @brief æ·»åŠ èµ„è´¨
+     * @param qual èµ„è´¨ç±»å‹ï¼ˆQualificationMaskæšä¸¾å€¼ï¼‰
      */
     void addQualification(QualificationMask qual) {
         qualification_mask_ |= static_cast<int32_t>(qual);
     }
     
     /**
-     * @brief ÒÆ³ı×ÊÖÊ
-     * @param qual ×ÊÖÊÀàĞÍ£¨QualificationMaskÃ¶¾ÙÖµ£©
+     * @brief ç§»é™¤èµ„è´¨
+     * @param qual èµ„è´¨ç±»å‹ï¼ˆQualificationMaskæšä¸¾å€¼ï¼‰
      */
     void removeQualification(QualificationMask qual) {
         qualification_mask_ &= ~static_cast<int32_t>(qual);
     }
     
     /**
-     * @brief ¼ì²éÊÇ·ñ¾ßÓĞÄ³ÖÖ×ÊÖÊ
-     * @param qual ×ÊÖÊÀàĞÍ£¨QualificationMaskÃ¶¾ÙÖµ£©
-     * @return true±íÊ¾¾ßÓĞ¸Ã×ÊÖÊ£¬false±íÊ¾²»¾ßÓĞ
+     * @brief æ£€æŸ¥æ˜¯å¦å…·æœ‰æŸç§èµ„è´¨
+     * @param qual èµ„è´¨ç±»å‹ï¼ˆQualificationMaskæšä¸¾å€¼ï¼‰
+     * @return trueè¡¨ç¤ºå…·æœ‰è¯¥èµ„è´¨ï¼Œfalseè¡¨ç¤ºä¸å…·æœ‰
      */
     bool hasQualification(QualificationMask qual) const {
         return (qualification_mask_ & static_cast<int32_t>(qual)) != 0;
     }
     
     /**
-     * @brief »ñÈ¡ÀÛ¼Æ¹¤×÷Ê±³¤
-     * @return ÀÛ¼Æ¹¤×÷Ê±³¤£¨Ãë£©
+     * @brief è·å–ç´¯è®¡å·¥ä½œæ—¶é•¿
+     * @return ç´¯è®¡å·¥ä½œæ—¶é•¿ï¼ˆç§’ï¼‰
      */
     int64_t getTotalWorkTime() const { return total_work_time_; }
     
     /**
-     * @brief ÉèÖÃÀÛ¼Æ¹¤×÷Ê±³¤
-     * @param time ÀÛ¼Æ¹¤×÷Ê±³¤£¨Ãë£©
+     * @brief è®¾ç½®ç´¯è®¡å·¥ä½œæ—¶é•¿
+     * @param time ç´¯è®¡å·¥ä½œæ—¶é•¿ï¼ˆç§’ï¼‰
      */
     void setTotalWorkTime(int64_t time) { total_work_time_ = time; }
     
     /**
-     * @brief Ôö¼ÓÀÛ¼Æ¹¤×÷Ê±³¤
-     * @param time Ôö¼ÓµÄ¹¤×÷Ê±³¤£¨Ãë£©
+     * @brief å¢åŠ ç´¯è®¡å·¥ä½œæ—¶é•¿
+     * @param time å¢åŠ çš„å·¥ä½œæ—¶é•¿ï¼ˆç§’ï¼‰
      */
     void addWorkTime(int64_t time) { total_work_time_ += time; }
     
     /**
-     * @brief »ñÈ¡°à´ÎÀàĞÍ´ÎÊıÍ³¼Æ
-     * @return °à´ÎÀàĞÍ´ÎÊıÍ³¼ÆµÄ³£Á¿ÒıÓÃ£¨¼üÎª"Ö÷°à1"¡¢"Ö÷°à2"¡¢"¸±°à1"µÈ£¬ÖµÎª´ÎÊı£©
+     * @brief è·å–ç­æ¬¡ç±»å‹æ¬¡æ•°ç»Ÿè®¡
+     * @return ç­æ¬¡ç±»å‹æ¬¡æ•°ç»Ÿè®¡çš„å¸¸é‡å¼•ç”¨ï¼ˆé”®ä¸º"ä¸»ç­1"ã€"ä¸»ç­2"ã€"å‰¯ç­1"ç­‰ï¼Œå€¼ä¸ºæ¬¡æ•°ï¼‰
      */
     const map<string, int32_t>& getShiftTypeCounts() const { return shift_type_counts_; }
     
     /**
-     * @brief »ñÈ¡°à´ÎÀàĞÍ´ÎÊıÍ³¼Æ£¨·Ç³£Á¿°æ±¾£©
-     * @return °à´ÎÀàĞÍ´ÎÊıÍ³¼ÆµÄÒıÓÃ
+     * @brief è·å–ç­æ¬¡ç±»å‹æ¬¡æ•°ç»Ÿè®¡ï¼ˆéå¸¸é‡ç‰ˆæœ¬ï¼‰
+     * @return ç­æ¬¡ç±»å‹æ¬¡æ•°ç»Ÿè®¡çš„å¼•ç”¨
      */
     map<string, int32_t>& getShiftTypeCounts() { return shift_type_counts_; }
     
     /**
-     * @brief Ôö¼Ó°à´ÎÀàĞÍ´ÎÊı
-     * @param shift_type °à´ÎÀàĞÍ£¨Èç"Ö÷°à1"¡¢"Ö÷°à2"¡¢"¸±°à1"µÈ£©
-     * @param count Ôö¼ÓµÄ´ÎÊı£¨Ä¬ÈÏÎª1£©
+     * @brief å¢åŠ ç­æ¬¡ç±»å‹æ¬¡æ•°
+     * @param shift_type ç­æ¬¡ç±»å‹ï¼ˆå¦‚"ä¸»ç­1"ã€"ä¸»ç­2"ã€"å‰¯ç­1"ç­‰ï¼‰
+     * @param count å¢åŠ çš„æ¬¡æ•°ï¼ˆé»˜è®¤ä¸º1ï¼‰
      */
     void addShiftTypeCount(const string& shift_type, int32_t count = 1) {
         shift_type_counts_[shift_type] += count;
     }
     
     /**
-     * @brief »ñÈ¡°à´ÎÀàĞÍµÄ´ÎÊı
-     * @param shift_type °à´ÎÀàĞÍ£¨Èç"Ö÷°à1"¡¢"Ö÷°à2"¡¢"¸±°à1"µÈ£©
-     * @return ¸Ã°à´ÎÀàĞÍµÄ´ÎÊı
+     * @brief è·å–ç­æ¬¡ç±»å‹çš„æ¬¡æ•°
+     * @param shift_type ç­æ¬¡ç±»å‹ï¼ˆå¦‚"ä¸»ç­1"ã€"ä¸»ç­2"ã€"å‰¯ç­1"ç­‰ï¼‰
+     * @return è¯¥ç­æ¬¡ç±»å‹çš„æ¬¡æ•°
      */
     int32_t getShiftTypeCount(const string& shift_type) const {
         auto it = shift_type_counts_.find(shift_type);
@@ -155,30 +155,30 @@ public:
     }
     
     /**
-     * @brief »ñÈ¡Ìü·¿ÈÎÎñ´ÎÊıÍ³¼Æ
-     * @return Ìü·¿ÈÎÎñ´ÎÊıÍ³¼ÆµÄ³£Á¿ÒıÓÃ£¨¼üÎªÌü·¿Ãû³Æ£¬ÖµÎª´ÎÊı£©
+     * @brief è·å–å…æˆ¿ä»»åŠ¡æ¬¡æ•°ç»Ÿè®¡
+     * @return å…æˆ¿ä»»åŠ¡æ¬¡æ•°ç»Ÿè®¡çš„å¸¸é‡å¼•ç”¨ï¼ˆé”®ä¸ºå…æˆ¿åç§°ï¼Œå€¼ä¸ºæ¬¡æ•°ï¼‰
      */
     const map<string, int32_t>& getHallTaskCounts() const { return hall_task_counts_; }
     
     /**
-     * @brief »ñÈ¡Ìü·¿ÈÎÎñ´ÎÊıÍ³¼Æ£¨·Ç³£Á¿°æ±¾£©
-     * @return Ìü·¿ÈÎÎñ´ÎÊıÍ³¼ÆµÄÒıÓÃ
+     * @brief è·å–å…æˆ¿ä»»åŠ¡æ¬¡æ•°ç»Ÿè®¡ï¼ˆéå¸¸é‡ç‰ˆæœ¬ï¼‰
+     * @return å…æˆ¿ä»»åŠ¡æ¬¡æ•°ç»Ÿè®¡çš„å¼•ç”¨
      */
     map<string, int32_t>& getHallTaskCounts() { return hall_task_counts_; }
     
     /**
-     * @brief Ôö¼ÓÌü·¿ÈÎÎñ´ÎÊı
-     * @param hall_name Ìü·¿Ãû³Æ£¨Èç"¹úÄÚÌüÄÚ"¡¢"¹ú¼ÊÌüÄÚ"µÈ£©
-     * @param count Ôö¼ÓµÄ´ÎÊı£¨Ä¬ÈÏÎª1£©
+     * @brief å¢åŠ å…æˆ¿ä»»åŠ¡æ¬¡æ•°
+     * @param hall_name å…æˆ¿åç§°ï¼ˆå¦‚"å›½å†…å…å†…"ã€"å›½é™…å…å†…"ç­‰ï¼‰
+     * @param count å¢åŠ çš„æ¬¡æ•°ï¼ˆé»˜è®¤ä¸º1ï¼‰
      */
     void addHallTaskCount(const string& hall_name, int32_t count = 1) {
         hall_task_counts_[hall_name] += count;
     }
     
     /**
-     * @brief »ñÈ¡Ìü·¿ÈÎÎñµÄ´ÎÊı
-     * @param hall_name Ìü·¿Ãû³Æ£¨Èç"¹úÄÚÌüÄÚ"¡¢"¹ú¼ÊÌüÄÚ"µÈ£©
-     * @return ¸ÃÌü·¿µÄÈÎÎñ´ÎÊı
+     * @brief è·å–å…æˆ¿ä»»åŠ¡çš„æ¬¡æ•°
+     * @param hall_name å…æˆ¿åç§°ï¼ˆå¦‚"å›½å†…å…å†…"ã€"å›½é™…å…å†…"ç­‰ï¼‰
+     * @return è¯¥å…æˆ¿çš„ä»»åŠ¡æ¬¡æ•°
      */
     int32_t getHallTaskCount(const string& hall_name) const {
         auto it = hall_task_counts_.find(hall_name);
@@ -186,7 +186,7 @@ public:
     }
     
     /**
-     * @brief ÖØÖÃËùÓĞÍ³¼ÆÊı¾İ
+     * @brief é‡ç½®æ‰€æœ‰ç»Ÿè®¡æ•°æ®
      */
     void resetStatistics() {
         shift_type_counts_.clear();
@@ -195,58 +195,58 @@ public:
     }
     
     /**
-     * @brief »ñÈ¡·ÖÅäµÄÈÎÎñIDÁĞ±í
-     * @return ÈÎÎñIDÁĞ±íµÄ³£Á¿ÒıÓÃ
+     * @brief è·å–åˆ†é…çš„ä»»åŠ¡IDåˆ—è¡¨
+     * @return ä»»åŠ¡IDåˆ—è¡¨çš„å¸¸é‡å¼•ç”¨
      */
     const vector<int64_t>& getAssignedTaskIds() const { return assigned_task_ids_; }
     
     /**
-     * @brief »ñÈ¡·ÖÅäµÄÈÎÎñIDÁĞ±í£¨·Ç³£Á¿°æ±¾£©
-     * @return ÈÎÎñIDÁĞ±íµÄÒıÓÃ
+     * @brief è·å–åˆ†é…çš„ä»»åŠ¡IDåˆ—è¡¨ï¼ˆéå¸¸é‡ç‰ˆæœ¬ï¼‰
+     * @return ä»»åŠ¡IDåˆ—è¡¨çš„å¼•ç”¨
      */
     vector<int64_t>& getAssignedTaskIds() { return assigned_task_ids_; }
     
     /**
-     * @brief Ìí¼Ó·ÖÅäµÄÈÎÎñID
-     * @param task_id ÈÎÎñID
+     * @brief æ·»åŠ åˆ†é…çš„ä»»åŠ¡ID
+     * @param task_id ä»»åŠ¡ID
      */
     void addAssignedTaskId(int64_t task_id);
     
     /**
-     * @brief ÒÆ³ı·ÖÅäµÄÈÎÎñID
-     * @param task_id ÈÎÎñID
-     * @return true±íÊ¾ÒÆ³ı³É¹¦£¬false±íÊ¾¸ÃÈÎÎñÎ´·ÖÅä¸ø´ËÔ±¹¤
+     * @brief ç§»é™¤åˆ†é…çš„ä»»åŠ¡ID
+     * @param task_id ä»»åŠ¡ID
+     * @return trueè¡¨ç¤ºç§»é™¤æˆåŠŸï¼Œfalseè¡¨ç¤ºè¯¥ä»»åŠ¡æœªåˆ†é…ç»™æ­¤å‘˜å·¥
      */
     bool removeAssignedTaskId(int64_t task_id);
     
     /**
-     * @brief ¼ì²éÊÇ·ñÒÑ·ÖÅäÖ¸¶¨ÈÎÎñ
-     * @param task_id ÈÎÎñID
-     * @return true±íÊ¾ÒÑ·ÖÅä£¬false±íÊ¾Î´·ÖÅä
+     * @brief æ£€æŸ¥æ˜¯å¦å·²åˆ†é…æŒ‡å®šä»»åŠ¡
+     * @param task_id ä»»åŠ¡ID
+     * @return trueè¡¨ç¤ºå·²åˆ†é…ï¼Œfalseè¡¨ç¤ºæœªåˆ†é…
      */
     bool isAssignedToTask(int64_t task_id) const;
     
     /**
-     * @brief »ñÈ¡·ÖÅäµÄÈÎÎñÊıÁ¿
-     * @return ·ÖÅäµÄÈÎÎñÊıÁ¿
+     * @brief è·å–åˆ†é…çš„ä»»åŠ¡æ•°é‡
+     * @return åˆ†é…çš„ä»»åŠ¡æ•°é‡
      */
     size_t getAssignedTaskCount() const { return assigned_task_ids_.size(); }
     
     /**
-     * @brief Çå³ıËùÓĞÈÎÎñ·ÖÅä
+     * @brief æ¸…é™¤æ‰€æœ‰ä»»åŠ¡åˆ†é…
      */
     void clearAssignedTasks() {
         assigned_task_ids_.clear();
     }
 
 private:
-    string employee_id_;                                 ///< Ô±¹¤ID
-    string employee_name_;                               ///< Ô±¹¤ĞÕÃû
-    int32_t qualification_mask_;                              ///< ×ÊÖÊÑÚÂë£¨Î»ÑÚÂë£©
-    int64_t total_work_time_;                                 ///< ÀÛ¼Æ¹¤×÷Ê±³¤£¨Ãë£©
-    map<string, int32_t> shift_type_counts_;       ///< °à´ÎÀàĞÍ´ÎÊıÍ³¼Æ£¨¼üÎª"Ö÷°à1"¡¢"Ö÷°à2"¡¢"¸±°à1"µÈ£©
-    map<string, int32_t> hall_task_counts_;        ///< Ìü·¿ÈÎÎñ´ÎÊıÍ³¼Æ£¨¼üÎªÌü·¿Ãû³Æ£©
-    vector<int64_t> assigned_task_ids_;                 ///< ·ÖÅäµÄÈÎÎñIDÁĞ±í
+    string employee_id_;                                 ///< å‘˜å·¥ID
+    string employee_name_;                               ///< å‘˜å·¥å§“å
+    int32_t qualification_mask_;                              ///< èµ„è´¨æ©ç ï¼ˆä½æ©ç ï¼‰
+    int64_t total_work_time_;                                 ///< ç´¯è®¡å·¥ä½œæ—¶é•¿ï¼ˆç§’ï¼‰
+    map<string, int32_t> shift_type_counts_;       ///< ç­æ¬¡ç±»å‹æ¬¡æ•°ç»Ÿè®¡ï¼ˆé”®ä¸º"ä¸»ç­1"ã€"ä¸»ç­2"ã€"å‰¯ç­1"ç­‰ï¼‰
+    map<string, int32_t> hall_task_counts_;        ///< å…æˆ¿ä»»åŠ¡æ¬¡æ•°ç»Ÿè®¡ï¼ˆé”®ä¸ºå…æˆ¿åç§°ï¼‰
+    vector<int64_t> assigned_task_ids_;                 ///< åˆ†é…çš„ä»»åŠ¡IDåˆ—è¡¨
 };
 
 }  // namespace vip_first_class

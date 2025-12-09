@@ -1,8 +1,8 @@
 /**
  * @file task_type.h
- * @brief ÈÎÎñÀàĞÍÃ¶¾Ù
+ * @brief ä»»åŠ¡ç±»å‹æšä¸¾
  * 
- * ¶¨ÒåËùÓĞÈÎÎñÀàĞÍµÄÃ¶¾Ù£¬»ùÓÚ Task.txt ÎÄ¼şÉú³É
+ * å®šä¹‰æ‰€æœ‰ä»»åŠ¡ç±»å‹çš„æšä¸¾ï¼ŒåŸºäº Task.txt æ–‡ä»¶ç”Ÿæˆ
  */
 
 #ifndef VIP_FIRST_CLASS_TASK_TYPE_H
@@ -11,62 +11,62 @@
 namespace vip_first_class {
 
 /**
- * @brief ÈÎÎñÀàĞÍÃ¶¾Ù
+ * @brief ä»»åŠ¡ç±»å‹æšä¸¾
  * 
- * ¸ù¾İ Task.txt ÎÄ¼şÖĞ¶¨ÒåµÄËùÓĞÈÎÎñÀàĞÍ
+ * æ ¹æ® Task.txt æ–‡ä»¶ä¸­å®šä¹‰çš„æ‰€æœ‰ä»»åŠ¡ç±»å‹
  */
 enum class TaskType {
-    // µ÷¶ÈÀà
-    DISPATCH = 0,                      ///< µ÷¶È
+    // è°ƒåº¦ç±»
+    DISPATCH = 0,                      ///< è°ƒåº¦
     
-    // ¹úÄÚÇ°Ì¨Àà
-    DOMESTIC_FRONT_DESK = 1,           ///< ¹úÄÚÇ°Ì¨
-    DOMESTIC_FRONT_DESK_ASSIST = 2,    ///< ¹úÄÚÇ°Ì¨Ğ­Öú
-    DOMESTIC_FRONT_DESK_ASSIST2 = 3,   ///< ¹úÄÚÇ°Ì¨Ğ­Öú2
-    DOMESTIC_FRONT_DESK_EARLY = 4,     ///< ¹úÄÚÇ°Ì¨Ôç°à
+    // å›½å†…å‰å°ç±»
+    DOMESTIC_FRONT_DESK = 1,           ///< å›½å†…å‰å°
+    DOMESTIC_FRONT_DESK_ASSIST = 2,    ///< å›½å†…å‰å°ååŠ©
+    DOMESTIC_FRONT_DESK_ASSIST2 = 3,   ///< å›½å†…å‰å°ååŠ©2
+    DOMESTIC_FRONT_DESK_EARLY = 4,     ///< å›½å†…å‰å°æ—©ç­
     
-    // ¹ú¼ÊÇ°Ì¨Àà
-    INTERNATIONAL_FRONT_DESK_EARLY = 5, ///< ¹ú¼ÊÇ°Ì¨Ôç°à
-    INTERNATIONAL_FRONT_DESK_LATE = 6,  ///< ¹ú¼ÊÇ°Ì¨Íí°à
+    // å›½é™…å‰å°ç±»
+    INTERNATIONAL_FRONT_DESK_EARLY = 5, ///< å›½é™…å‰å°æ—©ç­
+    INTERNATIONAL_FRONT_DESK_LATE = 6,  ///< å›½é™…å‰å°æ™šç­
     
-    // ¹ú¼ÊÌüÄÚÀà
-    INTERNATIONAL_HALL_EARLY = 7,      ///< ¹ú¼ÊÌüÄÚÔç°à
-    INTERNATIONAL_HALL_LATE = 8,       ///< ¹ú¼ÊÌüÄÚÍí°à
+    // å›½é™…å…å†…ç±»
+    INTERNATIONAL_HALL_EARLY = 7,      ///< å›½é™…å…å†…æ—©ç­
+    INTERNATIONAL_HALL_LATE = 8,       ///< å›½é™…å…å†…æ™šç­
     
-    // ¹úÄÚÌüÄÚÀà
-    DOMESTIC_HALL_EARLY = 9,           ///< ¹úÄÚÌüÄÚÔç°à
-    DOMESTIC_HALL_0830_0930 = 10,      ///< ¹úÄÚÌüÄÚ08:30-09:30
-    DOMESTIC_HALL_0930_1030 = 11,      ///< ¹úÄÚÌüÄÚ09:30-10:30
-    DOMESTIC_HALL_1030_1130 = 12,      ///< ¹úÄÚÌüÄÚ10:30-11:30
-    DOMESTIC_HALL_1130_1230 = 13,      ///< ¹úÄÚÌüÄÚ11:30-12:30
-    DOMESTIC_HALL_1230_1330 = 14,      ///< ¹úÄÚÌüÄÚ12:30-13:30
-    DOMESTIC_HALL_1330_1430 = 15,      ///< ¹úÄÚÌüÄÚ13:30-14:30
-    DOMESTIC_HALL_1430_1530 = 16,      ///< ¹úÄÚÌüÄÚ14:30-15:30
-    DOMESTIC_HALL_1530_1630 = 17,      ///< ¹úÄÚÌüÄÚ15:30-16:30
-    DOMESTIC_HALL_1630_1730 = 18,      ///< ¹úÄÚÌüÄÚ16:30-17:30
-    DOMESTIC_HALL_1730_1830 = 19,      ///< ¹úÄÚÌüÄÚ17:30-18:30
-    DOMESTIC_HALL_1830_1930 = 20,      ///< ¹úÄÚÌüÄÚ18:30-19:30
-    DOMESTIC_HALL_1930_2030 = 21,      ///< ¹úÄÚÌüÄÚ19:30-20:30
-    DOMESTIC_HALL_2030_AFTER = 22,     ///< ¹úÄÚÌüÄÚ20:30-º½ºó
+    // å›½å†…å…å†…ç±»
+    DOMESTIC_HALL_EARLY = 9,           ///< å›½å†…å…å†…æ—©ç­
+    DOMESTIC_HALL_0830_0930 = 10,      ///< å›½å†…å…å†…08:30-09:30
+    DOMESTIC_HALL_0930_1030 = 11,      ///< å›½å†…å…å†…09:30-10:30
+    DOMESTIC_HALL_1030_1130 = 12,      ///< å›½å†…å…å†…10:30-11:30
+    DOMESTIC_HALL_1130_1230 = 13,      ///< å›½å†…å…å†…11:30-12:30
+    DOMESTIC_HALL_1230_1330 = 14,      ///< å›½å†…å…å†…12:30-13:30
+    DOMESTIC_HALL_1330_1430 = 15,      ///< å›½å†…å…å†…13:30-14:30
+    DOMESTIC_HALL_1430_1530 = 16,      ///< å›½å†…å…å†…14:30-15:30
+    DOMESTIC_HALL_1530_1630 = 17,      ///< å›½å†…å…å†…15:30-16:30
+    DOMESTIC_HALL_1630_1730 = 18,      ///< å›½å†…å…å†…16:30-17:30
+    DOMESTIC_HALL_1730_1830 = 19,      ///< å›½å†…å…å†…17:30-18:30
+    DOMESTIC_HALL_1830_1930 = 20,      ///< å›½å†…å…å†…18:30-19:30
+    DOMESTIC_HALL_1930_2030 = 21,      ///< å›½å†…å…å†…19:30-20:30
+    DOMESTIC_HALL_2030_AFTER = 22,     ///< å›½å†…å…å†…20:30-èˆªå
     
-    // Íâ³¡Àà£¨¹úÄÚ³ö¸Û£©
-    EXTERNAL_DOMESTIC_DEPARTURE_FEW = 23,  ///< Íâ³¡£¨¹úÄÚ³ö¸Û-ÉÙÈË£©
-    EXTERNAL_DOMESTIC_DEPARTURE_MANY = 24, ///< Íâ³¡£¨¹úÄÚ³ö¸Û-¶àÈË£©
+    // å¤–åœºç±»ï¼ˆå›½å†…å‡ºæ¸¯ï¼‰
+    EXTERNAL_DOMESTIC_DEPARTURE_FEW = 23,  ///< å¤–åœºï¼ˆå›½å†…å‡ºæ¸¯-å°‘äººï¼‰
+    EXTERNAL_DOMESTIC_DEPARTURE_MANY = 24, ///< å¤–åœºï¼ˆå›½å†…å‡ºæ¸¯-å¤šäººï¼‰
     
-    // Íâ³¡Àà£¨¹úÄÚ½ø¸Û£©
-    EXTERNAL_DOMESTIC_ARRIVAL_FEW = 25,    ///< Íâ³¡£¨¹úÄÚ½ø¸Û-ÉÙÈË£©
-    EXTERNAL_DOMESTIC_ARRIVAL_MANY = 26,   ///< Íâ³¡£¨¹úÄÚ½ø¸Û-¶àÈË£©
+    // å¤–åœºç±»ï¼ˆå›½å†…è¿›æ¸¯ï¼‰
+    EXTERNAL_DOMESTIC_ARRIVAL_FEW = 25,    ///< å¤–åœºï¼ˆå›½å†…è¿›æ¸¯-å°‘äººï¼‰
+    EXTERNAL_DOMESTIC_ARRIVAL_MANY = 26,   ///< å¤–åœºï¼ˆå›½å†…è¿›æ¸¯-å¤šäººï¼‰
     
-    // Íâ³¡Àà£¨¹ú¼Ê³ö¸Û£©
-    EXTERNAL_INTERNATIONAL_DEPARTURE_FEW = 27,  ///< Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©
-    EXTERNAL_INTERNATIONAL_DEPARTURE_MANY = 28, ///< Íâ³¡£¨¹ú¼Ê³ö¸Û-¶àÈË£©
+    // å¤–åœºç±»ï¼ˆå›½é™…å‡ºæ¸¯ï¼‰
+    EXTERNAL_INTERNATIONAL_DEPARTURE_FEW = 27,  ///< å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰
+    EXTERNAL_INTERNATIONAL_DEPARTURE_MANY = 28, ///< å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å¤šäººï¼‰
     
-    // Íâ³¡Àà£¨¹ú¼Ê½ø¸Û£©
-    EXTERNAL_INTERNATIONAL_ARRIVAL_FEW = 29,    ///< Íâ³¡£¨¹ú¼Ê½ø¸Û-ÉÙÈË£©
-    EXTERNAL_INTERNATIONAL_ARRIVAL_MANY = 30,   ///< Íâ³¡£¨¹ú¼Ê½ø¸Û-¶àÈË£©
+    // å¤–åœºç±»ï¼ˆå›½é™…è¿›æ¸¯ï¼‰
+    EXTERNAL_INTERNATIONAL_ARRIVAL_FEW = 29,    ///< å¤–åœºï¼ˆå›½é™…è¿›æ¸¯-å°‘äººï¼‰
+    EXTERNAL_INTERNATIONAL_ARRIVAL_MANY = 30,   ///< å¤–åœºï¼ˆå›½é™…è¿›æ¸¯-å¤šäººï¼‰
     
-    // ²Ù×÷¼äÀà
-    OPERATION_ROOM = 31                          ///< ²Ù×÷¼äÈÎÎñ
+    // æ“ä½œé—´ç±»
+    OPERATION_ROOM = 31                          ///< æ“ä½œé—´ä»»åŠ¡
 };
 
 }  // namespace vip_first_class

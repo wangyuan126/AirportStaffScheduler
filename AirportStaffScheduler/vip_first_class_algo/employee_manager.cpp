@@ -1,6 +1,6 @@
 /**
  * @file employee_manager.cpp
- * @brief Ô±¹¤ĞÅÏ¢¹ÜÀíÆ÷ÊµÏÖ
+ * @brief å‘˜å·¥ä¿¡æ¯ç®¡ç†å™¨å®ç°
  */
 
 #include "employee_manager.h"

@@ -1,8 +1,8 @@
 /**
  * @file test_task_scheduler.cpp
- * @brief ÈÎÎñµ÷¶ÈÆ÷²âÊÔ³ÌĞò
+ * @brief ä»»åŠ¡è°ƒåº¦å™¨æµ‹è¯•ç¨‹åº
  * 
- * ¸ù¾İ Task.txt Éú³ÉÈÎÎñ²¢½øĞĞµ÷¶È£¬½«½á¹ûµ¼³öÎª CSV ÎÄ¼ş
+ * æ ¹æ® Task.txt ç”Ÿæˆä»»åŠ¡å¹¶è¿›è¡Œè°ƒåº¦ï¼Œå°†ç»“æœå¯¼å‡ºä¸º CSV æ–‡ä»¶
  */
 
 #include "task_scheduler.h"
@@ -23,13 +23,13 @@
 
 using namespace vip_first_class;
 
-// ¸¨Öúº¯Êı£º½«Ê±¼ä×Ö·û´®£¨Èç"08:30"£©×ª»»Îª´Ó2020-01-01 00:00:00¿ªÊ¼µÄÃëÊı
+// è¾…åŠ©å‡½æ•°ï¼šå°†æ—¶é—´å­—ç¬¦ä¸²ï¼ˆå¦‚"08:30"ï¼‰è½¬æ¢ä¸ºä»2020-01-01 00:00:00å¼€å§‹çš„ç§’æ•°
 static int64_t parseTimeString(const std::string& time_str) {
-    if (time_str.find("º½ºó") != std::string::npos) {
-        return -1;  // º½ºóÈÎÎñ
+    if (time_str.find("èˆªå") != std::string::npos) {
+        return -1;  // èˆªåä»»åŠ¡
     }
     
-    // ½âÎöHH:MM¸ñÊ½
+    // è§£æHH:MMæ ¼å¼
     size_t colon_pos = time_str.find(':');
     if (colon_pos == std::string::npos) {
         return 0;
@@ -38,83 +38,83 @@ static int64_t parseTimeString(const std::string& time_str) {
     int hours = std::stoi(time_str.substr(0, colon_pos));
     int minutes = std::stoi(time_str.substr(colon_pos + 1));
     
-    // ×ª»»ÎªÃëÊı£¨´Ó2020-01-01 00:00:00¿ªÊ¼£©
+    // è½¬æ¢ä¸ºç§’æ•°ï¼ˆä»2020-01-01 00:00:00å¼€å§‹ï¼‰
     return hours * 3600 + minutes * 60;
 }
 
-// ¸¨Öúº¯Êı£º½«ÈÎÎñÃû³ÆÓ³Éäµ½TaskType
+// è¾…åŠ©å‡½æ•°ï¼šå°†ä»»åŠ¡åç§°æ˜ å°„åˆ°TaskType
 static TaskType parseTaskType(const std::string& task_name) {
-    if (task_name == "µ÷¶È") {
+    if (task_name == "è°ƒåº¦") {
         return TaskType::DISPATCH;
-    } else if (task_name == "¹úÄÚÇ°Ì¨") {
+    } else if (task_name == "å›½å†…å‰å°") {
         return TaskType::DOMESTIC_FRONT_DESK;
-    } else if (task_name == "¹úÄÚÇ°Ì¨Ğ­Öú") {
+    } else if (task_name == "å›½å†…å‰å°ååŠ©") {
         return TaskType::DOMESTIC_FRONT_DESK_ASSIST;
-    } else if (task_name == "¹úÄÚÇ°Ì¨Ğ­Öú2") {
+    } else if (task_name == "å›½å†…å‰å°ååŠ©2") {
         return TaskType::DOMESTIC_FRONT_DESK_ASSIST2;
-    } else if (task_name == "¹úÄÚÇ°Ì¨Ôç°à") {
+    } else if (task_name == "å›½å†…å‰å°æ—©ç­") {
         return TaskType::DOMESTIC_FRONT_DESK_EARLY;
-    } else if (task_name == "¹ú¼ÊÇ°Ì¨Ôç°à") {
+    } else if (task_name == "å›½é™…å‰å°æ—©ç­") {
         return TaskType::INTERNATIONAL_FRONT_DESK_EARLY;
-    } else if (task_name == "¹ú¼ÊÇ°Ì¨Íí°à") {
+    } else if (task_name == "å›½é™…å‰å°æ™šç­") {
         return TaskType::INTERNATIONAL_FRONT_DESK_LATE;
-    } else if (task_name == "¹ú¼ÊÌüÄÚÔç°à") {
+    } else if (task_name == "å›½é™…å…å†…æ—©ç­") {
         return TaskType::INTERNATIONAL_HALL_EARLY;
-    } else if (task_name == "¹ú¼ÊÌüÄÚÍí°à") {
+    } else if (task_name == "å›½é™…å…å†…æ™šç­") {
         return TaskType::INTERNATIONAL_HALL_LATE;
-    } else if (task_name == "¹úÄÚÌüÄÚÔç°à") {
+    } else if (task_name == "å›½å†…å…å†…æ—©ç­") {
         return TaskType::DOMESTIC_HALL_EARLY;
-    } else if (task_name == "¹úÄÚÌüÄÚ08:30-09:30") {
+    } else if (task_name == "å›½å†…å…å†…08:30-09:30") {
         return TaskType::DOMESTIC_HALL_0830_0930;
-    } else if (task_name == "¹úÄÚÌüÄÚ09:30-10:30") {
+    } else if (task_name == "å›½å†…å…å†…09:30-10:30") {
         return TaskType::DOMESTIC_HALL_0930_1030;
-    } else if (task_name == "¹úÄÚÌüÄÚ10:30-11:30") {
+    } else if (task_name == "å›½å†…å…å†…10:30-11:30") {
         return TaskType::DOMESTIC_HALL_1030_1130;
-    } else if (task_name == "¹úÄÚÌüÄÚ11:30-12:30") {
+    } else if (task_name == "å›½å†…å…å†…11:30-12:30") {
         return TaskType::DOMESTIC_HALL_1130_1230;
-    } else if (task_name == "¹úÄÚÌüÄÚ12:30-13:30") {
+    } else if (task_name == "å›½å†…å…å†…12:30-13:30") {
         return TaskType::DOMESTIC_HALL_1230_1330;
-    } else if (task_name == "¹úÄÚÌüÄÚ13:30-14:30") {
+    } else if (task_name == "å›½å†…å…å†…13:30-14:30") {
         return TaskType::DOMESTIC_HALL_1330_1430;
-    } else if (task_name == "¹úÄÚÌüÄÚ14:30-15:30") {
+    } else if (task_name == "å›½å†…å…å†…14:30-15:30") {
         return TaskType::DOMESTIC_HALL_1430_1530;
-    } else if (task_name == "¹úÄÚÌüÄÚ15:30-16:30") {
+    } else if (task_name == "å›½å†…å…å†…15:30-16:30") {
         return TaskType::DOMESTIC_HALL_1530_1630;
-    } else if (task_name == "¹úÄÚÌüÄÚ16:30-17:30") {
+    } else if (task_name == "å›½å†…å…å†…16:30-17:30") {
         return TaskType::DOMESTIC_HALL_1630_1730;
-    } else if (task_name == "¹úÄÚÌüÄÚ17:30-18:30") {
+    } else if (task_name == "å›½å†…å…å†…17:30-18:30") {
         return TaskType::DOMESTIC_HALL_1730_1830;
-    } else if (task_name == "¹úÄÚÌüÄÚ18:30-19:30") {
+    } else if (task_name == "å›½å†…å…å†…18:30-19:30") {
         return TaskType::DOMESTIC_HALL_1830_1930;
-    } else if (task_name == "¹úÄÚÌüÄÚ19:30-20:30") {
+    } else if (task_name == "å›½å†…å…å†…19:30-20:30") {
         return TaskType::DOMESTIC_HALL_1930_2030;
-    } else if (task_name == "¹úÄÚÌüÄÚ20:30-º½ºó") {
+    } else if (task_name == "å›½å†…å…å†…20:30-èˆªå") {
         return TaskType::DOMESTIC_HALL_2030_AFTER;
-    } else if (task_name == "Íâ³¡£¨¹úÄÚ³ö¸Û-ÉÙÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½å†…å‡ºæ¸¯-å°‘äººï¼‰") {
         return TaskType::EXTERNAL_DOMESTIC_DEPARTURE_FEW;
-    } else if (task_name == "Íâ³¡£¨¹úÄÚ³ö¸Û-¶àÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½å†…å‡ºæ¸¯-å¤šäººï¼‰") {
         return TaskType::EXTERNAL_DOMESTIC_DEPARTURE_MANY;
-    } else if (task_name == "Íâ³¡£¨¹úÄÚ½ø¸Û-ÉÙÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½å†…è¿›æ¸¯-å°‘äººï¼‰") {
         return TaskType::EXTERNAL_DOMESTIC_ARRIVAL_FEW;
-    } else if (task_name == "Íâ³¡£¨¹úÄÚ½ø¸Û-¶àÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½å†…è¿›æ¸¯-å¤šäººï¼‰") {
         return TaskType::EXTERNAL_DOMESTIC_ARRIVAL_MANY;
-    } else if (task_name == "Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰") {
         return TaskType::EXTERNAL_INTERNATIONAL_DEPARTURE_FEW;
-    } else if (task_name == "Íâ³¡£¨¹ú¼Ê³ö¸Û-¶àÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å¤šäººï¼‰") {
         return TaskType::EXTERNAL_INTERNATIONAL_DEPARTURE_MANY;
-    } else if (task_name == "Íâ³¡£¨¹ú¼Ê½ø¸Û-ÉÙÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½é™…è¿›æ¸¯-å°‘äººï¼‰") {
         return TaskType::EXTERNAL_INTERNATIONAL_ARRIVAL_FEW;
-    } else if (task_name == "Íâ³¡£¨¹ú¼Ê½ø¸Û-¶àÈË£©") {
+    } else if (task_name == "å¤–åœºï¼ˆå›½é™…è¿›æ¸¯-å¤šäººï¼‰") {
         return TaskType::EXTERNAL_INTERNATIONAL_ARRIVAL_MANY;
     }
     
-    return TaskType::DISPATCH;  // Ä¬ÈÏ
+    return TaskType::DISPATCH;  // é»˜è®¤
 }
 
-// ¸¨Öúº¯Êı£º½«ÃëÊı×ª»»ÎªÊ±¼ä×Ö·û´®£¨ÓÃÓÚCSVÊä³ö£©
+// è¾…åŠ©å‡½æ•°ï¼šå°†ç§’æ•°è½¬æ¢ä¸ºæ—¶é—´å­—ç¬¦ä¸²ï¼ˆç”¨äºCSVè¾“å‡ºï¼‰
 static std::string formatTime(int64_t seconds) {
     if (seconds < 0) {
-        return "º½ºó";
+        return "èˆªå";
     }
     
     int64_t hours = seconds / 3600;
@@ -126,18 +126,18 @@ static std::string formatTime(int64_t seconds) {
     return oss.str();
 }
 
-// ¸¨Öúº¯Êı£ºµ¼³öÈÎÎñ·ÖÅä½á¹ûµ½CSVÎÄ¼ş
+// è¾…åŠ©å‡½æ•°ï¼šå¯¼å‡ºä»»åŠ¡åˆ†é…ç»“æœåˆ°CSVæ–‡ä»¶
 static void exportToCSV(const std::vector<TaskDefinition>& tasks, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "´íÎó£ºÎŞ·¨´´½¨CSVÎÄ¼ş " << filename << std::endl;
+        std::cerr << "é”™è¯¯ï¼šæ— æ³•åˆ›å»ºCSVæ–‡ä»¶ " << filename << std::endl;
         return;
     }
-    cout<<"1111£¡"<<endl;
-    // Ğ´ÈëCSV±íÍ·
-    file << "ÈÎÎñID,ÈÎÎñÃû³Æ,ÈÎÎñÀàĞÍ,¿ªÊ¼Ê±¼ä,½áÊøÊ±¼ä,ĞèÒªÈËÊı,ÒÑ·ÖÅäÈËÊı,ÊÇ·ñÒÑ·ÖÅä,ÊÇ·ñÈ±ÈË,·ÖÅäµÄÔ±¹¤ID\n";
+    cout<<"1111ï¼"<<endl;
+    // å†™å…¥CSVè¡¨å¤´
+    file << "ä»»åŠ¡ID,ä»»åŠ¡åç§°,ä»»åŠ¡ç±»å‹,å¼€å§‹æ—¶é—´,ç»“æŸæ—¶é—´,éœ€è¦äººæ•°,å·²åˆ†é…äººæ•°,æ˜¯å¦å·²åˆ†é…,æ˜¯å¦ç¼ºäºº,åˆ†é…çš„å‘˜å·¥ID\n";
     
-    // Ğ´ÈëÃ¿¸öÈÎÎñµÄÏêÏ¸ĞÅÏ¢
+    // å†™å…¥æ¯ä¸ªä»»åŠ¡çš„è¯¦ç»†ä¿¡æ¯
     for (const auto& task : tasks) {
         file << task.getTaskId() << ","
              << task.getTaskName() << ","
@@ -146,10 +146,10 @@ static void exportToCSV(const std::vector<TaskDefinition>& tasks, const std::str
              << formatTime(task.getEndTime()) << ","
              << task.getRequiredCount() << ","
              << task.getAssignedEmployeeCount() << ","
-             << (task.isAssigned() ? "ÊÇ" : "·ñ") << ","
-             << (task.isShortStaffed() ? "ÊÇ" : "·ñ") << ",";
+             << (task.isAssigned() ? "æ˜¯" : "å¦") << ","
+             << (task.isShortStaffed() ? "æ˜¯" : "å¦") << ",";
         
-        // Ğ´Èë·ÖÅäµÄÔ±¹¤IDÁĞ±í
+        // å†™å…¥åˆ†é…çš„å‘˜å·¥IDåˆ—è¡¨
         const auto& assigned_ids = task.getAssignedEmployeeIds();
         for (size_t i = 0; i < assigned_ids.size(); ++i) {
             if (i > 0) {
@@ -161,10 +161,10 @@ static void exportToCSV(const std::vector<TaskDefinition>& tasks, const std::str
     }
     
     file.close();
-    std::cout << "ÈÎÎñ·ÖÅä½á¹ûÒÑµ¼³öµ½: " << filename << std::endl;
+    std::cout << "ä»»åŠ¡åˆ†é…ç»“æœå·²å¯¼å‡ºåˆ°: " << filename << std::endl;
 }
 
-// ¸¨Öú½á¹¹£ºÔ±¹¤ÈÎÎñÊ±¼ä¶Î
+// è¾…åŠ©ç»“æ„ï¼šå‘˜å·¥ä»»åŠ¡æ—¶é—´æ®µ
 struct EmployeeTaskSlot {
     int64_t task_id;
     std::string task_name;
@@ -175,20 +175,20 @@ struct EmployeeTaskSlot {
         : task_id(id), task_name(name), start_time(start), end_time(end) {}
 };
 
-// ¸¨Öúº¯Êı£ºµ¼³öÔ±¹¤Ê±¼ä±í£¨¸ÊÌØÍ¼¸ñÊ½£©µ½CSVÎÄ¼ş
+// è¾…åŠ©å‡½æ•°ï¼šå¯¼å‡ºå‘˜å·¥æ—¶é—´è¡¨ï¼ˆç”˜ç‰¹å›¾æ ¼å¼ï¼‰åˆ°CSVæ–‡ä»¶
 static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks, 
                                          const std::vector<Shift>& shifts,
                                          const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "´íÎó£ºÎŞ·¨´´½¨CSVÎÄ¼ş " << filename << std::endl;
+        std::cerr << "é”™è¯¯ï¼šæ— æ³•åˆ›å»ºCSVæ–‡ä»¶ " << filename << std::endl;
         return;
     }
     
-    // ÊÕ¼¯Ã¿¸öÔ±¹¤µÄÈÎÎñÊ±¼ä¶Î
+    // æ”¶é›†æ¯ä¸ªå‘˜å·¥çš„ä»»åŠ¡æ—¶é—´æ®µ
     std::map<std::string, std::vector<EmployeeTaskSlot>> employee_schedule;
     
-    // ±éÀúËùÓĞÈÎÎñ£¬ÊÕ¼¯Ô±¹¤µÄÈÎÎñ·ÖÅä
+    // éå†æ‰€æœ‰ä»»åŠ¡ï¼Œæ”¶é›†å‘˜å·¥çš„ä»»åŠ¡åˆ†é…
     for (const auto& task : tasks) {
         const auto& assigned_ids = task.getAssignedEmployeeIds();
         for (const auto& employee_id : assigned_ids) {
@@ -199,7 +199,7 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
         }
     }
     
-    // ¶ÔÃ¿¸öÔ±¹¤µÄÈÎÎñ°´¿ªÊ¼Ê±¼äÅÅĞò
+    // å¯¹æ¯ä¸ªå‘˜å·¥çš„ä»»åŠ¡æŒ‰å¼€å§‹æ—¶é—´æ’åº
     for (auto& emp_pair : employee_schedule) {
         std::sort(emp_pair.second.begin(), emp_pair.second.end(),
                   [](const EmployeeTaskSlot& a, const EmployeeTaskSlot& b) {
@@ -207,10 +207,10 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
                   });
     }
     
-    // »ñÈ¡ËùÓĞÔ±¹¤µÄID²¢ÅÅĞò£¨Ö÷°à¡¢¸±°à¡¢ĞİÏ¢·Ö¿ª£©
+    // è·å–æ‰€æœ‰å‘˜å·¥çš„IDå¹¶æ’åºï¼ˆä¸»ç­ã€å‰¯ç­ã€ä¼‘æ¯åˆ†å¼€ï¼‰
     std::vector<std::string> all_employee_ids;
     
-    // ÏÈÌí¼ÓÖ÷°àÔ±¹¤
+    // å…ˆæ·»åŠ ä¸»ç­å‘˜å·¥
     for (int i = 1; i <= 8; ++i) {
         std::string emp_id = "main" + std::to_string(i);
         if (EmployeeManager::getInstance().hasEmployee(emp_id)) {
@@ -218,7 +218,7 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
         }
     }
     
-    // ÔÙÌí¼Ó¸±°àÔ±¹¤
+    // å†æ·»åŠ å‰¯ç­å‘˜å·¥
     for (int i = 1; i <= 8; ++i) {
         std::string emp_id = "sub" + std::to_string(i);
         if (EmployeeManager::getInstance().hasEmployee(emp_id)) {
@@ -226,7 +226,7 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
         }
     }
     
-    // ×îºóÌí¼ÓĞİÏ¢Ô±¹¤£¨Èç¹ûÓĞÈÎÎñ·ÖÅä£©
+    // æœ€åæ·»åŠ ä¼‘æ¯å‘˜å·¥ï¼ˆå¦‚æœæœ‰ä»»åŠ¡åˆ†é…ï¼‰
     for (int i = 1; i <= 8; ++i) {
         std::string emp_id = "rest" + std::to_string(i);
         if (EmployeeManager::getInstance().hasEmployee(emp_id) && 
@@ -235,36 +235,36 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
         }
     }
     
-    // Ğ´ÈëCSV±íÍ·
-    file << "Ô±¹¤ID,Ô±¹¤ĞÕÃû,°à´ÎÀàĞÍ,ÈÎÎñID,ÈÎÎñÃû³Æ,¿ªÊ¼Ê±¼ä,½áÊøÊ±¼ä,³ÖĞøÊ±¼ä(·ÖÖÓ)\n";
+    // å†™å…¥CSVè¡¨å¤´
+    file << "å‘˜å·¥ID,å‘˜å·¥å§“å,ç­æ¬¡ç±»å‹,ä»»åŠ¡ID,ä»»åŠ¡åç§°,å¼€å§‹æ—¶é—´,ç»“æŸæ—¶é—´,æŒç»­æ—¶é—´(åˆ†é’Ÿ)\n";
     
-    // Ğ´ÈëÃ¿¸öÔ±¹¤µÄÊ±¼ä±í
+    // å†™å…¥æ¯ä¸ªå‘˜å·¥çš„æ—¶é—´è¡¨
     for (const auto& employee_id : all_employee_ids) {
         auto* employee = EmployeeManager::getInstance().getEmployee(employee_id);
         if (!employee) {
             continue;
         }
         
-        // È·¶¨°à´ÎÀàĞÍ
-        std::string shift_type_str = "Î´Öª";
+        // ç¡®å®šç­æ¬¡ç±»å‹
+        std::string shift_type_str = "æœªçŸ¥";
         if (employee_id.find("main") == 0) {
-            shift_type_str = "Ö÷°à";
+            shift_type_str = "ä¸»ç­";
         } else if (employee_id.find("sub") == 0) {
-            shift_type_str = "¸±°à";
+            shift_type_str = "å‰¯ç­";
         } else if (employee_id.find("rest") == 0) {
-            shift_type_str = "ĞİÏ¢";
+            shift_type_str = "ä¼‘æ¯";
         }
         
-        // »ñÈ¡¸ÃÔ±¹¤µÄÈÎÎñÁĞ±í
+        // è·å–è¯¥å‘˜å·¥çš„ä»»åŠ¡åˆ—è¡¨
         auto schedule_it = employee_schedule.find(employee_id);
         if (schedule_it == employee_schedule.end() || schedule_it->second.empty()) {
-            // Ã»ÓĞÈÎÎñ£¬Ö»Êä³öÔ±¹¤ĞÅÏ¢
+            // æ²¡æœ‰ä»»åŠ¡ï¼Œåªè¾“å‡ºå‘˜å·¥ä¿¡æ¯
             file << employee_id << ","
                  << employee->getEmployeeName() << ","
                  << shift_type_str << ","
                  << ",,,,\n";
         } else {
-            // ÓĞÈÎÎñ£¬Êä³öÃ¿¸öÈÎÎñÊ±¼ä¶Î
+            // æœ‰ä»»åŠ¡ï¼Œè¾“å‡ºæ¯ä¸ªä»»åŠ¡æ—¶é—´æ®µ
             for (const auto& task_slot : schedule_it->second) {
                 file << employee_id << ","
                      << employee->getEmployeeName() << ","
@@ -274,9 +274,9 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
                      << formatTime(task_slot.start_time) << ","
                      << formatTime(task_slot.end_time) << ",";
                 
-                // ¼ÆËã³ÖĞøÊ±¼ä£¨·ÖÖÓ£©
+                // è®¡ç®—æŒç»­æ—¶é—´ï¼ˆåˆ†é’Ÿï¼‰
                 if (task_slot.end_time < 0) {
-                    file << "º½ºó\n";
+                    file << "èˆªå\n";
                 } else {
                     int64_t duration_seconds = task_slot.end_time - task_slot.start_time;
                     int64_t duration_minutes = duration_seconds / 60;
@@ -287,17 +287,17 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
     }
     
     file.close();
-    std::cout << "Ô±¹¤Ê±¼ä±íÒÑµ¼³öµ½: " << filename << std::endl;
+    std::cout << "å‘˜å·¥æ—¶é—´è¡¨å·²å¯¼å‡ºåˆ°: " << filename << std::endl;
 }
 
-// ¸¨Öúº¯Êı£º¼ÆËãÊ±¼äÔÚÊ±¼äÖáÉÏµÄÎ»ÖÃ£¨´Ó05:00¿ªÊ¼£¬Ã¿30·ÖÖÓÒ»¸öµ¥Î»£©
+// è¾…åŠ©å‡½æ•°ï¼šè®¡ç®—æ—¶é—´åœ¨æ—¶é—´è½´ä¸Šçš„ä½ç½®ï¼ˆä»05:00å¼€å§‹ï¼Œæ¯30åˆ†é’Ÿä¸€ä¸ªå•ä½ï¼‰
 static int getTimePosition(int64_t seconds) {
     if (seconds < 0) {
-        return 36;  // º½ºóÈÎÎñÎ»ÖÃ£¨22:30Ö®ºó£©
+        return 36;  // èˆªåä»»åŠ¡ä½ç½®ï¼ˆ22:30ä¹‹åï¼‰
     }
     
-    const int64_t START_TIME = 5 * 3600;  // 05:00 = 18000Ãë
-    const int64_t MINUTES_30 = 30 * 60;   // 30·ÖÖÓ = 1800Ãë
+    const int64_t START_TIME = 5 * 3600;  // 05:00 = 18000ç§’
+    const int64_t MINUTES_30 = 30 * 60;   // 30åˆ†é’Ÿ = 1800ç§’
     
     int64_t diff = seconds - START_TIME;
     if (diff < 0) {
@@ -307,17 +307,17 @@ static int getTimePosition(int64_t seconds) {
     return static_cast<int>(diff / MINUTES_30);
 }
 
-// ¸¨Öúº¯Êı£ºÉú³É¸ÊÌØÍ¼ÑùÊ½µÄÎÄ±¾Ê±¼ä±í
+// è¾…åŠ©å‡½æ•°ï¼šç”Ÿæˆç”˜ç‰¹å›¾æ ·å¼çš„æ–‡æœ¬æ—¶é—´è¡¨
 static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
                                   const std::vector<Shift>& shifts,
                                   const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "´íÎó£ºÎŞ·¨´´½¨ÎÄ¼ş " << filename << std::endl;
+        std::cerr << "é”™è¯¯ï¼šæ— æ³•åˆ›å»ºæ–‡ä»¶ " << filename << std::endl;
         return;
     }
     
-    // ÊÕ¼¯Ã¿¸öÔ±¹¤µÄÈÎÎñÊ±¼ä¶Î
+    // æ”¶é›†æ¯ä¸ªå‘˜å·¥çš„ä»»åŠ¡æ—¶é—´æ®µ
     std::map<std::string, std::vector<EmployeeTaskSlot>> employee_schedule;
     
     for (const auto& task : tasks) {
@@ -330,7 +330,7 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
         }
     }
     
-    // ¶ÔÃ¿¸öÔ±¹¤µÄÈÎÎñ°´¿ªÊ¼Ê±¼äÅÅĞò
+    // å¯¹æ¯ä¸ªå‘˜å·¥çš„ä»»åŠ¡æŒ‰å¼€å§‹æ—¶é—´æ’åº
     for (auto& emp_pair : employee_schedule) {
         std::sort(emp_pair.second.begin(), emp_pair.second.end(),
                   [](const EmployeeTaskSlot& a, const EmployeeTaskSlot& b) {
@@ -338,10 +338,10 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
                   });
     }
     
-    // »ñÈ¡ËùÓĞÔ±¹¤ID²¢ÅÅĞò£¨Ö»ÏÔÊ¾ÓĞÈÎÎñµÄÔ±¹¤£©
+    // è·å–æ‰€æœ‰å‘˜å·¥IDå¹¶æ’åºï¼ˆåªæ˜¾ç¤ºæœ‰ä»»åŠ¡çš„å‘˜å·¥ï¼‰
     std::vector<std::string> all_employee_ids;
     
-    // ÏÈÌí¼ÓÖ÷°àÔ±¹¤
+    // å…ˆæ·»åŠ ä¸»ç­å‘˜å·¥
     for (int i = 1; i <= 8; ++i) {
         std::string emp_id = "main" + std::to_string(i);
         if (EmployeeManager::getInstance().hasEmployee(emp_id) &&
@@ -351,7 +351,7 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
         }
     }
     
-    // ÔÙÌí¼Ó¸±°àÔ±¹¤
+    // å†æ·»åŠ å‰¯ç­å‘˜å·¥
     for (int i = 1; i <= 8; ++i) {
         std::string emp_id = "sub" + std::to_string(i);
         if (EmployeeManager::getInstance().hasEmployee(emp_id) &&
@@ -361,11 +361,11 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
         }
     }
     
-    file << "Ô±¹¤Ê±¼ä±í£¨¸ÊÌØÍ¼¸ñÊ½£©\n";
+    file << "å‘˜å·¥æ—¶é—´è¡¨ï¼ˆç”˜ç‰¹å›¾æ ¼å¼ï¼‰\n";
     file << std::string(120, '=') << "\n\n";
     
-    // Éú³ÉÊ±¼äÖá±êÌâ£¨Ã¿2Ğ¡Ê±Ò»¸ö±ê¼Ç£©
-    file << std::setw(15) << "Ô±¹¤";
+    // ç”Ÿæˆæ—¶é—´è½´æ ‡é¢˜ï¼ˆæ¯2å°æ—¶ä¸€ä¸ªæ ‡è®°ï¼‰
+    file << std::setw(15) << "å‘˜å·¥";
     for (int hour = 5; hour <= 22; hour += 2) {
         file << std::setw(12) << "";
         std::ostringstream oss;
@@ -376,31 +376,31 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
     
     file << std::string(120, '-') << "\n";
     
-    // ÎªÃ¿¸öÔ±¹¤Éú³ÉÊ±¼äÏß
+    // ä¸ºæ¯ä¸ªå‘˜å·¥ç”Ÿæˆæ—¶é—´çº¿
     for (const auto& employee_id : all_employee_ids) {
         auto* employee = EmployeeManager::getInstance().getEmployee(employee_id);
         if (!employee) {
             continue;
         }
         
-        // È·¶¨°à´ÎÀàĞÍ
-        std::string shift_type_str = "Î´Öª";
+        // ç¡®å®šç­æ¬¡ç±»å‹
+        std::string shift_type_str = "æœªçŸ¥";
         if (employee_id.find("main") == 0) {
-            shift_type_str = "Ö÷°à";
+            shift_type_str = "ä¸»ç­";
         } else if (employee_id.find("sub") == 0) {
-            shift_type_str = "¸±°à";
+            shift_type_str = "å‰¯ç­";
         }
         
-        // Êä³öÔ±¹¤ĞÅÏ¢£¨ÏŞÖÆ³¤¶È£©
+        // è¾“å‡ºå‘˜å·¥ä¿¡æ¯ï¼ˆé™åˆ¶é•¿åº¦ï¼‰
         std::string emp_display = employee->getEmployeeName() + "(" + employee_id + ")";
         if (emp_display.length() > 14) {
             emp_display = emp_display.substr(0, 11) + "...";
         }
         file << std::setw(15) << emp_display;
         
-        // ´´½¨Ê±¼äÏßÊı×é£¨´Ó05:00µ½22:30£¬Ã¿30·ÖÖÓÒ»¸öµ¥Î»£¬¹²36¸öµ¥Î»£©
+        // åˆ›å»ºæ—¶é—´çº¿æ•°ç»„ï¼ˆä»05:00åˆ°22:30ï¼Œæ¯30åˆ†é’Ÿä¸€ä¸ªå•ä½ï¼Œå…±36ä¸ªå•ä½ï¼‰
         const int TIME_SLOTS = 36;
-        std::vector<std::string> timeline(TIME_SLOTS, "  ");  // Ã¿¸öÊ±¼ä¶ÎÓÃ2¸ö×Ö·û±íÊ¾
+        std::vector<std::string> timeline(TIME_SLOTS, "  ");  // æ¯ä¸ªæ—¶é—´æ®µç”¨2ä¸ªå­—ç¬¦è¡¨ç¤º
         
         auto schedule_it = employee_schedule.find(employee_id);
         if (schedule_it != employee_schedule.end()) {
@@ -409,7 +409,7 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
                 int end_pos;
                 
                 if (task_slot.end_time < 0) {
-                    end_pos = TIME_SLOTS;  // º½ºóÈÎÎñÑÓÉìµ½Ê±¼äÖáÄ©Î²
+                    end_pos = TIME_SLOTS;  // èˆªåä»»åŠ¡å»¶ä¼¸åˆ°æ—¶é—´è½´æœ«å°¾
                 } else {
                     end_pos = getTimePosition(task_slot.end_time);
                     if (end_pos >= TIME_SLOTS) {
@@ -417,19 +417,19 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
                     }
                 }
                 
-                // ÔÚÊ±¼äÏßÉÏ±ê¼ÇÈÎÎñ£¨Ê¹ÓÃÈÎÎñIDµÄ×îºóÒ»¸ö×Ö·û×÷Îª±êÊ¶£©
+                // åœ¨æ—¶é—´çº¿ä¸Šæ ‡è®°ä»»åŠ¡ï¼ˆä½¿ç”¨ä»»åŠ¡IDçš„æœ€åä¸€ä¸ªå­—ç¬¦ä½œä¸ºæ ‡è¯†ï¼‰
                 char task_char = '0' + (task_slot.task_id % 10);
                 for (int pos = start_pos; pos < end_pos && pos < TIME_SLOTS; ++pos) {
                     if (timeline[pos] == "  ") {
                         timeline[pos] = std::string(1, task_char) + " ";
                     } else {
-                        timeline[pos] = "**";  // ÖØµşÈÎÎñ
+                        timeline[pos] = "**";  // é‡å ä»»åŠ¡
                     }
                 }
             }
         }
         
-        // Êä³öÊ±¼äÏß
+        // è¾“å‡ºæ—¶é—´çº¿
         for (int i = 0; i < TIME_SLOTS; ++i) {
             file << timeline[i];
         }
@@ -437,13 +437,13 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
     }
     
     file << std::string(120, '-') << "\n\n";
-    file << "Í¼ÀıËµÃ÷£º\n";
-    file << "- Êı×Ö±íÊ¾ÈÎÎñIDµÄ×îºóÒ»Î»\n";
-    file << "- ** ±íÊ¾ÈÎÎñÖØµş\n";
-    file << "- ¿Õ°×±íÊ¾¿ÕÏĞÊ±¼ä\n\n";
+    file << "å›¾ä¾‹è¯´æ˜ï¼š\n";
+    file << "- æ•°å­—è¡¨ç¤ºä»»åŠ¡IDçš„æœ€åä¸€ä½\n";
+    file << "- ** è¡¨ç¤ºä»»åŠ¡é‡å \n";
+    file << "- ç©ºç™½è¡¨ç¤ºç©ºé—²æ—¶é—´\n\n";
     
-    // Êä³öÏêÏ¸ÈÎÎñÁĞ±í
-    file << "ÏêÏ¸ÈÎÎñÁĞ±í£º\n";
+    // è¾“å‡ºè¯¦ç»†ä»»åŠ¡åˆ—è¡¨
+    file << "è¯¦ç»†ä»»åŠ¡åˆ—è¡¨ï¼š\n";
     file << std::string(120, '-') << "\n";
     
     for (const auto& employee_id : all_employee_ids) {
@@ -458,64 +458,64 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
             for (const auto& task_slot : schedule_it->second) {
                 file << "  [" << formatTime(task_slot.start_time) << "-" 
                      << formatTime(task_slot.end_time) << "] " 
-                     << task_slot.task_name << " (ÈÎÎñID: " << task_slot.task_id << ")\n";
+                     << task_slot.task_name << " (ä»»åŠ¡ID: " << task_slot.task_id << ")\n";
             }
             file << "\n";
         }
     }
     
     file.close();
-    std::cout << "¸ÊÌØÍ¼ÎÄ±¾Ê±¼ä±íÒÑµ¼³öµ½: " << filename << std::endl;
+    std::cout << "ç”˜ç‰¹å›¾æ–‡æœ¬æ—¶é—´è¡¨å·²å¯¼å‡ºåˆ°: " << filename << std::endl;
 }
 
 int main() {
-    std::cout << "¿ªÊ¼ÈÎÎñµ÷¶È²âÊÔ..." << std::endl;
+    std::cout << "å¼€å§‹ä»»åŠ¡è°ƒåº¦æµ‹è¯•..." << std::endl;
     
-    // 1. ³õÊ¼»¯Ô±¹¤ĞÅÏ¢
-    // Ö÷°àÔ±¹¤£ºmain1-8
-    // ¸±°àÔ±¹¤£ºsub1-8
-    // ĞİÏ¢Ô±¹¤£ºrest1-8£¨ËäÈ»ĞİÏ¢£¬µ«ĞèÒª¼ÇÂ¼£©
+    // 1. åˆå§‹åŒ–å‘˜å·¥ä¿¡æ¯
+    // ä¸»ç­å‘˜å·¥ï¼šmain1-8
+    // å‰¯ç­å‘˜å·¥ï¼šsub1-8
+    // ä¼‘æ¯å‘˜å·¥ï¼šrest1-8ï¼ˆè™½ç„¶ä¼‘æ¯ï¼Œä½†éœ€è¦è®°å½•ï¼‰
     for (int i = 1; i <= 8; ++i) {
-        // Ö÷°àÔ±¹¤
+        // ä¸»ç­å‘˜å·¥
         EmployeeInfo main_emp;
         main_emp.setEmployeeId("main" + std::to_string(i));
-        main_emp.setEmployeeName("Ö÷°à" + std::to_string(i));
-        main_emp.setQualificationMask(15);  // ËùÓĞ×ÊÖÊ£¨1+2+4+8=15£©
+        main_emp.setEmployeeName("ä¸»ç­" + std::to_string(i));
+        main_emp.setQualificationMask(15);  // æ‰€æœ‰èµ„è´¨ï¼ˆ1+2+4+8=15ï¼‰
         EmployeeManager::getInstance().addOrUpdateEmployee("main" + std::to_string(i), main_emp);
         
-        // ¸±°àÔ±¹¤
+        // å‰¯ç­å‘˜å·¥
         EmployeeInfo sub_emp;
         sub_emp.setEmployeeId("sub" + std::to_string(i));
-        sub_emp.setEmployeeName("¸±°à" + std::to_string(i));
-        sub_emp.setQualificationMask(15);  // ËùÓĞ×ÊÖÊ
+        sub_emp.setEmployeeName("å‰¯ç­" + std::to_string(i));
+        sub_emp.setQualificationMask(15);  // æ‰€æœ‰èµ„è´¨
         EmployeeManager::getInstance().addOrUpdateEmployee("sub" + std::to_string(i), sub_emp);
         
-        // ĞİÏ¢Ô±¹¤£¨ËäÈ»ĞİÏ¢£¬µ«Ò²´´½¨Ô±¹¤ĞÅÏ¢£©
+        // ä¼‘æ¯å‘˜å·¥ï¼ˆè™½ç„¶ä¼‘æ¯ï¼Œä½†ä¹Ÿåˆ›å»ºå‘˜å·¥ä¿¡æ¯ï¼‰
         EmployeeInfo rest_emp;
         rest_emp.setEmployeeId("rest" + std::to_string(i));
-        rest_emp.setEmployeeName("ĞİÏ¢" + std::to_string(i));
-        rest_emp.setQualificationMask(15);  // ËùÓĞ×ÊÖÊ
+        rest_emp.setEmployeeName("ä¼‘æ¯" + std::to_string(i));
+        rest_emp.setQualificationMask(15);  // æ‰€æœ‰èµ„è´¨
         EmployeeManager::getInstance().addOrUpdateEmployee("rest" + std::to_string(i), rest_emp);
     }
     
-    // 2. ´´½¨Shift¶ÔÏó
-    // Ö÷°àShift£ºÎ»ÖÃ1-8¶ÔÓ¦main1-8
+    // 2. åˆ›å»ºShiftå¯¹è±¡
+    // ä¸»ç­Shiftï¼šä½ç½®1-8å¯¹åº”main1-8
     Shift main_shift;
-    main_shift.setShiftType(1);  // Ö÷°à
+    main_shift.setShiftType(1);  // ä¸»ç­
     for (int i = 1; i <= 8; ++i) {
         main_shift.setEmployeeIdAtPosition(i, "main" + std::to_string(i));
     }
     
-    // ¸±°àShift£ºÎ»ÖÃ1-8¶ÔÓ¦sub1-8
+    // å‰¯ç­Shiftï¼šä½ç½®1-8å¯¹åº”sub1-8
     Shift sub_shift;
-    sub_shift.setShiftType(2);  // ¸±°à
+    sub_shift.setShiftType(2);  // å‰¯ç­
     for (int i = 1; i <= 8; ++i) {
         sub_shift.setEmployeeIdAtPosition(i, "sub" + std::to_string(i));
     }
     
-    // ĞİÏ¢Shift£ºÎ»ÖÃ1-8¶ÔÓ¦rest1-8
+    // ä¼‘æ¯Shiftï¼šä½ç½®1-8å¯¹åº”rest1-8
     Shift rest_shift;
-    rest_shift.setShiftType(0);  // ĞİÏ¢
+    rest_shift.setShiftType(0);  // ä¼‘æ¯
     for (int i = 1; i <= 8; ++i) {
         rest_shift.setEmployeeIdAtPosition(i, "rest" + std::to_string(i));
     }
@@ -525,10 +525,10 @@ int main() {
     shifts.push_back(sub_shift);
     shifts.push_back(rest_shift);
     
-    // 3. ¸ù¾İTask.txt´´½¨ÈÎÎñÁĞ±í
+    // 3. æ ¹æ®Task.txtåˆ›å»ºä»»åŠ¡åˆ—è¡¨
     std::vector<TaskDefinition> tasks;
     
-    // ´ÓTask.txt¶¨ÒåµÄÈÎÎñ
+    // ä»Task.txtå®šä¹‰çš„ä»»åŠ¡
     struct TaskData {
         std::string name;
         std::string start_time;
@@ -536,53 +536,53 @@ int main() {
         int required_count;
     };
     
-    // ´ÓTask.txt¶¨ÒåµÄÈÎÎñ
-    // Íâ³¡ÈÎÎñÊ¹ÓÃÄ£ÄâÊ±¼ä£¨Êµ¼ÊÓ¦ÓÃÖĞĞèÒª¸ù¾İº½°àĞÅÏ¢¼ÆËã£©
+    // ä»Task.txtå®šä¹‰çš„ä»»åŠ¡
+    // å¤–åœºä»»åŠ¡ä½¿ç”¨æ¨¡æ‹Ÿæ—¶é—´ï¼ˆå®é™…åº”ç”¨ä¸­éœ€è¦æ ¹æ®èˆªç­ä¿¡æ¯è®¡ç®—ï¼‰
     std::vector<TaskData> task_data_list = {
-        {"µ÷¶È", "08:30", "º½ºó", 1},
-        {"¹úÄÚÇ°Ì¨", "08:30", "º½ºó", 1},
-        {"¹úÄÚÇ°Ì¨Ğ­Öú", "07:00", "º½ºó", 1},
-        {"¹úÄÚÇ°Ì¨Ğ­Öú2", "06:30", "º½ºó", 1},
-        {"¹úÄÚÇ°Ì¨Ôç°à", "05:30", "08:30", 2},
-        {"¹ú¼ÊÇ°Ì¨Ôç°à", "06:00", "14:00", 1},
-        {"¹ú¼ÊÇ°Ì¨Íí°à", "14:00", "º½ºó", 1},
-        {"¹ú¼ÊÌüÄÚÔç°à", "06:00", "14:00", 2},
-        {"¹ú¼ÊÌüÄÚÍí°à", "14:00", "º½ºó", 2},
-        {"¹úÄÚÌüÄÚÔç°à", "05:30", "08:30", 2},
-        {"¹úÄÚÌüÄÚ08:30-09:30", "08:30", "09:30", 2},
-        {"¹úÄÚÌüÄÚ09:30-10:30", "09:30", "10:30", 2},
-        {"¹úÄÚÌüÄÚ10:30-11:30", "10:30", "11:30", 3},
-        {"¹úÄÚÌüÄÚ11:30-12:30", "11:30", "12:30", 3},
-        {"¹úÄÚÌüÄÚ12:30-13:30", "12:30", "13:30", 3},
-        {"¹úÄÚÌüÄÚ13:30-14:30", "13:30", "14:30", 2},
-        {"¹úÄÚÌüÄÚ14:30-15:30", "14:30", "15:30", 2},
-        {"¹úÄÚÌüÄÚ15:30-16:30", "15:30", "16:30", 2},
-        {"¹úÄÚÌüÄÚ16:30-17:30", "16:30", "17:30", 3},
-        {"¹úÄÚÌüÄÚ17:30-18:30", "17:30", "18:30", 3},
-        {"¹úÄÚÌüÄÚ18:30-19:30", "18:30", "19:30", 3},
-        {"¹úÄÚÌüÄÚ19:30-20:30", "19:30", "20:30", 2},
-        {"¹úÄÚÌüÄÚ20:30-º½ºó", "20:30", "º½ºó", 2},
-        // Íâ³¡ÈÎÎñ£¨Ê¹ÓÃÄ£ÄâÊ±¼ä£¬Êµ¼ÊÓ¦ÓÃÖĞĞèÒª¸ù¾İº½°àĞÅÏ¢¼ÆËã£©
-        // ¼ÙÉèÆğ·ÉÊ±¼ä10:00£¬Ôò¿ªÊ¼Ê±¼äÎª09:00£¨Æğ·ÉÇ°60·ÖÖÓ£©£¬½áÊøÊ±¼äÎª10:30£¨µÇ»ú½áÊøºóÔ¼15-20·ÖÖÓ£©
-        {"Íâ³¡£¨¹úÄÚ³ö¸Û-ÉÙÈË£©", "09:00", "10:30", 2},
-        {"Íâ³¡£¨¹úÄÚ³ö¸Û-¶àÈË£©", "09:30", "11:00", 4},
-        // ¼ÙÉèÂäµØÊ±¼ä11:00£¬Ôò¿ªÊ¼Ê±¼äÎª10:45£¨ÂäµØÇ°15·ÖÖÓ£©£¬½áÊøÊ±¼äÎª11:20£¨µÇ»ú½áÊøºóÔ¼15-20·ÖÖÓ£©
-        {"Íâ³¡£¨¹úÄÚ½ø¸Û-ÉÙÈË£©", "10:45", "11:20", 2},
-        {"Íâ³¡£¨¹úÄÚ½ø¸Û-¶àÈË£©", "11:00", "11:40", 4},
-        // ¼ÙÉèÆğ·ÉÊ±¼ä14:00£¬Ôò¿ªÊ¼Ê±¼äÎª13:00£¨Æğ·ÉÇ°60·ÖÖÓ£©£¬½áÊøÊ±¼äÎª14:30
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "13:00", "14:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "13:25", "14:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "18:00", "19:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "15:00", "17:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-¶àÈË£©", "20:30", "22:00", 4},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "13:00", "14:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "13:25", "14:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "18:00", "19:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-ÉÙÈË£©", "15:00", "17:30", 2},
-        {"Íâ³¡£¨¹ú¼Ê³ö¸Û-¶àÈË£©", "20:30", "22:00", 4},
-        // ¼ÙÉèÂäµØÊ±¼ä15:00£¬Ôò¿ªÊ¼Ê±¼äÎª14:45£¨ÂäµØÇ°15·ÖÖÓ£©£¬½áÊøÊ±¼äÎª15:20
-        {"Íâ³¡£¨¹ú¼Ê½ø¸Û-ÉÙÈË£©", "14:45", "15:20", 2},
-        {"Íâ³¡£¨¹ú¼Ê½ø¸Û-¶àÈË£©", "15:00", "15:40", 4}
+        {"è°ƒåº¦", "08:30", "èˆªå", 1},
+        {"å›½å†…å‰å°", "08:30", "èˆªå", 1},
+        {"å›½å†…å‰å°ååŠ©", "07:00", "èˆªå", 1},
+        {"å›½å†…å‰å°ååŠ©2", "06:30", "èˆªå", 1},
+        {"å›½å†…å‰å°æ—©ç­", "05:30", "08:30", 2},
+        {"å›½é™…å‰å°æ—©ç­", "06:00", "14:00", 1},
+        {"å›½é™…å‰å°æ™šç­", "14:00", "èˆªå", 1},
+        {"å›½é™…å…å†…æ—©ç­", "06:00", "14:00", 2},
+        {"å›½é™…å…å†…æ™šç­", "14:00", "èˆªå", 2},
+        {"å›½å†…å…å†…æ—©ç­", "05:30", "08:30", 2},
+        {"å›½å†…å…å†…08:30-09:30", "08:30", "09:30", 2},
+        {"å›½å†…å…å†…09:30-10:30", "09:30", "10:30", 2},
+        {"å›½å†…å…å†…10:30-11:30", "10:30", "11:30", 3},
+        {"å›½å†…å…å†…11:30-12:30", "11:30", "12:30", 3},
+        {"å›½å†…å…å†…12:30-13:30", "12:30", "13:30", 3},
+        {"å›½å†…å…å†…13:30-14:30", "13:30", "14:30", 2},
+        {"å›½å†…å…å†…14:30-15:30", "14:30", "15:30", 2},
+        {"å›½å†…å…å†…15:30-16:30", "15:30", "16:30", 2},
+        {"å›½å†…å…å†…16:30-17:30", "16:30", "17:30", 3},
+        {"å›½å†…å…å†…17:30-18:30", "17:30", "18:30", 3},
+        {"å›½å†…å…å†…18:30-19:30", "18:30", "19:30", 3},
+        {"å›½å†…å…å†…19:30-20:30", "19:30", "20:30", 2},
+        {"å›½å†…å…å†…20:30-èˆªå", "20:30", "èˆªå", 2},
+        // å¤–åœºä»»åŠ¡ï¼ˆä½¿ç”¨æ¨¡æ‹Ÿæ—¶é—´ï¼Œå®é™…åº”ç”¨ä¸­éœ€è¦æ ¹æ®èˆªç­ä¿¡æ¯è®¡ç®—ï¼‰
+        // å‡è®¾èµ·é£æ—¶é—´10:00ï¼Œåˆ™å¼€å§‹æ—¶é—´ä¸º09:00ï¼ˆèµ·é£å‰60åˆ†é’Ÿï¼‰ï¼Œç»“æŸæ—¶é—´ä¸º10:30ï¼ˆç™»æœºç»“æŸåçº¦15-20åˆ†é’Ÿï¼‰
+        {"å¤–åœºï¼ˆå›½å†…å‡ºæ¸¯-å°‘äººï¼‰", "09:00", "10:30", 2},
+        {"å¤–åœºï¼ˆå›½å†…å‡ºæ¸¯-å¤šäººï¼‰", "09:30", "11:00", 4},
+        // å‡è®¾è½åœ°æ—¶é—´11:00ï¼Œåˆ™å¼€å§‹æ—¶é—´ä¸º10:45ï¼ˆè½åœ°å‰15åˆ†é’Ÿï¼‰ï¼Œç»“æŸæ—¶é—´ä¸º11:20ï¼ˆç™»æœºç»“æŸåçº¦15-20åˆ†é’Ÿï¼‰
+        {"å¤–åœºï¼ˆå›½å†…è¿›æ¸¯-å°‘äººï¼‰", "10:45", "11:20", 2},
+        {"å¤–åœºï¼ˆå›½å†…è¿›æ¸¯-å¤šäººï¼‰", "11:00", "11:40", 4},
+        // å‡è®¾èµ·é£æ—¶é—´14:00ï¼Œåˆ™å¼€å§‹æ—¶é—´ä¸º13:00ï¼ˆèµ·é£å‰60åˆ†é’Ÿï¼‰ï¼Œç»“æŸæ—¶é—´ä¸º14:30
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "13:00", "14:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "13:25", "14:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "18:00", "19:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "15:00", "17:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å¤šäººï¼‰", "20:30", "22:00", 4},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "13:00", "14:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "13:25", "14:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "18:00", "19:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å°‘äººï¼‰", "15:00", "17:30", 2},
+        {"å¤–åœºï¼ˆå›½é™…å‡ºæ¸¯-å¤šäººï¼‰", "20:30", "22:00", 4},
+        // å‡è®¾è½åœ°æ—¶é—´15:00ï¼Œåˆ™å¼€å§‹æ—¶é—´ä¸º14:45ï¼ˆè½åœ°å‰15åˆ†é’Ÿï¼‰ï¼Œç»“æŸæ—¶é—´ä¸º15:20
+        {"å¤–åœºï¼ˆå›½é™…è¿›æ¸¯-å°‘äººï¼‰", "14:45", "15:20", 2},
+        {"å¤–åœºï¼ˆå›½é™…è¿›æ¸¯-å¤šäººï¼‰", "15:00", "15:40", 4}
     };
     
     int64_t task_id = 1;
@@ -593,49 +593,49 @@ int main() {
         task.setTaskType(parseTaskType(task_data.name));
         task.setStartTime(parseTimeString(task_data.start_time));
         
-        if (task_data.end_time.find("º½ºó") != std::string::npos) {
-            task.setAfterFlight();  // ÉèÖÃÎªº½ºó
+        if (task_data.end_time.find("èˆªå") != std::string::npos) {
+            task.setAfterFlight();  // è®¾ç½®ä¸ºèˆªå
         } else {
             task.setEndTime(parseTimeString(task_data.end_time));
         }
         
         task.setRequiredCount(task_data.required_count);
-        task.setPreferMainShift(true);  // Ä¬ÈÏÓÅÏÈÖ÷°à
+        task.setPreferMainShift(true);  // é»˜è®¤ä¼˜å…ˆä¸»ç­
         
-        // ÉèÖÃ×ÊÖÊÒªÇó£ºÍâ³¡ÈÎÎñĞèÒªÍâ³¡×ÊÖÊ£¨2£©£¬ÆäËûÈÎÎñĞèÒªËùÓĞ×ÊÖÊ£¨15£©
-        if (task_data.name.find("Íâ³¡") != std::string::npos) {
-            task.setRequiredQualification(2);  // Íâ³¡×ÊÖÊ
-            task.setCanNewEmployee(false);  // Íâ³¡ÈÎÎñĞÂÔ±¹¤²»¿É
+        // è®¾ç½®èµ„è´¨è¦æ±‚ï¼šå¤–åœºä»»åŠ¡éœ€è¦å¤–åœºèµ„è´¨ï¼ˆ2ï¼‰ï¼Œå…¶ä»–ä»»åŠ¡éœ€è¦æ‰€æœ‰èµ„è´¨ï¼ˆ15ï¼‰
+        if (task_data.name.find("å¤–åœº") != std::string::npos) {
+            task.setRequiredQualification(2);  // å¤–åœºèµ„è´¨
+            task.setCanNewEmployee(false);  // å¤–åœºä»»åŠ¡æ–°å‘˜å·¥ä¸å¯
         } else {
-            task.setRequiredQualification(15);  // ËùÓĞ×ÊÖÊ
-            task.setCanNewEmployee(true);  // Ä¬ÈÏÔÊĞíĞÂÔ±¹¤
+            task.setRequiredQualification(15);  // æ‰€æœ‰èµ„è´¨
+            task.setCanNewEmployee(true);  // é»˜è®¤å…è®¸æ–°å‘˜å·¥
         }
         
-        task.setAllowOverlap(false);  // Ä¬ÈÏ²»ÔÊĞíÖØµş
+        task.setAllowOverlap(false);  // é»˜è®¤ä¸å…è®¸é‡å 
         task.setMaxOverlapTime(0);
         
         tasks.push_back(task);
     }
     
-    // 4. ³õÊ¼»¯TaskConfig£¨Èç¹û»¹Ã»ÓĞ³õÊ¼»¯£©
+    // 4. åˆå§‹åŒ–TaskConfigï¼ˆå¦‚æœè¿˜æ²¡æœ‰åˆå§‹åŒ–ï¼‰
     TaskConfig::getInstance().initializeTaskPriorities();
     
-    // 5. µ÷ÓÃÈÎÎñµ÷¶È
+    // 5. è°ƒç”¨ä»»åŠ¡è°ƒåº¦
     TaskScheduler scheduler;
     scheduler.scheduleTasks(tasks, shifts);
     
-    // 6. µ¼³ö½á¹ûµ½CSV
+    // 6. å¯¼å‡ºç»“æœåˆ°CSV
     exportToCSV(tasks, "task_assignment_result.csv");
     
-    // 7. µ¼³öÔ±¹¤Ê±¼ä±í£¨¸ÊÌØÍ¼¸ñÊ½£©
+    // 7. å¯¼å‡ºå‘˜å·¥æ—¶é—´è¡¨ï¼ˆç”˜ç‰¹å›¾æ ¼å¼ï¼‰
     exportEmployeeScheduleToCSV(tasks, shifts, "employee_schedule.csv");
     exportGanttChartText(tasks, shifts, "employee_schedule_gantt.txt");
     
-    std::cout << "\nÈÎÎñµ÷¶È²âÊÔÍê³É£¡" << std::endl;
-    std::cout << "ÒÑÉú³ÉÒÔÏÂÎÄ¼ş£º" << std::endl;
-    std::cout << "  1. task_assignment_result.csv - ÈÎÎñ·ÖÅä½á¹û" << std::endl;
-    std::cout << "  2. employee_schedule.csv - Ô±¹¤Ê±¼ä±í£¨ÏêÏ¸ÁĞ±í£©" << std::endl;
-    std::cout << "  3. employee_schedule_gantt.txt - Ô±¹¤Ê±¼ä±í£¨¸ÊÌØÍ¼ÎÄ±¾£©" << std::endl;
+    std::cout << "\nä»»åŠ¡è°ƒåº¦æµ‹è¯•å®Œæˆï¼" << std::endl;
+    std::cout << "å·²ç”Ÿæˆä»¥ä¸‹æ–‡ä»¶ï¼š" << std::endl;
+    std::cout << "  1. task_assignment_result.csv - ä»»åŠ¡åˆ†é…ç»“æœ" << std::endl;
+    std::cout << "  2. employee_schedule.csv - å‘˜å·¥æ—¶é—´è¡¨ï¼ˆè¯¦ç»†åˆ—è¡¨ï¼‰" << std::endl;
+    std::cout << "  3. employee_schedule_gantt.txt - å‘˜å·¥æ—¶é—´è¡¨ï¼ˆç”˜ç‰¹å›¾æ–‡æœ¬ï¼‰" << std::endl;
     
     return 0;
 }

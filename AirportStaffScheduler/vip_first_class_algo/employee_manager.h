@@ -1,8 +1,8 @@
 /**
  * @file employee_manager.h
- * @brief Ô±¹¤ĞÅÏ¢¹ÜÀíÆ÷£¨µ¥ÀıÄ£Ê½£©
+ * @brief å‘˜å·¥ä¿¡æ¯ç®¡ç†å™¨ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰
  * 
- * ¹ÜÀíËùÓĞÔ±¹¤ĞÅÏ¢µÄÈ«¾Öµ¥ÀıÀà
+ * ç®¡ç†æ‰€æœ‰å‘˜å·¥ä¿¡æ¯çš„å…¨å±€å•ä¾‹ç±»
  */
 
 #ifndef VIP_FIRST_CLASS_EMPLOYEE_MANAGER_H
@@ -19,73 +19,73 @@ namespace vip_first_class {
 using namespace std;
 
 /**
- * @brief Ô±¹¤ĞÅÏ¢¹ÜÀíÆ÷£¨µ¥ÀıÄ£Ê½£©
+ * @brief å‘˜å·¥ä¿¡æ¯ç®¡ç†å™¨ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰
  * 
- * ¹ÜÀíËùÓĞÔ±¹¤ĞÅÏ¢µÄÈ«¾Ö·ÃÎÊµã
+ * ç®¡ç†æ‰€æœ‰å‘˜å·¥ä¿¡æ¯çš„å…¨å±€è®¿é—®ç‚¹
  */
 class EmployeeManager {
 public:
     /**
-     * @brief »ñÈ¡µ¥ÀıÊµÀı
-     * @return EmployeeManagerµ¥ÀıÒıÓÃ
+     * @brief è·å–å•ä¾‹å®ä¾‹
+     * @return EmployeeManagerå•ä¾‹å¼•ç”¨
      */
     static EmployeeManager& getInstance();
     
     /**
-     * @brief Ìí¼Ó»ò¸üĞÂÔ±¹¤ĞÅÏ¢
-     * @param employee_id Ô±¹¤ID
-     * @param employee_info Ô±¹¤ĞÅÏ¢¶ÔÏó
+     * @brief æ·»åŠ æˆ–æ›´æ–°å‘˜å·¥ä¿¡æ¯
+     * @param employee_id å‘˜å·¥ID
+     * @param employee_info å‘˜å·¥ä¿¡æ¯å¯¹è±¡
      */
     void addOrUpdateEmployee(const string& employee_id, const EmployeeInfo& employee_info);
     
     /**
-     * @brief »ñÈ¡Ô±¹¤ĞÅÏ¢
-     * @param employee_id Ô±¹¤ID
-     * @return Ô±¹¤ĞÅÏ¢Ö¸Õë£¬Èç¹û²»´æÔÚÔò·µ»Ønullptr
+     * @brief è·å–å‘˜å·¥ä¿¡æ¯
+     * @param employee_id å‘˜å·¥ID
+     * @return å‘˜å·¥ä¿¡æ¯æŒ‡é’ˆï¼Œå¦‚æœä¸å­˜åœ¨åˆ™è¿”å›nullptr
      */
     EmployeeInfo* getEmployee(const string& employee_id);
     
     /**
-     * @brief »ñÈ¡Ô±¹¤ĞÅÏ¢£¨³£Á¿°æ±¾£©
-     * @param employee_id Ô±¹¤ID
-     * @return Ô±¹¤ĞÅÏ¢³£Á¿Ö¸Õë£¬Èç¹û²»´æÔÚÔò·µ»Ønullptr
+     * @brief è·å–å‘˜å·¥ä¿¡æ¯ï¼ˆå¸¸é‡ç‰ˆæœ¬ï¼‰
+     * @param employee_id å‘˜å·¥ID
+     * @return å‘˜å·¥ä¿¡æ¯å¸¸é‡æŒ‡é’ˆï¼Œå¦‚æœä¸å­˜åœ¨åˆ™è¿”å›nullptr
      */
     const EmployeeInfo* getEmployee(const string& employee_id) const;
     
     /**
-     * @brief ¼ì²éÔ±¹¤ÊÇ·ñ´æÔÚ
-     * @param employee_id Ô±¹¤ID
-     * @return true±íÊ¾´æÔÚ£¬false±íÊ¾²»´æÔÚ
+     * @brief æ£€æŸ¥å‘˜å·¥æ˜¯å¦å­˜åœ¨
+     * @param employee_id å‘˜å·¥ID
+     * @return trueè¡¨ç¤ºå­˜åœ¨ï¼Œfalseè¡¨ç¤ºä¸å­˜åœ¨
      */
     bool hasEmployee(const string& employee_id) const;
     
     /**
-     * @brief É¾³ıÔ±¹¤ĞÅÏ¢
-     * @param employee_id Ô±¹¤ID
-     * @return true±íÊ¾É¾³ı³É¹¦£¬false±íÊ¾Ô±¹¤²»´æÔÚ
+     * @brief åˆ é™¤å‘˜å·¥ä¿¡æ¯
+     * @param employee_id å‘˜å·¥ID
+     * @return trueè¡¨ç¤ºåˆ é™¤æˆåŠŸï¼Œfalseè¡¨ç¤ºå‘˜å·¥ä¸å­˜åœ¨
      */
     bool removeEmployee(const string& employee_id);
     
     /**
-     * @brief »ñÈ¡ËùÓĞÔ±¹¤IDÁĞ±í
-     * @return Ô±¹¤IDÁĞ±í
+     * @brief è·å–æ‰€æœ‰å‘˜å·¥IDåˆ—è¡¨
+     * @return å‘˜å·¥IDåˆ—è¡¨
      */
     vector<string> getAllEmployeeIds() const;
     
     /**
-     * @brief »ñÈ¡Ô±¹¤×ÜÊı
-     * @return Ô±¹¤×ÜÊı
+     * @brief è·å–å‘˜å·¥æ€»æ•°
+     * @return å‘˜å·¥æ€»æ•°
      */
     size_t getEmployeeCount() const;
     
     /**
-     * @brief Çå³ıËùÓĞÔ±¹¤ĞÅÏ¢
+     * @brief æ¸…é™¤æ‰€æœ‰å‘˜å·¥ä¿¡æ¯
      */
     void clearAllEmployees();
     
     /**
-     * @brief »ñÈ¡ËùÓĞÔ±¹¤ĞÅÏ¢µÄÓ³Éä
-     * @return Ô±¹¤IDµ½Ô±¹¤ĞÅÏ¢µÄÓ³ÉäµÄ³£Á¿ÒıÓÃ
+     * @brief è·å–æ‰€æœ‰å‘˜å·¥ä¿¡æ¯çš„æ˜ å°„
+     * @return å‘˜å·¥IDåˆ°å‘˜å·¥ä¿¡æ¯çš„æ˜ å°„çš„å¸¸é‡å¼•ç”¨
      */
     const map<string, EmployeeInfo>& getAllEmployees() const {
         return employees_;
@@ -93,26 +93,26 @@ public:
 
 private:
     /**
-     * @brief Ë½ÓĞ¹¹Ôìº¯Êı£¨µ¥ÀıÄ£Ê½£©
+     * @brief ç§æœ‰æ„é€ å‡½æ•°ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰
      */
     EmployeeManager();
     
     /**
-     * @brief Ë½ÓĞÎö¹¹º¯Êı
+     * @brief ç§æœ‰ææ„å‡½æ•°
      */
     ~EmployeeManager();
     
     /**
-     * @brief ½ûÖ¹¿½±´¹¹Ôì
+     * @brief ç¦æ­¢æ‹·è´æ„é€ 
      */
     EmployeeManager(const EmployeeManager&) = delete;
     
     /**
-     * @brief ½ûÖ¹¸³Öµ²Ù×÷
+     * @brief ç¦æ­¢èµ‹å€¼æ“ä½œ
      */
     EmployeeManager& operator=(const EmployeeManager&) = delete;
     
-    // Ô±¹¤IDµ½Ô±¹¤ĞÅÏ¢µÄÓ³Éä
+    // å‘˜å·¥IDåˆ°å‘˜å·¥ä¿¡æ¯çš„æ˜ å°„
     map<string, EmployeeInfo> employees_;
 };
 
