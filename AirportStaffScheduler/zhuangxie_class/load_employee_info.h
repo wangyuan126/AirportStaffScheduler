@@ -8,8 +8,7 @@
 #ifndef ZHUANGXIE_CLASS_LOAD_EMPLOYEE_INFO_H
 #define ZHUANGXIE_CLASS_LOAD_EMPLOYEE_INFO_H
 
-#include "../vip_first_class/employee_info.h"
-#include <cstdint>
+#include "../vip_first_class_algo/employee_info.h"
 #include <string>
 
 namespace zhuangxie_class {
@@ -49,13 +48,13 @@ public:
      * @brief 获取装卸组ID
      * @return 装卸组ID（只有装卸员工使用）
      */
-    int32_t getLoadGroup() const { return load_group_; }
+    int getLoadGroup() const { return load_group_; }
     
     /**
      * @brief 设置装卸组ID
      * @param group 装卸组ID
      */
-    void setLoadGroup(int32_t group) { load_group_ = group; }
+    void setLoadGroup(int group) { load_group_ = group; }
     
     // 便捷方法：直接访问EmployeeInfo的常用方法
     const string& getEmployeeId() const { return employee_info_.getEmployeeId(); }
@@ -64,12 +63,12 @@ public:
     const string& getEmployeeName() const { return employee_info_.getEmployeeName(); }
     void setEmployeeName(const string& name) { employee_info_.setEmployeeName(name); }
     
-    int32_t getQualificationMask() const { return employee_info_.getQualificationMask(); }
-    void setQualificationMask(int32_t mask) { employee_info_.setQualificationMask(mask); }
+    int getQualificationMask() const { return employee_info_.getQualificationMask(); }
+    void setQualificationMask(int mask) { employee_info_.setQualificationMask(mask); }
 
 private:
     vip_first_class::EmployeeInfo employee_info_;  ///< 员工信息对象（引用vip_first_class）
-    int32_t load_group_;                          ///< 装卸组ID（只有装卸员工使用）
+    int load_group_;                          ///< 装卸组ID（只有装卸员工使用）
 };
 
 }  // namespace zhuangxie_class

@@ -22,7 +22,7 @@ StandDistance::StandDistance() {
 StandDistance::~StandDistance() {
 }
 
-int32_t StandDistance::makeKey(int32_t stand1, int32_t stand2) const {
+int StandDistance::makeKey(int stand1, int stand2) const {
     // 保证stand1 <= stand2
     if (stand1 > stand2) {
         swap(stand1, stand2);
@@ -31,7 +31,7 @@ int32_t StandDistance::makeKey(int32_t stand1, int32_t stand2) const {
     return stand1 * 100 + stand2;
 }
 
-int64_t StandDistance::getTravelTime(int32_t stand1, int32_t stand2) const {
+long StandDistance::getTravelTime(int stand1, int stand2) const {
     // 验证机位有效性
     if (stand1 <= 0 || stand1 > 24 || stand2 <= 0 || stand2 > 24) {
         return DEFAULT_TRAVEL_TIME;
@@ -42,7 +42,7 @@ int64_t StandDistance::getTravelTime(int32_t stand1, int32_t stand2) const {
         return 0;
     }
     
-    int32_t key = makeKey(stand1, stand2);
+    int key = makeKey(stand1, stand2);
     auto it = distance_map_.find(key);
     if (it != distance_map_.end()) {
         return it->second;
@@ -52,13 +52,13 @@ int64_t StandDistance::getTravelTime(int32_t stand1, int32_t stand2) const {
     return DEFAULT_TRAVEL_TIME;
 }
 
-void StandDistance::setTravelTime(int32_t stand1, int32_t stand2, int64_t time) {
+void StandDistance::setTravelTime(int stand1, int stand2, long time) {
     // 验证机位有效性
     if (stand1 <= 0 || stand1 > 24 || stand2 <= 0 || stand2 > 24) {
         return;
     }
     
-    int32_t key = makeKey(stand1, stand2);
+    int key = makeKey(stand1, stand2);
     distance_map_[key] = time;
 }
 
@@ -69,10 +69,10 @@ void StandDistance::initializeDefaultDistances() {
     // 远机位（相差3-5个）：8分钟（480秒）
     // 最远机位（相差6个以上）：12分钟（720秒）
     
-    for (int32_t i = 1; i <= 24; ++i) {
-        for (int32_t j = i + 1; j <= 24; ++j) {
-            int32_t diff = j - i;
-            int64_t time;
+    for (int i = 1; i <= 24; ++i) {
+        for (int j = i + 1; j <= 24; ++j) {
+            int diff = j - i;
+            long time;
             
             if (diff == 1) {
                 time = 3 * 60;  // 相邻机位：3分钟

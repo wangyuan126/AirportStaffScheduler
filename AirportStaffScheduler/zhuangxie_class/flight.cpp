@@ -9,7 +9,7 @@ namespace zhuangxie_class {
 
 using namespace std;
 
-const int64_t DEFAULT_VIP_TRAVEL_TIME = 8 * 60;  // 默认8分钟 = 480秒
+const long DEFAULT_VIP_TRAVEL_TIME = 8 * 60;  // 默认8分钟 = 480秒
 
 Flight::Flight()
     : flight_type_(0)

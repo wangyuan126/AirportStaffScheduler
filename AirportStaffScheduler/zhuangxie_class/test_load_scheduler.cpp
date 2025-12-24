@@ -8,8 +8,9 @@
 #include "load_scheduler.h"
 #include "load_employee_info.h"
 #include "flight.h"
-#include "../vip_first_class/shift.h"
-#include "../vip_first_class/task_definition.h"
+#include "../vip_first_class_algo/shift.h"
+#include "../vip_first_class_algo/task_definition.h"
+#include "../CSVDataLoader.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -162,99 +163,159 @@ static void exportEmployeeScheduleToCSV(const vector<TaskDefinition>& tasks,
     cout << "员工任务时间表已导出到: " << filename << endl;
 }
 
-int main() {
-    cout << "开始测试装卸任务调度器..." << endl;
+int main(int argc, char* argv[]) {
+    // 确保输出立即刷新
+    std::ios::sync_with_stdio(true);
+    std::cout.setf(std::ios::unitbuf);  // 无缓冲输出
     
-    // 1. 创建员工列表
+    cout << "=== Loading CSV Test Program ===" << endl;
+    cout << "Starting load scheduler test..." << endl;
+    cout.flush();
+    
+    // 确定CSV文件路径
+    std::string input_dir = "../input/";
+    if (argc > 1) {
+        input_dir = argv[1];
+        if (input_dir.back() != '/' && input_dir.back() != '\\') {
+            input_dir += "/";
+        }
+    }
+    
+    std::string staff_csv = input_dir + "staff.csv";
+    std::string shift_csv = input_dir + "shift.csv";
+    std::string task_csv = input_dir + "task.csv";
+    
+    // 1. 从CSV加载员工列表
+    cout << "Step 1: Loading employees from CSV..." << endl;
+    cout << "CSV file path: " << staff_csv << endl;
+    cout.flush();
+    
     vector<LoadEmployeeInfo> employees;
-    
-    // 创建主班员工（3个组，每组3人）
-    for (int group = 1; group <= 3; ++group) {
-        for (int pos = 1; pos <= 3; ++pos) {
-            LoadEmployeeInfo emp;
-            ostringstream oss;
-            oss << "main" << group << "_" << pos;
-            emp.setEmployeeId(oss.str());
-            emp.setEmployeeName("主班员工" + to_string(group) + "-" + to_string(pos));
-            emp.setLoadGroup(group);
-            emp.setQualificationMask(15);  // 所有资质
-            employees.push_back(emp);
+    try {
+        employees = AirportStaffScheduler::CSVLoader::loadLoadEmployeesFromCSV(staff_csv);
+        if (employees.empty()) {
+            throw std::runtime_error("CSV file contains no valid employee data");
+        }
+        cout << "Successfully loaded " << employees.size() << " employees from CSV" << endl;
+    } catch (const std::exception& e) {
+        cerr << "ERROR: Failed to load employees: " << e.what() << endl;
+        cerr << "Using default test data..." << endl;
+        
+        // 使用默认测试数据作为后备
+        employees.clear();
+        // 创建主班员工（3个组，每组3人）
+        for (int group = 1; group <= 3; ++group) {
+            for (int pos = 1; pos <= 3; ++pos) {
+                LoadEmployeeInfo emp;
+                ostringstream oss;
+                oss << "main" << group << "_" << pos;
+                emp.setEmployeeId(oss.str());
+                emp.setEmployeeName("主班员工" + to_string(group) + "-" + to_string(pos));
+                emp.setLoadGroup(group);
+                emp.setQualificationMask(15);  // 所有资质
+                employees.push_back(emp);
+            }
+        }
+        // 创建副班员工（3个组，每组3人）
+        for (int group = 1; group <= 3; ++group) {
+            for (int pos = 1; pos <= 3; ++pos) {
+                LoadEmployeeInfo emp;
+                ostringstream oss;
+                oss << "sub" << group << "_" << pos;
+                emp.setEmployeeId(oss.str());
+                emp.setEmployeeName("副班员工" + to_string(group) + "-" + to_string(pos));
+                emp.setLoadGroup(group);
+                emp.setQualificationMask(15);  // 所有资质
+                employees.push_back(emp);
+            }
         }
     }
     
-    // 创建副班员工（3个组，每组3人）
-    for (int group = 1; group <= 3; ++group) {
-        for (int pos = 1; pos <= 3; ++pos) {
-            LoadEmployeeInfo emp;
-            ostringstream oss;
-            oss << "sub" << group << "_" << pos;
-            emp.setEmployeeId(oss.str());
-            emp.setEmployeeName("副班员工" + to_string(group) + "-" + to_string(pos));
-            emp.setLoadGroup(group);
-            emp.setQualificationMask(15);  // 所有资质
-            employees.push_back(emp);
-        }
-    }
+    cout << "Total employees: " << employees.size() << endl;
+    cout.flush();
     
-    cout << "创建了 " << employees.size() << " 个员工" << endl;
+    // 2. 从CSV加载班次列表
+    cout << "Step 2: Loading shifts from CSV..." << endl;
+    cout << "CSV file path: " << shift_csv << endl;
+    cout.flush();
     
-    // 2. 创建班次列表
     vector<Shift> shifts;
+    try {
+        shifts = AirportStaffScheduler::CSVLoader::loadShiftsFromCSV(shift_csv);
+        if (shifts.empty()) {
+            throw std::runtime_error("CSV file contains no valid shift data");
+        }
+    } catch (const std::exception& e) {
+        cerr << "ERROR: Failed to load shifts: " << e.what() << endl;
+        cerr << "Using default test data..." << endl;
+        
+        // 使用默认测试数据作为后备
+        shifts.clear();
+        // 主班1
+        Shift main_shift1;
+        main_shift1.setShiftType(1);  // 主班
+        main_shift1.setEmployeeIdAtPosition(1, "main1_1");
+        main_shift1.setEmployeeIdAtPosition(2, "main1_2");
+        main_shift1.setEmployeeIdAtPosition(3, "main1_3");
+        shifts.push_back(main_shift1);
+        // 主班2
+        Shift main_shift2;
+        main_shift2.setShiftType(1);  // 主班
+        main_shift2.setEmployeeIdAtPosition(1, "main2_1");
+        main_shift2.setEmployeeIdAtPosition(2, "main2_2");
+        main_shift2.setEmployeeIdAtPosition(3, "main2_3");
+        shifts.push_back(main_shift2);
+        // 主班3
+        Shift main_shift3;
+        main_shift3.setShiftType(1);  // 主班
+        main_shift3.setEmployeeIdAtPosition(1, "main3_1");
+        main_shift3.setEmployeeIdAtPosition(2, "main3_2");
+        main_shift3.setEmployeeIdAtPosition(3, "main3_3");
+        shifts.push_back(main_shift3);
+        // 副班1
+        Shift sub_shift1;
+        sub_shift1.setShiftType(2);  // 副班
+        sub_shift1.setEmployeeIdAtPosition(1, "sub1_1");
+        sub_shift1.setEmployeeIdAtPosition(2, "sub1_2");
+        sub_shift1.setEmployeeIdAtPosition(3, "sub1_3");
+        shifts.push_back(sub_shift1);
+        // 副班2
+        Shift sub_shift2;
+        sub_shift2.setShiftType(2);  // 副班
+        sub_shift2.setEmployeeIdAtPosition(1, "sub2_1");
+        sub_shift2.setEmployeeIdAtPosition(2, "sub2_2");
+        sub_shift2.setEmployeeIdAtPosition(3, "sub2_3");
+        shifts.push_back(sub_shift2);
+        // 副班3
+        Shift sub_shift3;
+        sub_shift3.setShiftType(2);  // 副班
+        sub_shift3.setEmployeeIdAtPosition(1, "sub3_1");
+        sub_shift3.setEmployeeIdAtPosition(2, "sub3_2");
+        sub_shift3.setEmployeeIdAtPosition(3, "sub3_3");
+        shifts.push_back(sub_shift3);
+    }
     
-    // 主班1
-    Shift main_shift1;
-    main_shift1.setShiftType(1);  // 主班
-    main_shift1.setEmployeeIdAtPosition(1, "main1_1");
-    main_shift1.setEmployeeIdAtPosition(2, "main1_2");
-    main_shift1.setEmployeeIdAtPosition(3, "main1_3");
-    shifts.push_back(main_shift1);
+    cout << "Total shifts: " << shifts.size() << endl;
+    cout.flush();
     
-    // 主班2
-    Shift main_shift2;
-    main_shift2.setShiftType(1);  // 主班
-    main_shift2.setEmployeeIdAtPosition(1, "main2_1");
-    main_shift2.setEmployeeIdAtPosition(2, "main2_2");
-    main_shift2.setEmployeeIdAtPosition(3, "main2_3");
-    shifts.push_back(main_shift2);
+    // 3. 从CSV加载航班列表
+    cout << "Step 3: Loading flights from CSV..." << endl;
+    cout << "CSV file path: " << task_csv << endl;
+    cout.flush();
     
-    // 主班3
-    Shift main_shift3;
-    main_shift3.setShiftType(1);  // 主班
-    main_shift3.setEmployeeIdAtPosition(1, "main3_1");
-    main_shift3.setEmployeeIdAtPosition(2, "main3_2");
-    main_shift3.setEmployeeIdAtPosition(3, "main3_3");
-    shifts.push_back(main_shift3);
-    
-    // 副班1
-    Shift sub_shift1;
-    sub_shift1.setShiftType(2);  // 副班
-    sub_shift1.setEmployeeIdAtPosition(1, "sub1_1");
-    sub_shift1.setEmployeeIdAtPosition(2, "sub1_2");
-    sub_shift1.setEmployeeIdAtPosition(3, "sub1_3");
-    shifts.push_back(sub_shift1);
-    
-    // 副班2
-    Shift sub_shift2;
-    sub_shift2.setShiftType(2);  // 副班
-    sub_shift2.setEmployeeIdAtPosition(1, "sub2_1");
-    sub_shift2.setEmployeeIdAtPosition(2, "sub2_2");
-    sub_shift2.setEmployeeIdAtPosition(3, "sub2_3");
-    shifts.push_back(sub_shift2);
-    
-    // 副班3
-    Shift sub_shift3;
-    sub_shift3.setShiftType(2);  // 副班
-    sub_shift3.setEmployeeIdAtPosition(1, "sub3_1");
-    sub_shift3.setEmployeeIdAtPosition(2, "sub3_2");
-    sub_shift3.setEmployeeIdAtPosition(3, "sub3_3");
-    shifts.push_back(sub_shift3);
-    
-    cout << "创建了 " << shifts.size() << " 个班次" << endl;
-    
-    // 3. 创建航班列表
     vector<Flight> flights;
-    
-    // 航班1：国内进港
+    try {
+        flights = AirportStaffScheduler::CSVLoader::loadFlightsFromTaskCSV(task_csv);
+        if (flights.empty()) {
+            throw std::runtime_error("CSV file contains no valid flight data");
+        }
+    } catch (const std::exception& e) {
+        cerr << "ERROR: Failed to load flights: " << e.what() << endl;
+        cerr << "Using default test data..." << endl;
+        
+        // 使用默认测试数据作为后备
+        flights.clear();
+        // 航班1：国内进港
     Flight flight1;
     flight1.setFlightTypeEnum(FlightType::DOMESTIC_ARRIVAL);
     flight1.setArrivalTime(parseTimeString("08:30"));
@@ -513,8 +574,10 @@ int main() {
     flight20.setRemoteStand(false);
     flight20.setVipTravelTime(480);
     flights.push_back(flight20);
+    }
     
-    cout << "创建了 " << flights.size() << " 个航班" << endl;
+    cout << "Total flights: " << flights.size() << endl;
+    cout.flush();
     
     // 4. 创建班次占位时间段（疲劳度控制测试）
     vector<LoadScheduler::ShiftBlockPeriod> block_periods;
@@ -524,13 +587,15 @@ int main() {
     block1.end_time = parseTimeString("13:00");
     block_periods.push_back(block1);
     
-    cout << "创建了 " << block_periods.size() << " 个班次占位时间段" << endl;
+    cout << "Block periods: " << block_periods.size() << endl;
+    cout.flush();
     
     // 5. 调用任务调度
+    cout << "Step 4: Starting task scheduling..." << endl;
+    cout.flush();
+    
     LoadScheduler scheduler;
     vector<TaskDefinition> tasks;
-    
-    cout << "\n开始调度任务..." << endl;
     scheduler.scheduleLoadTasks(employees, flights, shifts, tasks, 480, block_periods, nullptr);
     
     // 6. 输出统计信息
@@ -554,23 +619,28 @@ int main() {
         total_assigned += static_cast<int>(task.getAssignedEmployeeCount());
     }
     
-    cout << "\n=== 调度统计 ===" << endl;
-    cout << "总任务数: " << total_tasks << endl;
-    cout << "已分配任务: " << assigned_tasks << endl;
-    cout << "未分配任务: " << unassigned_tasks << endl;
-    cout << "缺人任务: " << short_staffed_tasks << endl;
-    cout << "总需求人数: " << total_required << endl;
-    cout << "总分配人数: " << total_assigned << endl;
-    cout << "分配率: " << (total_required > 0 ? (total_assigned * 100.0 / total_required) : 0) << "%" << endl;
+    cout << "\n=== Scheduling Statistics ===" << endl;
+    cout << "Total tasks: " << total_tasks << endl;
+    cout << "Assigned tasks: " << assigned_tasks << endl;
+    cout << "Unassigned tasks: " << unassigned_tasks << endl;
+    cout << "Short-staffed tasks: " << short_staffed_tasks << endl;
+    cout << "Total required staff: " << total_required << endl;
+    cout << "Total assigned staff: " << total_assigned << endl;
+    cout << "Assignment rate: " << (total_required > 0 ? (total_assigned * 100.0 / total_required) : 0) << "%" << endl;
+    cout.flush();
     
     // 7. 导出结果到CSV
+    cout << "\nStep 5: Exporting results to CSV files..." << endl;
+    cout.flush();
+    
     exportToCSV(tasks, "load_task_assignment_result.csv");
     exportEmployeeScheduleToCSV(tasks, employees, "load_employee_schedule.csv");
     
-    cout << "\n测试完成！" << endl;
-    cout << "已生成以下文件：" << endl;
-    cout << "  1. load_task_assignment_result.csv - 任务分配结果" << endl;
-    cout << "  2. load_employee_schedule.csv - 员工任务时间表" << endl;
+    cout << "\n=== Test Completed Successfully ===" << endl;
+    cout << "Generated files:" << endl;
+    cout << "  1. load_task_assignment_result.csv - Task assignment results" << endl;
+    cout << "  2. load_employee_schedule.csv - Employee schedule" << endl;
+    cout.flush();
     
     return 0;
 }

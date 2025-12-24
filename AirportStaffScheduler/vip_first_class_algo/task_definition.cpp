@@ -76,8 +76,8 @@ bool TaskDefinition::isFixedPerson(const std::string& employee_id,
         // 遍历该班次的所有位置，查找员工
         for (const auto& pos_pair : position_map) {
             if (pos_pair.second == employee_id) {
-                int32_t position = pos_pair.first;
-                int32_t shift_type = shift.getShiftType();
+                int position = pos_pair.first;
+                int shift_type = shift.getShiftType();
                 
                 // 将ShiftType转换为ShiftCategory
                 ShiftCategory category;

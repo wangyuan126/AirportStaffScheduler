@@ -5,6 +5,7 @@
 
 #include "load_scheduler.h"
 #include "stand_distance.h"
+#include "../CommonAdapterUtils.h"
 #include <algorithm>
 #include <map>
 #include <set>
@@ -12,7 +13,6 @@
 #include <climits>
 #include <iostream>
 #include <sstream>
-#include <cstdint>
 
 namespace zhuangxie_class {
 
@@ -31,12 +31,12 @@ void LoadScheduler::scheduleLoadTasks(const vector<LoadEmployeeInfo>& employees,
                                      const vector<Flight>& flights,
                                      const vector<Shift>& shifts,
                                      vector<TaskDefinition>& tasks,
-                                     int64_t default_travel_time,
+                                     long default_travel_time,
                                      const vector<ShiftBlockPeriod>& block_periods,
                                      const vector<TaskDefinition>* previous_tasks)
 {
     // 1. 从航班信息生成任务，同时建立任务ID到航班索引的映射
-    map<int64_t, size_t> flight_task_map;
+    map<long, size_t> flight_task_map;
     generateTasksFromFlights(flights, tasks, default_travel_time, flight_task_map);
     
     // 2. 按任务保障优先级排序任务
@@ -48,22 +48,22 @@ void LoadScheduler::scheduleLoadTasks(const vector<LoadEmployeeInfo>& employees,
 
 void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
                                             vector<TaskDefinition>& tasks,
-                                            int64_t default_travel_time,
-                                            map<int64_t, size_t>& flight_task_map)
+                                            long default_travel_time,
+                                            map<long, size_t>& flight_task_map)
 {
-    int64_t task_id = 1;
-    const int64_t MINUTES_5 = 5 * 60;      // 5分钟
-    const int64_t MINUTES_10 = 10 * 60;    // 10分钟
-    const int64_t MINUTES_15 = 15 * 60;    // 15分钟（远机位叫车时间）
-    const int64_t MINUTES_60 = 60 * 60;    // 60分钟
-    const int64_t MINUTES_90 = 90 * 60;    // 90分钟（长过站阈值）
+    long task_id = 1;
+    const long MINUTES_5 = 5 * 60;      // 5分钟
+    const long MINUTES_10 = 10 * 60;    // 10分钟
+    const long MINUTES_15 = 15 * 60;    // 15分钟（远机位叫车时间）
+    const long MINUTES_60 = 60 * 60;    // 60分钟
+    const long MINUTES_90 = 90 * 60;    // 90分钟（长过站阈值）
     
     for (size_t flight_idx = 0; flight_idx < flights.size(); ++flight_idx) {
         const auto& flight = flights[flight_idx];
-        int32_t flight_type = flight.getFlightType();
-        int64_t arrival_time = flight.getArrivalTime();
-        int64_t departure_time = flight.getDepartureTime();
-        int64_t vip_travel_time = flight.getVipTravelTime();
+        int flight_type = flight.getFlightType();
+        long arrival_time = flight.getArrivalTime();
+        long departure_time = flight.getDepartureTime();
+        long vip_travel_time = flight.getVipTravelTime();
         bool is_remote_stand = flight.isRemoteStand();
         double arrival_cargo = flight.getArrivalCargo();
         double departure_cargo = flight.getDepartureCargo();
@@ -74,24 +74,24 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
         }
         
         // 远机位需要提前15分钟叫车
-        int64_t vehicle_call_time = is_remote_stand ? MINUTES_15 : 0;
+        long vehicle_call_time = is_remote_stand ? MINUTES_15 : 0;
         
-        bool is_domestic = (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-                           flight_type == static_cast<int32_t>(FlightType::DOMESTIC_DEPARTURE) ||
-                           flight_type == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT));
-        bool is_international = (flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL) ||
-                                flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_DEPARTURE) ||
-                                flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT));
+        bool is_domestic = (flight_type == static_cast<int>(FlightType::DOMESTIC_ARRIVAL) ||
+                           flight_type == static_cast<int>(FlightType::DOMESTIC_DEPARTURE) ||
+                           flight_type == static_cast<int>(FlightType::DOMESTIC_TRANSIT));
+        bool is_international = (flight_type == static_cast<int>(FlightType::INTERNATIONAL_ARRIVAL) ||
+                                flight_type == static_cast<int>(FlightType::INTERNATIONAL_DEPARTURE) ||
+                                flight_type == static_cast<int>(FlightType::INTERNATIONAL_TRANSIT));
         
-        if (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-            flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL)) {
+        if (flight_type == static_cast<int>(FlightType::DOMESTIC_ARRIVAL) ||
+            flight_type == static_cast<int>(FlightType::INTERNATIONAL_ARRIVAL)) {
             // 进港任务：落地前5分钟 ~ 起飞前5分钟
             // 开始时间 = 进港时间 - 5分钟 - 通勤时间 - 远机位叫车时间
             // 结束时间 = 起飞前5分钟（如果有起飞时间），否则为落地后一定时间
             TaskDefinition task;
             task.setTaskId(task_id++);
-            int64_t task_start_time = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
-            int64_t task_end_time;
+            long task_start_time = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
+            long task_end_time;
             // 如果departure_time有效且大于arrival_time，使用起飞前5分钟；否则使用落地后30分钟
             if (departure_time > arrival_time) {
                 task_end_time = departure_time - MINUTES_5;
@@ -109,7 +109,7 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
             task.setTaskName(is_domestic ? "国内进港装卸" : "国际进港装卸");
             
             // 计算需要人数：正常3人，单进2.5t以上6人
-            int32_t required_count = 3;
+            int required_count = 3;
             if (arrival_cargo >= 2.5) {
                 required_count = 6;
             }
@@ -130,15 +130,15 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
             tasks.push_back(task);
             flight_task_map[task.getTaskId()] = flight_idx;
             
-        } else if (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_DEPARTURE) ||
-                   flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_DEPARTURE)) {
+        } else if (flight_type == static_cast<int>(FlightType::DOMESTIC_DEPARTURE) ||
+                   flight_type == static_cast<int>(FlightType::INTERNATIONAL_DEPARTURE)) {
             // 出港任务：起飞前60分钟 ~ 起飞前10分钟
             // 开始时间 = 出港时间 - 60分钟 - 通勤时间 - 远机位叫车时间
             // 结束时间 = 出港时间 - 10分钟
             TaskDefinition task;
             task.setTaskId(task_id++);
-            int64_t task_start_time = departure_time - MINUTES_60 - vip_travel_time - vehicle_call_time;
-            int64_t task_end_time = departure_time - MINUTES_10;
+            long task_start_time = departure_time - MINUTES_60 - vip_travel_time - vehicle_call_time;
+            long task_end_time = departure_time - MINUTES_10;
             
             // 确保开始时间 < 结束时间
             if (task_start_time >= task_end_time) {
@@ -150,7 +150,7 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
             task.setTaskName(is_domestic ? "国内出港装卸" : "国际出港装卸");
             
             // 计算需要人数：正常3人，单出2t以上6人
-            int32_t required_count = 3;
+            int required_count = 3;
             if (departure_cargo >= 2.0) {
                 required_count = 6;
             }
@@ -171,10 +171,10 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
             tasks.push_back(task);
             flight_task_map[task.getTaskId()] = flight_idx;
             
-        } else if (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT) ||
-                   flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT)) {
+        } else if (flight_type == static_cast<int>(FlightType::DOMESTIC_TRANSIT) ||
+                   flight_type == static_cast<int>(FlightType::INTERNATIONAL_TRANSIT)) {
             // 过站任务
-            int64_t transit_duration = departure_time - arrival_time;
+            long transit_duration = departure_time - arrival_time;
             bool is_long_transit = transit_duration > MINUTES_90;
             
             if (is_long_transit) {
@@ -183,8 +183,8 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
                 // 进港卸货任务：落地前5分钟 ~ 落地后（简化处理，设为落地后10分钟）
                 TaskDefinition arrival_task;
                 arrival_task.setTaskId(task_id++);
-                int64_t arrival_task_start = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
-                int64_t arrival_task_end = arrival_time + MINUTES_10;  // 落地后10分钟
+                long arrival_task_start = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
+                long arrival_task_end = arrival_time + MINUTES_10;  // 落地后10分钟
                 
                 // 确保开始时间 < 结束时间
                 if (arrival_task_start >= arrival_task_end) {
@@ -196,7 +196,7 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
                 arrival_task.setTaskName(is_domestic ? "国内过站-进港卸货" : "国际过站-进港卸货");
                 
                 // 计算需要人数：正常3人，单进2.5t以上6人
-                int32_t arrival_count = 3;
+                int arrival_count = 3;
                 if (arrival_cargo >= 2.5) {
                     arrival_count = 6;
                 }
@@ -219,8 +219,8 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
                 // 出港装货任务：起飞前60分钟 ~ 起飞前10分钟
                 TaskDefinition departure_task;
                 departure_task.setTaskId(task_id++);
-                int64_t departure_task_start = departure_time - MINUTES_60 - vip_travel_time - vehicle_call_time;
-                int64_t departure_task_end = departure_time - MINUTES_10;
+                long departure_task_start = departure_time - MINUTES_60 - vip_travel_time - vehicle_call_time;
+                long departure_task_end = departure_time - MINUTES_10;
                 
                 // 确保开始时间 < 结束时间
                 if (departure_task_start >= departure_task_end) {
@@ -232,7 +232,7 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
                 departure_task.setTaskName(is_domestic ? "国内过站-出港装货" : "国际过站-出港装货");
                 
                 // 计算需要人数：正常3人，单出2t以上6人
-                int32_t departure_count = 3;
+                int departure_count = 3;
                 if (departure_cargo >= 2.0) {
                     departure_count = 6;
                 }
@@ -256,8 +256,8 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
                 // 短过站：落地前5分钟 ~ 起飞前5分钟
                 TaskDefinition task;
                 task.setTaskId(task_id++);
-                int64_t task_start_time = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
-                int64_t task_end_time = departure_time - MINUTES_5;
+                long task_start_time = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
+                long task_end_time = departure_time - MINUTES_5;
                 
                 // 确保开始时间 < 结束时间
                 if (task_start_time >= task_end_time) {
@@ -269,7 +269,7 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
                 task.setTaskName(is_domestic ? "国内过站装卸" : "国际过站装卸");
                 
                 // 计算需要人数：正常3人，进出港货量和下2t以上需要6人
-                int32_t required_count = 3;
+                int required_count = 3;
                 double total_cargo = arrival_cargo + departure_cargo;
                 if (total_cargo >= 2.0) {
                     required_count = 6;
@@ -297,7 +297,7 @@ void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
 
 void LoadScheduler::sortTasksByPriority(vector<TaskDefinition>& tasks,
                                        const vector<Flight>& flights,
-                                       const map<int64_t, size_t>& flight_task_map)
+                                       const map<long, size_t>& flight_task_map)
 {
     // 任务保障优先级排序规则：
     // 1. 已报时 > 未报时
@@ -324,16 +324,16 @@ void LoadScheduler::sortTasksByPriority(vector<TaskDefinition>& tasks,
         }
         
         // 2. 进港 > 出港
-        int32_t type_a = flight_a.getFlightType();
-        int32_t type_b = flight_b.getFlightType();
-        bool a_is_arrival = (type_a == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-                            type_a == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL));
-        bool b_is_arrival = (type_b == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-                            type_b == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL));
-        bool a_is_transit_arrival = (type_a == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT) ||
-                                    type_a == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT));
-        bool b_is_transit_arrival = (type_b == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT) ||
-                                    type_b == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT));
+        int type_a = flight_a.getFlightType();
+        int type_b = flight_b.getFlightType();
+        bool a_is_arrival = (type_a == static_cast<int>(FlightType::DOMESTIC_ARRIVAL) ||
+                            type_a == static_cast<int>(FlightType::INTERNATIONAL_ARRIVAL));
+        bool b_is_arrival = (type_b == static_cast<int>(FlightType::DOMESTIC_ARRIVAL) ||
+                            type_b == static_cast<int>(FlightType::INTERNATIONAL_ARRIVAL));
+        bool a_is_transit_arrival = (type_a == static_cast<int>(FlightType::DOMESTIC_TRANSIT) ||
+                                    type_a == static_cast<int>(FlightType::INTERNATIONAL_TRANSIT));
+        bool b_is_transit_arrival = (type_b == static_cast<int>(FlightType::DOMESTIC_TRANSIT) ||
+                                    type_b == static_cast<int>(FlightType::INTERNATIONAL_TRANSIT));
         
         // 进港任务（包括过站的进港部分）优先
         if (a_is_arrival || (a_is_transit_arrival && a.getTaskName().find("进港") != string::npos)) {
@@ -345,8 +345,8 @@ void LoadScheduler::sortTasksByPriority(vector<TaskDefinition>& tasks,
         }
         
         // 4. 落地时间早的 > 落地时间晚的
-        int64_t arrival_a = flight_a.getArrivalTime();
-        int64_t arrival_b = flight_b.getArrivalTime();
+        long arrival_a = flight_a.getArrivalTime();
+        long arrival_b = flight_b.getArrivalTime();
         if (arrival_a != arrival_b) {
             return arrival_a < arrival_b;
         }
@@ -356,7 +356,7 @@ void LoadScheduler::sortTasksByPriority(vector<TaskDefinition>& tasks,
     });
 }
 
-bool LoadScheduler::isShiftBlocked(int32_t shift_type, int64_t time,
+bool LoadScheduler::isShiftBlocked(int shift_type, long time,
                                    const vector<ShiftBlockPeriod>& block_periods) const
 {
     for (const auto& period : block_periods) {
@@ -369,8 +369,8 @@ bool LoadScheduler::isShiftBlocked(int32_t shift_type, int64_t time,
 }
 
 // 辅助函数：检查员工在指定时间段是否空闲
-static bool isEmployeeAvailable(const string& employee_id, int64_t task_start, int64_t task_end,
-                                const map<int64_t, TaskDefinition*>& task_ptr_map,
+static bool isEmployeeAvailable(const string& employee_id, long task_start, long task_end,
+                                const map<long, TaskDefinition*>& task_ptr_map,
                                 const map<string, const LoadEmployeeInfo*>& employee_map)
 {
     auto emp_it = employee_map.find(employee_id);
@@ -381,15 +381,15 @@ static bool isEmployeeAvailable(const string& employee_id, int64_t task_start, i
     const LoadEmployeeInfo* emp = emp_it->second;
     const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
     
-    for (int64_t assigned_task_id : assigned_task_ids) {
+    for (long assigned_task_id : assigned_task_ids) {
         auto task_it = task_ptr_map.find(assigned_task_id);
         if (task_it == task_ptr_map.end() || task_it->second == nullptr) {
             continue;
         }
         
         const TaskDefinition& assigned_task = *(task_it->second);
-        int64_t assigned_start = assigned_task.getStartTime();
-        int64_t assigned_end = assigned_task.getEndTime();
+        long assigned_start = assigned_task.getStartTime();
+        long assigned_end = assigned_task.getEndTime();
         
         // 检查时间段是否重叠
         if (!(assigned_end <= task_start || task_end <= assigned_start)) {
@@ -401,13 +401,13 @@ static bool isEmployeeAvailable(const string& employee_id, int64_t task_start, i
 }
 
 // 辅助函数：计算组的当日任务总时长
-static int64_t calculateGroupDailyTaskTime(const vector<string>& group_members, int64_t current_task_start,
-                                           const map<int64_t, TaskDefinition*>& task_ptr_map,
+static long calculateGroupDailyTaskTime(const vector<string>& group_members, long current_task_start,
+                                           const map<long, TaskDefinition*>& task_ptr_map,
                                            const map<string, const LoadEmployeeInfo*>& employee_map)
 {
-    const int64_t SECONDS_PER_DAY = 24 * 3600;
-    int64_t current_day = current_task_start / SECONDS_PER_DAY;
-    int64_t total_time = 0;
+    const long SECONDS_PER_DAY = 24 * 3600;
+    long current_day = current_task_start / SECONDS_PER_DAY;
+    long total_time = 0;
     
     for (const string& employee_id : group_members) {
         auto emp_it = employee_map.find(employee_id);
@@ -418,19 +418,19 @@ static int64_t calculateGroupDailyTaskTime(const vector<string>& group_members, 
         const LoadEmployeeInfo* emp = emp_it->second;
         const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
         
-        for (int64_t assigned_task_id : assigned_task_ids) {
+        for (long assigned_task_id : assigned_task_ids) {
             auto task_it = task_ptr_map.find(assigned_task_id);
             if (task_it == task_ptr_map.end() || task_it->second == nullptr) {
                 continue;
             }
             
             const TaskDefinition& assigned_task = *(task_it->second);
-            int64_t assigned_start = assigned_task.getStartTime();
-            int64_t task_day = assigned_start / SECONDS_PER_DAY;
+            long assigned_start = assigned_task.getStartTime();
+            long task_day = assigned_start / SECONDS_PER_DAY;
             
             if (task_day == current_day) {
-                int64_t assigned_end = assigned_task.getEndTime();
-                int64_t task_duration = assigned_end - assigned_start;
+                long assigned_end = assigned_task.getEndTime();
+                long task_duration = assigned_end - assigned_start;
                 if (task_duration > 0) {
                     total_time += task_duration;
                 }
@@ -447,12 +447,12 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                                           const vector<Flight>& flights,
                                           const vector<ShiftBlockPeriod>& block_periods,
                                           const vector<TaskDefinition>* previous_tasks,
-                                          const map<int64_t, size_t>& flight_task_map)
+                                          const map<long, size_t>& flight_task_map)
 {
     const int GROUP_SIZE = 3;  // 每个组3个人
     
     // 创建任务ID到TaskDefinition指针的映射
-    map<int64_t, TaskDefinition*> task_ptr_map;
+    map<long, TaskDefinition*> task_ptr_map;
     for (auto& task : tasks) {
         task_ptr_map[task.getTaskId()] = &task;
     }
@@ -465,8 +465,8 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
     
     // 按装卸组组织员工（组ID -> 该组的所有员工ID列表）
     // 注意：同一load_group的主班和副班应该分开成组，不能合并
-    map<int32_t, vector<string>> groups;
-    int32_t internal_group_id = 1;
+    map<int, vector<string>> groups;
+    int internal_group_id = 1;
     
     for (const auto& shift : shifts) {
         // 跳过休息的班次
@@ -488,14 +488,14 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         }
         
         // 按load_group分组
-        map<int32_t, vector<string>> load_group_employees;
+        map<int, vector<string>> load_group_employees;
         for (const string& employee_id : shift_employees) {
             auto emp_it = employee_map.find(employee_id);
             if (emp_it == employee_map.end()) {
                 continue;
             }
             const LoadEmployeeInfo* emp = emp_it->second;
-            int32_t load_group = emp->getLoadGroup();
+            int load_group = emp->getLoadGroup();
             
             // 如果员工没有组信息，尝试自动分配组
             if (load_group <= 0) {
@@ -538,18 +538,18 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
     
     // 注意：任务已经按优先级排序，这里不再重新排序，保持优先级顺序
     // 使用任务ID集合来跟踪已处理的任务
-    set<int64_t> processed_task_ids;
+    set<long> processed_task_ids;
     
     // 轮转机制：记录当前轮到哪个组
     // 按班次类型和load_group排序：主班1,2,3 -> 副班1,2,3
-    vector<int32_t> rotation_order;  // 按轮转顺序存储组ID
+    vector<int> rotation_order;  // 按轮转顺序存储组ID
     
     // 构建轮转顺序：主班1,2,3 -> 副班1,2,3
     // 首先收集所有组的信息（load_group, shift_type）
-    map<int32_t, pair<int32_t, int32_t>> group_info_map;  // group_id -> (load_group, shift_type)
+    map<int, pair<int, int>> group_info_map;  // group_id -> (load_group, shift_type)
     
     for (const auto& group_pair : groups) {
-        int32_t group_id = group_pair.first;
+        int group_id = group_pair.first;
         if (group_pair.second.empty()) {
             continue;
         }
@@ -561,8 +561,8 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         }
         
         const LoadEmployeeInfo* emp = emp_it->second;
-        int32_t load_group = emp->getLoadGroup();
-        int32_t shift_type = 0;
+        int load_group = emp->getLoadGroup();
+        int shift_type = 0;
         
         // 查找员工所在的班次类型
         for (const auto& shift : shifts) {
@@ -581,9 +581,10 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         }
     }
     
-    // 按轮转顺序排序：主班1,2,3 -> 副班1,2,3
+    // 按轮转顺序排序：白班航班派工（08:00后）：按 2组-3组-4组-5组-6组-7组-8组-1组循环指派
+    // 首先按班次类型分组，然后按load_group排序，但需要调整为2-3-4-5-6-7-8-1的顺序
     for (int shift_type = 1; shift_type <= 2; ++shift_type) {  // 1=主班, 2=副班
-        vector<pair<int32_t, int32_t>> temp_groups;  // (group_id, load_group)
+        vector<pair<int, int>> temp_groups;  // (group_id, load_group)
         for (const auto& info_pair : group_info_map) {
             if (info_pair.second.second == shift_type) {
                 temp_groups.push_back({info_pair.first, info_pair.second.first});
@@ -591,11 +592,29 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         }
         // 按load_group排序
         sort(temp_groups.begin(), temp_groups.end(), 
-             [](const pair<int32_t, int32_t>& a, const pair<int32_t, int32_t>& b) {
+             [](const pair<int, int>& a, const pair<int, int>& b) {
                  return a.second < b.second;
              });
-        // 添加到轮转顺序
+        
+        // 调整为2-3-4-5-6-7-8-1的顺序（如果load_group在1-8范围内）
+        // 将load_group=1的组移到末尾
+        vector<pair<int, int>> reordered_groups;
         for (const auto& tg : temp_groups) {
+            if (tg.second == 1) {
+                // load_group=1的组放到末尾
+                continue;
+            }
+            reordered_groups.push_back(tg);
+        }
+        // 将load_group=1的组添加到末尾
+        for (const auto& tg : temp_groups) {
+            if (tg.second == 1) {
+                reordered_groups.push_back(tg);
+            }
+        }
+        
+        // 添加到轮转顺序
+        for (const auto& tg : reordered_groups) {
             rotation_order.push_back(tg.first);
         }
     }
@@ -608,11 +627,11 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         sort(rotation_order.begin(), rotation_order.end());
     }
     
-    int32_t current_rotation_index = 0;  // 当前轮转索引
+    int current_rotation_index = 0;  // 当前轮转索引
     
     // 遍历任务列表，逐个分配任务
     for (auto& task : tasks) {
-        int64_t task_id = task.getTaskId();
+        long task_id = task.getTaskId();
         
         // 跳过已经处理过的任务
         if (processed_task_ids.find(task_id) != processed_task_ids.end()) {
@@ -628,15 +647,22 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         int assigned_count = static_cast<int>(task.getAssignedEmployeeCount());
         int required_count = task.getRequiredCount();
         
-        int64_t task_start = task.getStartTime();
-        int64_t task_end = task.getEndTime();
+        long task_start = task.getStartTime();
+        long task_end = task.getEndTime();
         
         // 获取当前任务的机位信息
-        int32_t task_stand = 0;
+        int task_stand = 0;
         auto task_flight_it = flight_task_map.find(task_id);
         if (task_flight_it != flight_task_map.end() && task_flight_it->second < flights.size()) {
             task_stand = flights[task_flight_it->second].getStand();
         }
+        
+        // 判断是否是早出港任务（08:00前）
+        const long EIGHT_AM_SECONDS = 8 * 3600;  // 08:00 = 28800秒（从当天0点开始）
+        long task_day = task_start / (24 * 3600);
+        long task_time_in_day = task_start % (24 * 3600);
+        bool is_early_departure = (task_time_in_day < EIGHT_AM_SECONDS) && 
+                                   (task.getTaskName().find("出港") != string::npos);
         
         // 计算需要的组数（3人一组）
         int required_groups = (required_count + GROUP_SIZE - 1) / GROUP_SIZE;  // 向上取整
@@ -695,10 +721,10 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         // 分配任务给组（不拆组）
         while (assigned_count < required_count) {
             // 找到所有可用的组（组内所有成员都空闲）
-            vector<pair<int32_t, vector<string>>> available_groups;
+            vector<pair<int, vector<string>>> available_groups;
             
             for (const auto& group_pair : groups) {
-                int32_t group_id = group_pair.first;
+                int group_id = group_pair.first;
                 const vector<string>& group_members = group_pair.second;
                 
                 // 检查组是否完整（必须有3个人）
@@ -726,7 +752,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         const auto& position_map = shift.getPositionToEmployeeId();
                         for (const auto& pos_pair : position_map) {
                             if (pos_pair.second == emp_id) {
-                                int32_t shift_type = shift.getShiftType();
+                                int shift_type = shift.getShiftType();
                                 if (isShiftBlocked(shift_type, task_start, block_periods)) {
                                     shift_blocked = true;
                                     break;
@@ -739,6 +765,31 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                 }
                 if (shift_blocked) {
                     continue;  // 班次被占位，跳过
+                }
+                
+                // 检查组资质是否匹配（硬约束：主要看小组资质是否匹配）
+                // 这里简化处理：检查组内所有成员是否都有任务要求的资质
+                // 实际应该检查组整体资质，但这里假设组内成员资质相同
+                bool qualification_match = true;
+                int required_qualification = task.getRequiredQualification();
+                if (required_qualification > 0) {
+                    for (const string& emp_id : group_members) {
+                        auto emp_it = employee_map.find(emp_id);
+                        if (emp_it == employee_map.end()) {
+                            qualification_match = false;
+                            break;
+                        }
+                        const LoadEmployeeInfo* emp = emp_it->second;
+                        int emp_qualification = emp->getQualificationMask();
+                        // 检查员工是否具有任务要求的所有资质
+                        if ((emp_qualification & required_qualification) != required_qualification) {
+                            qualification_match = false;
+                            break;
+                        }
+                    }
+                }
+                if (!qualification_match) {
+                    continue;  // 资质不匹配，跳过
                 }
                 
                 // 检查组内所有成员在任务时间段是否都空闲
@@ -763,8 +814,8 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                 // 注意：这里只做基本验证，如果时间非常紧张（比如只差几秒），仍然允许分配
                 if (task_stand > 0) {
                     // 获取该组最近结束的任务的机位和时间
-                    int32_t last_stand = 0;
-                    int64_t last_end_time = -1;
+                    int last_stand = 0;
+                    long last_end_time = -1;
                     
                     for (const string& emp_id : group_members) {
                         auto emp_it = employee_map.find(emp_id);
@@ -776,7 +827,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                         
                         // 找到该成员最近结束的任务（在当前任务开始之前）
-                        for (int64_t assigned_task_id : assigned_task_ids) {
+                        for (long assigned_task_id : assigned_task_ids) {
                             auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                             if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                 continue;
@@ -799,8 +850,8 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                     // 如果找到上次任务，验证是否有足够时间到达当前任务
                     // 放宽条件：允许有5分钟的缓冲时间（300秒）
                     if (last_stand > 0 && last_end_time > 0) {
-                        int64_t travel_time = StandDistance::getInstance().getTravelTime(last_stand, task_stand);
-                        const int64_t BUFFER_TIME = 5 * 60;  // 5分钟缓冲
+                        long travel_time = StandDistance::getInstance().getTravelTime(last_stand, task_stand);
+                        const long BUFFER_TIME = 5 * 60;  // 5分钟缓冲
                         if ((last_end_time + travel_time + BUFFER_TIME) > task_start) {
                             // 无法按时到达，跳过该组
                             continue;
@@ -813,17 +864,17 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
             }
             
             // 选择最优的组：优先级 1.轮转顺序 2.连续工作时长 3.机位远近
-            int64_t best_score = INT64_MAX;
-            int32_t selected_group_id = -1;
+            long best_score = LONG_MAX;
+            int selected_group_id = -1;
             vector<string> selected_group_members;
             bool forced_assignment = false;  // 标记是否是强制分配（时间段被占满）
             
             if (available_groups.empty()) {
                 // 没有可用的组，找到最先结束任务的组进行强制分配
-                int64_t earliest_end_time = INT64_MAX;
+                long earliest_end_time = LONG_MAX;
                 
                 for (const auto& group_pair : groups) {
-                    int32_t group_id = group_pair.first;
+                    int group_id = group_pair.first;
                     const vector<string>& group_members = group_pair.second;
                     
                     // 检查组是否完整（必须有3个人）
@@ -850,7 +901,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                             const auto& position_map = shift.getPositionToEmployeeId();
                             for (const auto& pos_pair : position_map) {
                                 if (pos_pair.second == emp_id) {
-                                    int32_t shift_type = shift.getShiftType();
+                                    int shift_type = shift.getShiftType();
                                     if (isShiftBlocked(shift_type, task_start, block_periods)) {
                                         shift_blocked = true;
                                         break;
@@ -866,7 +917,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                     }
                     
                     // 找到该组所有成员中最近结束的任务
-                    int64_t group_last_end_time = -1;
+                    long group_last_end_time = -1;
                     for (const string& emp_id : group_members) {
                         auto emp_it = employee_map.find(emp_id);
                         if (emp_it == employee_map.end()) {
@@ -876,7 +927,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         const LoadEmployeeInfo* emp = emp_it->second;
                         const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                         
-                        for (int64_t assigned_task_id : assigned_task_ids) {
+                        for (long assigned_task_id : assigned_task_ids) {
                             auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                             if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                 continue;
@@ -911,55 +962,150 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
             } else {
                 // 有可用组，按正常轮转逻辑选择
                 // 创建可用组的映射，便于查找
-                map<int32_t, vector<string>> available_groups_map;
+                map<int, vector<string>> available_groups_map;
                 for (const auto& group_pair : available_groups) {
                     available_groups_map[group_pair.first] = group_pair.second;
                 }
                 
-                // 按轮转顺序查找可用组（从当前轮转索引开始）
-                bool found_by_rotation = false;
-                for (size_t offset = 0; offset < rotation_order.size(); ++offset) {
-                    size_t idx = (current_rotation_index + offset) % rotation_order.size();
-                    int32_t candidate_group_id = rotation_order[idx];
+                // 早出港派工（08:00前）：临近机位尽量同组保障
+                if (is_early_departure && task_stand > 0) {
+                    // 查找是否有组在临近机位（相邻或相近机位）
+                    int best_group_id = -1;
+                    int min_stand_distance = INT_MAX;
+                    long min_group_task_time = LONG_MAX;
                     
-                    auto it = available_groups_map.find(candidate_group_id);
-                    if (it != available_groups_map.end()) {
-                        // 找到第一个在轮转顺序中且可用的组
-                        selected_group_id = candidate_group_id;
-                        selected_group_members = it->second;
-                        found_by_rotation = true;
-                        // 更新轮转索引到下一个
-                        current_rotation_index = (idx + 1) % rotation_order.size();
-                        break;
+                    for (const auto& group_pair : available_groups) {
+                        int group_id = group_pair.first;
+                        const vector<string>& group_members = group_pair.second;
+                        
+                        // 获取该组最近任务的机位
+                        int last_stand = 0;
+                        long last_end_time = -1;
+                        for (const string& emp_id : group_members) {
+                            auto emp_it = employee_map.find(emp_id);
+                            if (emp_it == employee_map.end()) {
+                                continue;
+                            }
+                            const LoadEmployeeInfo* emp = emp_it->second;
+                            const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
+                            
+                            for (long assigned_task_id : assigned_task_ids) {
+                                auto assigned_task_it = task_ptr_map.find(assigned_task_id);
+                                if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
+                                    continue;
+                                }
+                                const TaskDefinition& assigned_task = *(assigned_task_it->second);
+                                if (assigned_task.getEndTime() < task_start && 
+                                    assigned_task.getEndTime() > last_end_time) {
+                                    last_end_time = assigned_task.getEndTime();
+                                    auto last_flight_it = flight_task_map.find(assigned_task_id);
+                                    if (last_flight_it != flight_task_map.end() && 
+                                        last_flight_it->second < flights.size()) {
+                                        last_stand = flights[last_flight_it->second].getStand();
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (last_stand > 0) {
+                            // 计算机位距离（绝对值）
+                            int stand_distance = abs(last_stand - task_stand);
+                            if (stand_distance < min_stand_distance) {
+                                min_stand_distance = stand_distance;
+                                best_group_id = group_id;
+                                min_group_task_time = calculateGroupDailyTaskTime(group_members, task_start, task_ptr_map, employee_map);
+                            } else if (stand_distance == min_stand_distance) {
+                                // 如果距离相同，选择当日工时较少的组（均衡疲劳度）
+                                long group_task_time = calculateGroupDailyTaskTime(group_members, task_start, task_ptr_map, employee_map);
+                                if (group_task_time < min_group_task_time) {
+                                    min_group_task_time = group_task_time;
+                                    best_group_id = group_id;
+                                }
+                            }
+                        } else {
+                            // 如果该组没有上一个任务，也考虑（选择当日工时较少的组）
+                            long group_task_time = calculateGroupDailyTaskTime(group_members, task_start, task_ptr_map, employee_map);
+                            if (min_stand_distance == INT_MAX && group_task_time < min_group_task_time) {
+                                min_group_task_time = group_task_time;
+                                best_group_id = group_id;
+                            }
+                        }
                     }
+                    
+                    if (best_group_id >= 0) {
+                        selected_group_id = best_group_id;
+                        selected_group_members = available_groups_map[best_group_id];
+                        // 更新轮转索引
+                        for (size_t i = 0; i < rotation_order.size(); ++i) {
+                            if (rotation_order[i] == best_group_id) {
+                                current_rotation_index = (i + 1) % rotation_order.size();
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // 如果早出港没有找到临近机位的组，或者不是早出港，按正常轮转逻辑
+                bool found_by_rotation = false;  // 移到外层作用域，以便后续使用
+                if (selected_group_id < 0) {
+                    // 按轮转顺序查找可用组（从当前轮转索引开始）
+                    for (size_t offset = 0; offset < rotation_order.size(); ++offset) {
+                        size_t idx = (current_rotation_index + offset) % rotation_order.size();
+                        int candidate_group_id = rotation_order[idx];
+                        
+                        auto it = available_groups_map.find(candidate_group_id);
+                        if (it != available_groups_map.end()) {
+                            // 找到第一个在轮转顺序中且可用的组
+                            selected_group_id = candidate_group_id;
+                            selected_group_members = it->second;
+                            found_by_rotation = true;
+                            // 更新轮转索引到下一个
+                            current_rotation_index = (idx + 1) % rotation_order.size();
+                            break;
+                        }
+                    }
+                } else {
+                    // 如果selected_group_id >= 0，说明已经通过前面的逻辑找到了，不是通过轮转
+                    found_by_rotation = false;
                 }
             
                 // 如果按轮转顺序没有找到可用组，则按综合得分选择（减少调整）
-                if (!found_by_rotation) {
+                // 同时考虑：临近下班小组任务指派、小组休息时优先为当日工时较少的小组分配任务
+                if (selected_group_id < 0) {
                     for (const auto& group_pair : available_groups) {
-                    int32_t group_id = group_pair.first;
+                    int group_id = group_pair.first;
                     
                     // 优先级1：轮转顺序
-                    int32_t rotation_position = INT32_MAX;
+                    int rotation_position = INT_MAX;
                     for (size_t i = 0; i < rotation_order.size(); ++i) {
                         if (rotation_order[i] == group_id) {
-                            int32_t distance = static_cast<int32_t>(i) - current_rotation_index;
+                            int distance = static_cast<int>(i) - current_rotation_index;
                             if (distance < 0) {
-                                distance += static_cast<int32_t>(rotation_order.size());
+                                distance += static_cast<int>(rotation_order.size());
                             }
                             rotation_position = distance;
                             break;
                         }
                     }
-                    if (rotation_position == INT32_MAX) {
+                    if (rotation_position == INT_MAX) {
                         rotation_position = 10000;
                     }
                 
-                    // 优先级2：计算连续工作时长
-                    int64_t continuous_work_duration = 0;
+                    // 优先级2：临近下班小组任务指派（尽量为小组分配不延误下班时间的机位任务）
+                    // 检查任务结束时间是否在下班时间之后（这里简化处理，假设下班时间为22:00）
+                    const long DEFAULT_OFF_DUTY_TIME = 22 * 3600;  // 22:00 = 79200秒
+                    long task_day = task_start / (24 * 3600);
+                    long off_duty_time = task_day * (24 * 3600) + DEFAULT_OFF_DUTY_TIME;
+                    bool task_delays_off_duty = (task_end > off_duty_time);
+                    
+                    // 如果任务会延误下班，优先选择当日工时较少的组（这些组可能更早下班）
+                    long group_daily_task_time = calculateGroupDailyTaskTime(group_pair.second, task_start, task_ptr_map, employee_map);
+                    
+                    // 优先级3：计算连续工作时长
+                    long continuous_work_duration = 0;
                     if (task_stand > 0) {
                         // 收集该组所有成员的所有已分配任务（在当前任务开始之前的）
-                        vector<tuple<int64_t, int64_t, int32_t>> prev_tasks;  // (start_time, end_time, stand)
+                        vector<tuple<long, long, int>> prev_tasks;  // (start_time, end_time, stand)
                         
                         for (const string& emp_id : group_pair.second) {
                             auto emp_it = employee_map.find(emp_id);
@@ -970,7 +1116,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                             const LoadEmployeeInfo* emp = emp_it->second;
                             const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                             
-                            for (int64_t assigned_task_id : assigned_task_ids) {
+                            for (long assigned_task_id : assigned_task_ids) {
                                 auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                                 if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                     continue;
@@ -980,7 +1126,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                                 // 只考虑在当前任务开始之前的任务
                                 if (assigned_task.getEndTime() < task_start) {
                                     // 获取该任务的机位
-                                    int32_t assigned_stand = 0;
+                                    int assigned_stand = 0;
                                     auto assigned_flight_it = flight_task_map.find(assigned_task_id);
                                     if (assigned_flight_it != flight_task_map.end() && 
                                         assigned_flight_it->second < flights.size()) {
@@ -1000,19 +1146,19 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                             sort(prev_tasks.begin(), prev_tasks.end());
                             
                             // 从最近的任务开始，向前查找连续的任务链
-                            int64_t current_end = task_end;
-                            int64_t current_start = task_start;
-                            int32_t current_stand = task_stand;
-                            int64_t chain_start = task_start;
+                            long current_end = task_end;
+                            long current_start = task_start;
+                            int current_stand = task_stand;
+                            long chain_start = task_start;
                             
                             // 反向遍历，查找连续的任务
                             for (int i = static_cast<int>(prev_tasks.size()) - 1; i >= 0; --i) {
-                                int64_t prev_start = get<0>(prev_tasks[i]);
-                                int64_t prev_end = get<1>(prev_tasks[i]);
-                                int32_t prev_stand = get<2>(prev_tasks[i]);
+                                long prev_start = get<0>(prev_tasks[i]);
+                                long prev_end = get<1>(prev_tasks[i]);
+                                int prev_stand = get<2>(prev_tasks[i]);
                                 
                                 // 计算路程时间
-                                int64_t travel_time = 0;
+                                long travel_time = 0;
                                 if (prev_stand > 0 && current_stand > 0) {
                                     travel_time = StandDistance::getInstance().getTravelTime(prev_stand, current_stand);
                                 } else if (prev_stand > 0) {
@@ -1037,12 +1183,12 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         }
                     }
                     
-                    // 优先级3：计算路程时间（机位远近）
-                    int64_t travel_time_score = 0;
+                    // 优先级4：计算路程时间（机位远近）
+                    long travel_time_score = 0;
                     if (task_stand > 0) {
                         // 获取该组上次任务的结束机位
-                        int32_t last_stand = 0;
-                        int64_t last_end_time = -1;
+                        int last_stand = 0;
+                        long last_end_time = -1;
                         
                         for (const string& emp_id : group_pair.second) {
                             auto emp_it = employee_map.find(emp_id);
@@ -1054,7 +1200,7 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                             const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                             
                             // 找到该组所有成员中最近结束的任务
-                            for (int64_t assigned_task_id : assigned_task_ids) {
+                            for (long assigned_task_id : assigned_task_ids) {
                                 auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                                 if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                     continue;
@@ -1081,9 +1227,20 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                     
                     // 综合得分：优先级1（轮转顺序）* 1000000 + 优先级2（连续工作时长）* 100 + 优先级3（路程时间）
                     // 得分越小越好
-                    int64_t total_score = rotation_position * 1000000 + 
+                    // 如果任务会延误下班，增加当日工时较少的组的权重（优先选择）
+                    long off_duty_penalty = 0;
+                    if (task_delays_off_duty) {
+                        // 当日工时较少的组得分更低（更优先）
+                        off_duty_penalty = group_daily_task_time / 100;  // 工时越少，惩罚越小
+                    } else {
+                        // 任务不会延误下班，优先选择当日工时较少的组（小组休息时优先分配）
+                        off_duty_penalty = group_daily_task_time / 100;
+                    }
+                    
+                    long total_score = rotation_position * 1000000 + 
                                          continuous_work_duration * 100 + 
-                                         travel_time_score;
+                                         travel_time_score +
+                                         off_duty_penalty;
                     
                     if (total_score < best_score) {
                         best_score = total_score;
@@ -1167,6 +1324,75 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
     }
     
     cout << "装卸任务调度完成！" << endl;
+}
+
+// 使用公共类的适配器函数实现
+void LoadScheduler::scheduleLoadTasksFromCommon(
+    const std::vector<AirportStaffScheduler::Staff>& common_staffs,
+    const std::vector<AirportStaffScheduler::Task>& common_tasks,
+    const std::vector<AirportStaffScheduler::Shift>& common_shifts,
+    long default_travel_time,
+    const vector<ShiftBlockPeriod>& block_periods)
+{
+    using namespace AirportStaffScheduler::Adapter;
+    
+    // 1. 转换Staff到LoadEmployeeInfo
+    vector<LoadEmployeeInfo> employees;
+    employees.reserve(common_staffs.size());
+    for (const auto& staff : common_staffs) {
+        LoadEmployeeInfo load_emp;
+        EmployeeInfo emp_info = StaffToEmployeeInfo(staff);
+        load_emp.getEmployeeInfo() = emp_info;
+        // 从staff的teamName或其他属性中提取load_group（这里简化处理）
+        // 实际使用时可能需要从其他字段获取组ID
+        load_emp.setLoadGroup(0);  // 默认组，实际使用时需要从数据中提取
+        employees.push_back(load_emp);
+    }
+    
+    // 2. 转换Task到Flight（需要从Task中提取航班信息）
+    // 注意：这里需要从Task的属性中提取航班信息，简化处理
+    vector<Flight> flights;
+    // 实际使用时需要根据Task的属性创建Flight对象
+    // 这里只是示例，实际实现需要根据业务逻辑
+    
+    // 3. 转换Shift：将公共Shift列表按班次类型分组
+    map<int, vip_first_class::Shift> shift_map;  // shift_type -> Shift对象
+    
+    for (const auto& common_shift : common_shifts) {
+        const std::string& shift_name = common_shift.getShiftName();
+        int shift_type = 0;  // 默认休息
+        if (shift_name.find("主班") != string::npos) {
+            shift_type = 1;  // 主班
+        } else if (shift_name.find("副班") != string::npos) {
+            shift_type = 2;  // 副班
+        }
+        
+        if (shift_map.find(shift_type) == shift_map.end()) {
+            vip_first_class::Shift vip_shift;
+            vip_shift.setShiftType(shift_type);
+            shift_map[shift_type] = vip_shift;
+        }
+        
+        int position = shift_map[shift_type].getPositionToEmployeeId().size() + 1;
+        shift_map[shift_type].setEmployeeIdAtPosition(position, common_shift.getStaffId());
+    }
+    
+    vector<vip_first_class::Shift> shifts;
+    for (auto& pair : shift_map) {
+        shifts.push_back(pair.second);
+    }
+    
+    // 4. 转换Task到TaskDefinition（如果需要从Task生成装卸任务）
+    vector<vip_first_class::TaskDefinition> tasks;
+    tasks.reserve(common_tasks.size());
+    for (const auto& common_task : common_tasks) {
+        vip_first_class::TaskDefinition task_def = TaskToTaskDefinition(common_task, vip_first_class::TaskType::DISPATCH);
+        tasks.push_back(task_def);
+    }
+    
+    // 5. 调用原有的调度函数
+    // 注意：这里假设flights已经正确填充，实际使用时需要从common_tasks中提取航班信息
+    scheduleLoadTasks(employees, flights, shifts, tasks, default_travel_time, block_periods, nullptr);
 }
 
 }  // namespace zhuangxie_class

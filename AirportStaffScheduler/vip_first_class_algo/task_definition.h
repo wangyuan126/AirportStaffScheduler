@@ -10,7 +10,6 @@
 
 #include <string>
 #include <vector>
-#include <cstdint>
 #include "task_type.h"
 #include "task_config.h"
 #include "shift.h"
@@ -38,13 +37,13 @@ public:
      * @brief 获取任务ID
      * @return 任务ID
      */
-    int64_t getTaskId() const { return task_id_; }
+    long getTaskId() const { return task_id_; }
     
     /**
      * @brief 设置任务ID
      * @param id 任务ID
      */
-    void setTaskId(int64_t id) { task_id_ = id; }
+    void setTaskId(long id) { task_id_ = id; }
     
     /**
      * @brief 获取任务名称
@@ -74,25 +73,25 @@ public:
      * @brief 获取任务开始时间
      * @return 任务开始时间（从2020年1月1日0点0分0秒开始的秒数）
      */
-    int64_t getStartTime() const { return start_time_; }
+    long getStartTime() const { return start_time_; }
     
     /**
      * @brief 设置任务开始时间
      * @param time 任务开始时间（从2020年1月1日0点0分0秒开始的秒数）
      */
-    void setStartTime(int64_t time) { start_time_ = time; }
+    void setStartTime(long time) { start_time_ = time; }
     
     /**
      * @brief 获取任务结束时间
      * @return 任务结束时间（从2020年1月1日0点0分0秒开始的秒数）
      */
-    int64_t getEndTime() const { return end_time_; }
+    long getEndTime() const { return end_time_; }
     
     /**
      * @brief 设置任务结束时间
      * @param time 任务结束时间（从2020年1月1日0点0分0秒开始的秒数，如果为航后则设为特殊值）
      */
-    void setEndTime(int64_t time) { end_time_ = time; }
+    void setEndTime(long time) { end_time_ = time; }
     
     /**
      * @brief 检查结束时间是否为航后
@@ -109,13 +108,13 @@ public:
      * @brief 获取需要的资质类型
      * @return 资质类型（位掩码，参见QualificationType）
      */
-    int32_t getRequiredQualification() const { return required_qualification_; }
+    int getRequiredQualification() const { return required_qualification_; }
     
     /**
      * @brief 设置需要的资质类型
      * @param qualification 资质类型（位掩码）
      */
-    void setRequiredQualification(int32_t qualification) { required_qualification_ = qualification; }
+    void setRequiredQualification(int qualification) { required_qualification_ = qualification; }
     
     /**
      * @brief 获取任务类型
@@ -157,13 +156,13 @@ public:
      * @brief 获取最大任务重叠时间
      * @return 最大重叠时间（秒）
      */
-    int64_t getMaxOverlapTime() const { return max_overlap_time_; }
+    long getMaxOverlapTime() const { return max_overlap_time_; }
     
     /**
      * @brief 设置最大任务重叠时间
      * @param time 最大重叠时间（秒）
      */
-    void setMaxOverlapTime(int64_t time) { max_overlap_time_ = time; }
+    void setMaxOverlapTime(long time) { max_overlap_time_ = time; }
     
     /**
      * @brief 是否已经分配
@@ -242,13 +241,13 @@ public:
      * @brief 获取需要的人员数量
      * @return 需要的人员数量
      */
-    int32_t getRequiredCount() const { return required_count_; }
+    int getRequiredCount() const { return required_count_; }
     
     /**
      * @brief 设置需要的人员数量
      * @param count 需要的人员数量
      */
-    void setRequiredCount(int32_t count) { required_count_ = count; }
+    void setRequiredCount(int count) { required_count_ = count; }
     
     /**
      * @brief 清除所有人员分配
@@ -259,17 +258,17 @@ public:
     }
 
 private:
-    int64_t task_id_;                    ///< 任务ID
+    long task_id_;                    ///< 任务ID
     std::string task_name_;              ///< 任务名称
     TaskType task_type_;                 ///< 任务类型
     bool prefer_main_shift_;             ///< 是否优先主班
-    int64_t start_time_;                 ///< 任务开始时间（从2020年1月1日0点0分0秒开始的秒数）
-    int64_t end_time_;                   ///< 任务结束时间（从2020年1月1日0点0分0秒开始的秒数，-1表示航后）
-    int32_t required_qualification_;     ///< 需要的资质类型（位掩码）
+    long start_time_;                 ///< 任务开始时间（从2020年1月1日0点0分0秒开始的秒数）
+    long end_time_;                   ///< 任务结束时间（从2020年1月1日0点0分0秒开始的秒数，-1表示航后）
+    int required_qualification_;     ///< 需要的资质类型（位掩码）
     bool can_new_employee_;              ///< 是否可以由新员工担任
     bool allow_overlap_;                 ///< 是否允许任务重叠
-    int64_t max_overlap_time_;           ///< 最大任务重叠时间（秒）
-    int32_t required_count_;             ///< 需要的人员数量
+    long max_overlap_time_;           ///< 最大任务重叠时间（秒）
+    int required_count_;             ///< 需要的人员数量
     bool is_assigned_;                   ///< 是否已经分配
     bool is_short_staffed_;              ///< 是否缺少人手
     std::vector<std::string> assigned_employee_ids_;  ///< 分配的人员ID列表

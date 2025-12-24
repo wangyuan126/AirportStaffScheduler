@@ -9,7 +9,6 @@
 #define ZHUANGXIE_CLASS_STAND_DISTANCE_H
 
 #include <map>
-#include <cstdint>
 
 namespace zhuangxie_class {
 
@@ -34,7 +33,7 @@ public:
      * @param stand2 目标机位（1-24）
      * @return 路程时间（秒），如果机位无效或未设置则返回默认值（5分钟=300秒）
      */
-    int64_t getTravelTime(int32_t stand1, int32_t stand2) const;
+    long getTravelTime(int stand1, int stand2) const;
     
     /**
      * @brief 设置两个机位之间的路程时间
@@ -42,7 +41,7 @@ public:
      * @param stand2 目标机位（1-24）
      * @param time 路程时间（秒）
      */
-    void setTravelTime(int32_t stand1, int32_t stand2, int64_t time);
+    void setTravelTime(int stand1, int stand2, long time);
     
     /**
      * @brief 初始化默认距离矩阵（可根据实际需求调整）
@@ -76,10 +75,10 @@ private:
      * @param stand2 机位2
      * @return 机位对的键
      */
-    int32_t makeKey(int32_t stand1, int32_t stand2) const;
+    int makeKey(int stand1, int stand2) const;
     
-    map<int32_t, int64_t> distance_map_;  ///< 机位对到路程时间的映射
-    static const int64_t DEFAULT_TRAVEL_TIME = 5 * 60;  ///< 默认路程时间（5分钟=300秒）
+    map<int, long> distance_map_;  ///< 机位对到路程时间的映射
+    static const long DEFAULT_TRAVEL_TIME = 5 * 60;  ///< 默认路程时间（5分钟=300秒）
 };
 
 }  // namespace zhuangxie_class

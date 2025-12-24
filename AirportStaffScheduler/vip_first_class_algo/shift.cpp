@@ -8,7 +8,7 @@
 namespace vip_first_class {
 
 Shift::Shift()
-    : shift_type_(static_cast<int32_t>(ShiftType::REST))
+    : shift_type_(static_cast<int>(ShiftType::REST))
 {
 }
 

@@ -11,13 +11,20 @@
 #include "load_employee_info.h"
 #include "flight.h"
 #include "stand_distance.h"
-#include "../vip_first_class/shift.h"
-#include "../vip_first_class/task_definition.h"
+#include "../vip_first_class_algo/shift.h"
+#include "../vip_first_class_algo/task_definition.h"
+#include "../CommonAdapterUtils.h"
 #include <vector>
 #include <string>
-#include <cstdint>
 #include <map>
 #include <set>
+
+// 前向声明公共类
+namespace AirportStaffScheduler {
+    class Task;
+    class Shift;
+    class Staff;
+}
 
 namespace zhuangxie_class {
 
@@ -44,9 +51,9 @@ public:
      * @brief 班次占位时间段
      */
     struct ShiftBlockPeriod {
-        int32_t shift_type;    ///< 班次类型（1=主班，2=副班）
-        int64_t start_time;    ///< 占位开始时间
-        int64_t end_time;      ///< 占位结束时间
+        int shift_type;    ///< 班次类型（1=主班，2=副班）
+        long start_time;    ///< 占位开始时间
+        long end_time;      ///< 占位结束时间
     };
     
     /**
@@ -63,9 +70,23 @@ public:
                           const vector<Flight>& flights,
                           const vector<vip_first_class::Shift>& shifts,
                           vector<vip_first_class::TaskDefinition>& tasks,
-                          int64_t default_travel_time = 480,  // 默认8分钟=480秒
+                          long default_travel_time = 480,  // 默认8分钟=480秒
                           const vector<ShiftBlockPeriod>& block_periods = vector<ShiftBlockPeriod>(),
                           const vector<vip_first_class::TaskDefinition>* previous_tasks = nullptr);
+    
+    /**
+     * @brief 调度装卸任务（使用公共类接口）
+     * @param staffs 公共Staff列表（用于员工信息）
+     * @param tasks 公共Task列表（用于生成装卸任务）
+     * @param common_shifts 公共Shift列表
+     * @param default_travel_time 默认通勤时间（秒）
+     * @param block_periods 班次占位时间段列表（疲劳度控制）
+     */
+    void scheduleLoadTasksFromCommon(const std::vector<AirportStaffScheduler::Staff>& staffs,
+                                     const std::vector<AirportStaffScheduler::Task>& tasks,
+                                     const std::vector<AirportStaffScheduler::Shift>& common_shifts,
+                                     long default_travel_time = 480,
+                                     const vector<ShiftBlockPeriod>& block_periods = vector<ShiftBlockPeriod>());
 
 private:
     /**
@@ -77,8 +98,8 @@ private:
      */
     void generateTasksFromFlights(const vector<Flight>& flights,
                                   vector<vip_first_class::TaskDefinition>& tasks,
-                                  int64_t default_travel_time,
-                                  map<int64_t, size_t>& flight_task_map);
+                                  long default_travel_time,
+                                  map<long, size_t>& flight_task_map);
     
     /**
      * @brief 按任务保障优先级排序任务
@@ -88,7 +109,7 @@ private:
      */
     void sortTasksByPriority(vector<vip_first_class::TaskDefinition>& tasks,
                              const vector<Flight>& flights,
-                             const map<int64_t, size_t>& flight_task_map);
+                             const map<long, size_t>& flight_task_map);
     
     /**
      * @brief 分配任务给员工
@@ -106,7 +127,7 @@ private:
                                 const vector<Flight>& flights,
                                 const vector<ShiftBlockPeriod>& block_periods,
                                 const vector<vip_first_class::TaskDefinition>* previous_tasks,
-                                const map<int64_t, size_t>& flight_task_map);
+                                const map<long, size_t>& flight_task_map);
     
     /**
      * @brief 检查班次在指定时间是否被占位
@@ -115,7 +136,7 @@ private:
      * @param block_periods 班次占位时间段列表
      * @return true表示被占位，false表示未被占位
      */
-    bool isShiftBlocked(int32_t shift_type, int64_t time,
+    bool isShiftBlocked(int shift_type, long time,
                        const vector<ShiftBlockPeriod>& block_periods) const;
     
 };
