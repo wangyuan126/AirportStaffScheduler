@@ -14,7 +14,7 @@ namespace AirportStaffScheduler {
         std::string FormatDateTime(std::chrono::system_clock::time_point tp) {
             auto tt = std::chrono::system_clock::to_time_t(tp);
             std::tm tm{};
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
             localtime_s(&tm, &tt);
 #else
             localtime_r(&tt, &tm);

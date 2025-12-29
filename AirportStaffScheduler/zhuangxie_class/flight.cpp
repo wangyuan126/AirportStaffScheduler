@@ -1,6 +1,6 @@
 /**
  * @file flight.cpp
- * @brief º½°àĞÅÏ¢ÀàÊµÏÖ
+ * @brief èˆªç­ä¿¡æ¯ç±»å®ç°
  */
 
 #include "flight.h"
@@ -9,7 +9,7 @@ namespace zhuangxie_class {
 
 using namespace std;
 
-const int64_t DEFAULT_VIP_TRAVEL_TIME = 8 * 60;  // Ä¬ÈÏ8·ÖÖÓ = 480Ãë
+const long DEFAULT_VIP_TRAVEL_TIME = 8 * 60;  // é»˜è®¤8åˆ†é’Ÿ = 480ç§’
 
 Flight::Flight()
     : flight_type_(0)

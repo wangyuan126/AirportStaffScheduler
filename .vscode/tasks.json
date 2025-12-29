@@ -1,4 +1,5 @@
 {
+    "version": "2.0.0",
     "tasks": [
         {
             "type": "cppbuild",
@@ -19,10 +20,214 @@
             ],
             "group": {
                 "kind": "build",
+                "isDefault": false
+            },
+            "detail": "调试器生成的任务（单文件编译，不推荐使用）。"
+        },
+        {
+            "label": "编译: 装卸任务调度测试",
+            "type": "shell",
+            "command": "C:\\MinGW\\bin\\g++.exe",
+            "args": [
+                "-std=c++11",
+                "-fdiagnostics-color=always",
+                "-g",
+                "-fexec-charset=utf-8",
+                "-finput-charset=utf-8",
+                "-I${workspaceFolder}/AirportStaffScheduler",
+                "-I${workspaceFolder}/AirportStaffScheduler/vip_first_class_algo",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\test_load_scheduler.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\load_scheduler.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\load_task.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\load_employee_info.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\flight.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\stand_distance.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\shift.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\task_definition.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\employee_info.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\task_config.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\employee_manager.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\DateTimeUtils.cpp",
+                "-o",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\test_load_scheduler.exe",
+                "-static-libgcc",
+                "-static-libstdc++"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "编译装卸任务调度测试程序（多文件编译）"
+        },
+        {
+            "label": "运行: 装卸任务调度测试",
+            "type": "shell",
+            // 核心修复：给带空格的exe路径加双引号，统一用\\分隔符
+            "command": "chcp 65001 >nul && \"${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\test_load_scheduler.exe\"",
+            "options": {
+                "cwd": "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class"
+            },
+            "dependsOn": "编译: 装卸任务调度测试",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "detail": "运行装卸任务调度测试程序",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "echo": true
+            }
+        },
+        {
+            "label": "编译并运行: 装卸任务调度测试",
+            "dependsOn": [
+                "编译: 装卸任务调度测试",
+                "运行: 装卸任务调度测试"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
                 "isDefault": true
             },
-            "detail": "调试器生成的任务。"
+            "detail": "编译并运行装卸任务调度测试程序（默认任务）"
+        },
+        {
+            "label": "编译: VIP头等舱任务调度测试",
+            "type": "shell",
+            "command": "C:\\MinGW\\bin\\g++.exe",
+            "args": [
+                "-std=c++11",
+                "-fdiagnostics-color=always",
+                "-g",
+                "-fexec-charset=utf-8",
+                "-finput-charset=utf-8",
+                "-I${workspaceFolder}/AirportStaffScheduler",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\test_task_scheduler.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\task_scheduler.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\task_config.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\task_definition.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\shift.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\employee_info.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\employee_manager.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\DateTimeUtils.cpp",
+                "-o",
+                "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\test_task_scheduler.exe",
+                "-static-libgcc",
+                "-static-libstdc++"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "编译VIP头等舱任务调度测试程序（多文件编译）"
+        },
+        {
+            "label": "运行: VIP头等舱任务调度测试",
+            "type": "shell",
+            // 核心修复：给带空格的exe路径加双引号，统一用\\分隔符
+            "command": "chcp 65001 >nul && \"${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo\\test_task_scheduler.exe\"",
+            "options": {
+                "cwd": "${workspaceFolder}\\AirportStaffScheduler\\vip_first_class_algo"
+            },
+            "dependsOn": "编译: VIP头等舱任务调度测试",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "detail": "运行VIP头等舱任务调度测试程序",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "echo": true
+            }
+        },
+        {
+            "label": "编译并运行: VIP头等舱任务调度测试",
+            "dependsOn": [
+                "编译: VIP头等舱任务调度测试",
+                "运行: VIP头等舱任务调度测试"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "detail": "编译并运行VIP头等舱任务调度测试程序"
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++.exe 生成活动文件（单文件）",
+            "command": "C:\\MinGW\\bin\\g++.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "调试器生成的任务（仅单文件编译，禁止默认使用）。"
+        },
+        {
+            "label": "智能编译（根据文件自动选择）",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "请使用专门的编译任务：",
+                "\"编译并运行: 装卸任务调度测试\" 或",
+                "\"编译并运行: VIP头等舱任务调度测试\""
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "提示使用正确的编译任务"
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++.exe 生成活动文件",
+            "command": "C:\\MinGW\\bin\\g++.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "调试器生成的任务（单文件编译，禁止默认使用）。"
         }
-    ],
-    "version": "2.0.0"
+    ]
 }

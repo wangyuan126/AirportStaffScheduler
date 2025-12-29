@@ -1,6 +1,6 @@
 /**
  * @file load_employee_info.cpp
- * @brief ×°Ğ¶Ô±¹¤ĞÅÏ¢ÀàÊµÏÖ
+ * @brief è£…å¸å‘˜å·¥ä¿¡æ¯ç±»å®ç°
  */
 
 #include "load_employee_info.h"

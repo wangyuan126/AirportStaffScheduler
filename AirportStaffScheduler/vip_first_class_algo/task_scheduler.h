@@ -10,9 +10,17 @@
 
 #include "task_definition.h"
 #include "shift.h"
+#include "../CommonAdapterUtils.h"
 #include <vector>
 #include <map>
 #include <string>
+
+// 前向声明公共类（避免循环依赖）
+namespace AirportStaffScheduler {
+    class Task;
+    class Shift;
+    class Staff;
+}
 
 namespace vip_first_class {
 
@@ -44,6 +52,16 @@ public:
                        const vector<Shift>& shifts);
     
     /**
+     * @brief 调度任务（使用公共类接口）
+     * @param tasks 公共Task列表
+     * @param shifts 公共Shift列表（每个Shift代表一个员工的班次）
+     * @param staffs 公共Staff列表（用于员工信息）
+     */
+    void scheduleTasksFromCommon(const std::vector<AirportStaffScheduler::Task>& tasks,
+                                 const std::vector<AirportStaffScheduler::Shift>& shifts,
+                                 const std::vector<AirportStaffScheduler::Staff>& staffs);
+    
+    /**
      * @brief 重置第一次值守次数统计（用于新的一天）
      */
     static void resetFirstShiftCounts();
@@ -53,7 +71,7 @@ public:
      * @param employee_id 员工ID
      * @return 作为第一次值守的次数
      */
-    static int32_t getFirstShiftCount(const string& employee_id);
+    static int getFirstShiftCount(const string& employee_id);
     
     /**
      * @brief 增加员工作为第一次值守的次数
@@ -70,7 +88,7 @@ private:
      */
     void scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
                                       const vector<Shift>& shifts,
-                                      map<int64_t, TaskDefinition*>& task_ptr_map);
+                                      map<string, TaskDefinition*>& task_ptr_map);
     
     /**
      * @brief 为不值守的员工分配操作间任务
@@ -83,13 +101,13 @@ private:
      */
     void scheduleOperationRoomTasks(vector<TaskDefinition>& tasks,
                                     const vector<Shift>& shifts,
-                                    map<int64_t, TaskDefinition*>& task_ptr_map,
+                                    map<string, TaskDefinition*>& task_ptr_map,
                                     const vector<string>& off_duty_employees,
-                                    int64_t time_slot_start,
-                                    int64_t time_slot_end);
+                                    long time_slot_start,
+                                    long time_slot_end);
     
     // 静态成员：跟踪每个员工作为第一次值守的次数（全局字段）
-    static map<string, int32_t> first_shift_counts_;
+    static map<string, int> first_shift_counts_;
 };
 
 }  // namespace vip_first_class

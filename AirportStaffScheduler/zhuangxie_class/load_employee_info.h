@@ -1,15 +1,14 @@
 /**
  * @file load_employee_info.h
- * @brief ×°Ğ¶Ô±¹¤ĞÅÏ¢Àà
+ * @brief è£…å¸å‘˜å·¥ä¿¡æ¯ç±»
  * 
- * »ùÓÚvip_first_classµÄEmployeeInfo£¬Ìí¼Ó×°Ğ¶×é×Ö¶Î
+ * åŸºäºvip_first_classçš„EmployeeInfoï¼Œæ·»åŠ è£…å¸ç»„å­—æ®µ
  */
 
 #ifndef ZHUANGXIE_CLASS_LOAD_EMPLOYEE_INFO_H
 #define ZHUANGXIE_CLASS_LOAD_EMPLOYEE_INFO_H
 
-#include "../vip_first_class/employee_info.h"
-#include <cstdint>
+#include "../vip_first_class_algo/employee_info.h"
 #include <string>
 
 namespace zhuangxie_class {
@@ -17,59 +16,59 @@ namespace zhuangxie_class {
 using namespace std;
 
 /**
- * @brief ×°Ğ¶Ô±¹¤ĞÅÏ¢Àà
+ * @brief è£…å¸å‘˜å·¥ä¿¡æ¯ç±»
  * 
- * ¼Ì³Ğ»ò×éºÏvip_first_class::EmployeeInfo£¬Ìí¼Ó×°Ğ¶×é×Ö¶Î
+ * ç»§æ‰¿æˆ–ç»„åˆvip_first_class::EmployeeInfoï¼Œæ·»åŠ è£…å¸ç»„å­—æ®µ
  */
 class LoadEmployeeInfo {
 public:
     /**
-     * @brief ¹¹Ôìº¯Êı
+     * @brief æ„é€ å‡½æ•°
      */
     LoadEmployeeInfo();
     
     /**
-     * @brief Îö¹¹º¯Êı
+     * @brief ææ„å‡½æ•°
      */
     ~LoadEmployeeInfo();
     
     /**
-     * @brief »ñÈ¡Ô±¹¤ĞÅÏ¢¶ÔÏó£¨ÒıÓÃ£©
-     * @return EmployeeInfoµÄÒıÓÃ
+     * @brief è·å–å‘˜å·¥ä¿¡æ¯å¯¹è±¡ï¼ˆå¼•ç”¨ï¼‰
+     * @return EmployeeInfoçš„å¼•ç”¨
      */
     vip_first_class::EmployeeInfo& getEmployeeInfo() { return employee_info_; }
     
     /**
-     * @brief »ñÈ¡Ô±¹¤ĞÅÏ¢¶ÔÏó£¨³£Á¿ÒıÓÃ£©
-     * @return EmployeeInfoµÄ³£Á¿ÒıÓÃ
+     * @brief è·å–å‘˜å·¥ä¿¡æ¯å¯¹è±¡ï¼ˆå¸¸é‡å¼•ç”¨ï¼‰
+     * @return EmployeeInfoçš„å¸¸é‡å¼•ç”¨
      */
     const vip_first_class::EmployeeInfo& getEmployeeInfo() const { return employee_info_; }
     
     /**
-     * @brief »ñÈ¡×°Ğ¶×éID
-     * @return ×°Ğ¶×éID£¨Ö»ÓĞ×°Ğ¶Ô±¹¤Ê¹ÓÃ£©
+     * @brief è·å–è£…å¸ç»„ID
+     * @return è£…å¸ç»„IDï¼ˆåªæœ‰è£…å¸å‘˜å·¥ä½¿ç”¨ï¼‰
      */
-    int32_t getLoadGroup() const { return load_group_; }
+    int getLoadGroup() const { return load_group_; }
     
     /**
-     * @brief ÉèÖÃ×°Ğ¶×éID
-     * @param group ×°Ğ¶×éID
+     * @brief è®¾ç½®è£…å¸ç»„ID
+     * @param group è£…å¸ç»„ID
      */
-    void setLoadGroup(int32_t group) { load_group_ = group; }
+    void setLoadGroup(int group) { load_group_ = group; }
     
-    // ±ã½İ·½·¨£ºÖ±½Ó·ÃÎÊEmployeeInfoµÄ³£ÓÃ·½·¨
+    // ä¾¿æ·æ–¹æ³•ï¼šç›´æ¥è®¿é—®EmployeeInfoçš„å¸¸ç”¨æ–¹æ³•
     const string& getEmployeeId() const { return employee_info_.getEmployeeId(); }
     void setEmployeeId(const string& id) { employee_info_.setEmployeeId(id); }
     
     const string& getEmployeeName() const { return employee_info_.getEmployeeName(); }
     void setEmployeeName(const string& name) { employee_info_.setEmployeeName(name); }
     
-    int32_t getQualificationMask() const { return employee_info_.getQualificationMask(); }
-    void setQualificationMask(int32_t mask) { employee_info_.setQualificationMask(mask); }
+    int getQualificationMask() const { return employee_info_.getQualificationMask(); }
+    void setQualificationMask(int mask) { employee_info_.setQualificationMask(mask); }
 
 private:
-    vip_first_class::EmployeeInfo employee_info_;  ///< Ô±¹¤ĞÅÏ¢¶ÔÏó£¨ÒıÓÃvip_first_class£©
-    int32_t load_group_;                          ///< ×°Ğ¶×éID£¨Ö»ÓĞ×°Ğ¶Ô±¹¤Ê¹ÓÃ£©
+    vip_first_class::EmployeeInfo employee_info_;  ///< å‘˜å·¥ä¿¡æ¯å¯¹è±¡ï¼ˆå¼•ç”¨vip_first_classï¼‰
+    int load_group_;                          ///< è£…å¸ç»„IDï¼ˆåªæœ‰è£…å¸å‘˜å·¥ä½¿ç”¨ï¼‰
 };
 
 }  // namespace zhuangxie_class

@@ -1,14 +1,13 @@
 /**
  * @file flight.h
- * @brief º½°àĞÅÏ¢Àà
+ * @brief èˆªç­ä¿¡æ¯ç±»
  * 
- * ¶¨Òå×°Ğ¶ÅÅ°àÏµÍ³ÖĞµÄº½°àĞÅÏ¢
+ * å®šä¹‰è£…å¸æ’ç­ç³»ç»Ÿä¸­çš„èˆªç­ä¿¡æ¯
  */
 
 #ifndef ZHUANGXIE_CLASS_FLIGHT_H
 #define ZHUANGXIE_CLASS_FLIGHT_H
 
-#include <cstdint>
 #include <cfloat>  // for double constants
 
 namespace zhuangxie_class {
@@ -16,164 +15,164 @@ namespace zhuangxie_class {
 using namespace std;
 
 /**
- * @brief º½°àÀàĞÍÃ¶¾Ù
+ * @brief èˆªç­ç±»å‹æšä¸¾
  */
 enum class FlightType {
-    DOMESTIC_ARRIVAL = 0,      ///< ¹úÄÚ½ø¸Û
-    DOMESTIC_DEPARTURE = 1,    ///< ¹úÄÚ³ö¸Û
-    DOMESTIC_TRANSIT = 2,      ///< ¹úÄÚ¹ıÕ¾
-    INTERNATIONAL_ARRIVAL = 3, ///< ¹úÍâ½ø¸Û
-    INTERNATIONAL_DEPARTURE = 4,///< ¹úÍâ³ö¸Û
-    INTERNATIONAL_TRANSIT = 5  ///< ¹úÍâ¹ıÕ¾
+    DOMESTIC_ARRIVAL = 0,      ///< å›½å†…è¿›æ¸¯
+    DOMESTIC_DEPARTURE = 1,    ///< å›½å†…å‡ºæ¸¯
+    DOMESTIC_TRANSIT = 2,      ///< å›½å†…è¿‡ç«™
+    INTERNATIONAL_ARRIVAL = 3, ///< å›½å¤–è¿›æ¸¯
+    INTERNATIONAL_DEPARTURE = 4,///< å›½å¤–å‡ºæ¸¯
+    INTERNATIONAL_TRANSIT = 5  ///< å›½å¤–è¿‡ç«™
 };
 
 /**
- * @brief º½°àĞÅÏ¢Àà
+ * @brief èˆªç­ä¿¡æ¯ç±»
  * 
- * ÃèÊöÒ»¸öº½°àµÄ»ù±¾ĞÅÏ¢
+ * æè¿°ä¸€ä¸ªèˆªç­çš„åŸºæœ¬ä¿¡æ¯
  */
 class Flight {
 public:
     /**
-     * @brief ¹¹Ôìº¯Êı
+     * @brief æ„é€ å‡½æ•°
      */
     Flight();
     
     /**
-     * @brief Îö¹¹º¯Êı
+     * @brief ææ„å‡½æ•°
      */
     ~Flight();
     
     /**
-     * @brief »ñÈ¡º½°àÀàĞÍ
-     * @return º½°àÀàĞÍ£¨0-5¶ÔÓ¦²»Í¬µÄº½°àÀàĞÍ£©
+     * @brief è·å–èˆªç­ç±»å‹
+     * @return èˆªç­ç±»å‹ï¼ˆ0-5å¯¹åº”ä¸åŒçš„èˆªç­ç±»å‹ï¼‰
      */
-    int32_t getFlightType() const { return flight_type_; }
+    int getFlightType() const { return flight_type_; }
     
     /**
-     * @brief ÉèÖÃº½°àÀàĞÍ
-     * @param type º½°àÀàĞÍ£¨0-5£©
+     * @brief è®¾ç½®èˆªç­ç±»å‹
+     * @param type èˆªç­ç±»å‹ï¼ˆ0-5ï¼‰
      */
-    void setFlightType(int32_t type) { flight_type_ = type; }
+    void setFlightType(int type) { flight_type_ = type; }
     
     /**
-     * @brief ÉèÖÃº½°àÀàĞÍ£¨Ê¹ÓÃÃ¶¾Ù£©
-     * @param type º½°àÀàĞÍÃ¶¾ÙÖµ
+     * @brief è®¾ç½®èˆªç­ç±»å‹ï¼ˆä½¿ç”¨æšä¸¾ï¼‰
+     * @param type èˆªç­ç±»å‹æšä¸¾å€¼
      */
-    void setFlightTypeEnum(FlightType type) { flight_type_ = static_cast<int32_t>(type); }
+    void setFlightTypeEnum(FlightType type) { flight_type_ = static_cast<int>(type); }
     
     /**
-     * @brief »ñÈ¡½ø¸ÛÊ±¼ä
-     * @return ½ø¸ÛÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
+     * @brief è·å–è¿›æ¸¯æ—¶é—´
+     * @return è¿›æ¸¯æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
      */
-    int64_t getArrivalTime() const { return arrival_time_; }
+    long getArrivalTime() const { return arrival_time_; }
     
     /**
-     * @brief ÉèÖÃ½ø¸ÛÊ±¼ä
-     * @param time ½ø¸ÛÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
+     * @brief è®¾ç½®è¿›æ¸¯æ—¶é—´
+     * @param time è¿›æ¸¯æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
      */
-    void setArrivalTime(int64_t time) { arrival_time_ = time; }
+    void setArrivalTime(long time) { arrival_time_ = time; }
     
     /**
-     * @brief »ñÈ¡³ö¸ÛÊ±¼ä
-     * @return ³ö¸ÛÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
+     * @brief è·å–å‡ºæ¸¯æ—¶é—´
+     * @return å‡ºæ¸¯æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
      */
-    int64_t getDepartureTime() const { return departure_time_; }
+    long getDepartureTime() const { return departure_time_; }
     
     /**
-     * @brief ÉèÖÃ³ö¸ÛÊ±¼ä
-     * @param time ³ö¸ÛÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
+     * @brief è®¾ç½®å‡ºæ¸¯æ—¶é—´
+     * @param time å‡ºæ¸¯æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
      */
-    void setDepartureTime(int64_t time) { departure_time_ = time; }
+    void setDepartureTime(long time) { departure_time_ = time; }
     
     /**
-     * @brief »ñÈ¡¹ó±öÍ¨ÇÚÊ±¼ä
-     * @return ¹ó±öÍ¨ÇÚÊ±¼ä£¨Ãë£¬Ä¬ÈÏ8·ÖÖÓ=480Ãë£©
+     * @brief è·å–è´µå®¾é€šå‹¤æ—¶é—´
+     * @return è´µå®¾é€šå‹¤æ—¶é—´ï¼ˆç§’ï¼Œé»˜è®¤8åˆ†é’Ÿ=480ç§’ï¼‰
      */
-    int64_t getVipTravelTime() const { return vip_travel_time_; }
+    long getVipTravelTime() const { return vip_travel_time_; }
     
     /**
-     * @brief ÉèÖÃ¹ó±öÍ¨ÇÚÊ±¼ä
-     * @param time ¹ó±öÍ¨ÇÚÊ±¼ä£¨Ãë£©
+     * @brief è®¾ç½®è´µå®¾é€šå‹¤æ—¶é—´
+     * @param time è´µå®¾é€šå‹¤æ—¶é—´ï¼ˆç§’ï¼‰
      */
-    void setVipTravelTime(int64_t time) { vip_travel_time_ = time; }
+    void setVipTravelTime(long time) { vip_travel_time_ = time; }
     
     /**
-     * @brief »ñÈ¡ÊÇ·ñÔ¶»úÎ»
-     * @return true±íÊ¾Ô¶»úÎ»£¬false±íÊ¾½ü»úÎ»
+     * @brief è·å–æ˜¯å¦è¿œæœºä½
+     * @return trueè¡¨ç¤ºè¿œæœºä½ï¼Œfalseè¡¨ç¤ºè¿‘æœºä½
      */
     bool isRemoteStand() const { return is_remote_stand_; }
     
     /**
-     * @brief ÉèÖÃÊÇ·ñÔ¶»úÎ»
-     * @param remote true±íÊ¾Ô¶»úÎ»£¬false±íÊ¾½ü»úÎ»
+     * @brief è®¾ç½®æ˜¯å¦è¿œæœºä½
+     * @param remote trueè¡¨ç¤ºè¿œæœºä½ï¼Œfalseè¡¨ç¤ºè¿‘æœºä½
      */
     void setRemoteStand(bool remote) { is_remote_stand_ = remote; }
     
     /**
-     * @brief »ñÈ¡½ø¸Û»õÁ¿£¨¶Ö£©
-     * @return ½ø¸Û»õÁ¿£¨¶Ö£©
+     * @brief è·å–è¿›æ¸¯è´§é‡ï¼ˆå¨ï¼‰
+     * @return è¿›æ¸¯è´§é‡ï¼ˆå¨ï¼‰
      */
     double getArrivalCargo() const { return arrival_cargo_; }
     
     /**
-     * @brief ÉèÖÃ½ø¸Û»õÁ¿£¨¶Ö£©
-     * @param cargo ½ø¸Û»õÁ¿£¨¶Ö£©
+     * @brief è®¾ç½®è¿›æ¸¯è´§é‡ï¼ˆå¨ï¼‰
+     * @param cargo è¿›æ¸¯è´§é‡ï¼ˆå¨ï¼‰
      */
     void setArrivalCargo(double cargo) { arrival_cargo_ = cargo; }
     
     /**
-     * @brief »ñÈ¡³ö¸Û»õÁ¿£¨¶Ö£©
-     * @return ³ö¸Û»õÁ¿£¨¶Ö£©
+     * @brief è·å–å‡ºæ¸¯è´§é‡ï¼ˆå¨ï¼‰
+     * @return å‡ºæ¸¯è´§é‡ï¼ˆå¨ï¼‰
      */
     double getDepartureCargo() const { return departure_cargo_; }
     
     /**
-     * @brief ÉèÖÃ³ö¸Û»õÁ¿£¨¶Ö£©
-     * @param cargo ³ö¸Û»õÁ¿£¨¶Ö£©
+     * @brief è®¾ç½®å‡ºæ¸¯è´§é‡ï¼ˆå¨ï¼‰
+     * @param cargo å‡ºæ¸¯è´§é‡ï¼ˆå¨ï¼‰
      */
     void setDepartureCargo(double cargo) { departure_cargo_ = cargo; }
     
     /**
-     * @brief »ñÈ¡±¨Ê±£¨×¼È·Ê±¼ä£©
-     * @return ±¨Ê±£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©£¬0±íÊ¾Î´±¨Ê±
+     * @brief è·å–æŠ¥æ—¶ï¼ˆå‡†ç¡®æ—¶é—´ï¼‰
+     * @return æŠ¥æ—¶ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰ï¼Œ0è¡¨ç¤ºæœªæŠ¥æ—¶
      */
-    int64_t getReportTime() const { return report_time_; }
+    long getReportTime() const { return report_time_; }
     
     /**
-     * @brief ÉèÖÃ±¨Ê±£¨×¼È·Ê±¼ä£©
-     * @param time ±¨Ê±£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©£¬0±íÊ¾Î´±¨Ê±
+     * @brief è®¾ç½®æŠ¥æ—¶ï¼ˆå‡†ç¡®æ—¶é—´ï¼‰
+     * @param time æŠ¥æ—¶ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰ï¼Œ0è¡¨ç¤ºæœªæŠ¥æ—¶
      */
-    void setReportTime(int64_t time) { report_time_ = time; }
+    void setReportTime(long time) { report_time_ = time; }
     
     /**
-     * @brief ¼ì²éÊÇ·ñÒÑ±¨Ê±
-     * @return true±íÊ¾ÒÑ±¨Ê±£¬false±íÊ¾Î´±¨Ê±
+     * @brief æ£€æŸ¥æ˜¯å¦å·²æŠ¥æ—¶
+     * @return trueè¡¨ç¤ºå·²æŠ¥æ—¶ï¼Œfalseè¡¨ç¤ºæœªæŠ¥æ—¶
      */
     bool hasReported() const { return report_time_ > 0; }
     
     /**
-     * @brief »ñÈ¡»úÎ»
-     * @return »úÎ»±àºÅ£¨1-24£©£¬0±íÊ¾Î´·ÖÅä»úÎ»
+     * @brief è·å–æœºä½
+     * @return æœºä½ç¼–å·ï¼ˆ1-24ï¼‰ï¼Œ0è¡¨ç¤ºæœªåˆ†é…æœºä½
      */
-    int32_t getStand() const { return stand_; }
+    int getStand() const { return stand_; }
     
     /**
-     * @brief ÉèÖÃ»úÎ»
-     * @param stand »úÎ»±àºÅ£¨1-24£©£¬0±íÊ¾Î´·ÖÅä»úÎ»
+     * @brief è®¾ç½®æœºä½
+     * @param stand æœºä½ç¼–å·ï¼ˆ1-24ï¼‰ï¼Œ0è¡¨ç¤ºæœªåˆ†é…æœºä½
      */
-    void setStand(int32_t stand) { stand_ = stand; }
+    void setStand(int stand) { stand_ = stand; }
 
 private:
-    int32_t flight_type_;          ///< º½°àÀàĞÍ£¨0-5£©
-    int64_t arrival_time_;         ///< ½ø¸ÛÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
-    int64_t departure_time_;       ///< ³ö¸ÛÊ±¼ä£¨´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©
-    int64_t vip_travel_time_;      ///< ¹ó±öÍ¨ÇÚÊ±¼ä£¨Ãë£¬Ä¬ÈÏ8·ÖÖÓ=480Ãë£©
-    bool is_remote_stand_;         ///< ÊÇ·ñÔ¶»úÎ»
-    double arrival_cargo_;         ///< ½ø¸Û»õÁ¿£¨¶Ö£©
-    double departure_cargo_;       ///< ³ö¸Û»õÁ¿£¨¶Ö£©
-    int64_t report_time_;          ///< ±¨Ê±£¨×¼È·Ê±¼ä£¬´Ó2020Äê1ÔÂ1ÈÕ0µã0·Ö0Ãë¿ªÊ¼µÄÃëÊı£©£¬0±íÊ¾Î´±¨Ê±
-    int32_t stand_;                ///< »úÎ»±àºÅ£¨1-24£©£¬0±íÊ¾Î´·ÖÅä»úÎ»
+    int flight_type_;          ///< èˆªç­ç±»å‹ï¼ˆ0-5ï¼‰
+    long arrival_time_;         ///< è¿›æ¸¯æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
+    long departure_time_;       ///< å‡ºæ¸¯æ—¶é—´ï¼ˆä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰
+    long vip_travel_time_;      ///< è´µå®¾é€šå‹¤æ—¶é—´ï¼ˆç§’ï¼Œé»˜è®¤8åˆ†é’Ÿ=480ç§’ï¼‰
+    bool is_remote_stand_;         ///< æ˜¯å¦è¿œæœºä½
+    double arrival_cargo_;         ///< è¿›æ¸¯è´§é‡ï¼ˆå¨ï¼‰
+    double departure_cargo_;       ///< å‡ºæ¸¯è´§é‡ï¼ˆå¨ï¼‰
+    long report_time_;          ///< æŠ¥æ—¶ï¼ˆå‡†ç¡®æ—¶é—´ï¼Œä»2020å¹´1æœˆ1æ—¥0ç‚¹0åˆ†0ç§’å¼€å§‹çš„ç§’æ•°ï¼‰ï¼Œ0è¡¨ç¤ºæœªæŠ¥æ—¶
+    int stand_;                ///< æœºä½ç¼–å·ï¼ˆ1-24ï¼‰ï¼Œ0è¡¨ç¤ºæœªåˆ†é…æœºä½
 };
 
 }  // namespace zhuangxie_class

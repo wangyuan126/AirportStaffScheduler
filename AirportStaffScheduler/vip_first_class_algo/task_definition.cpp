@@ -10,19 +10,28 @@
 namespace vip_first_class {
 
 TaskDefinition::TaskDefinition()
-    : task_id_(0)
+    : task_id_("")
     , task_name_("")
     , task_type_(TaskType::DISPATCH)
     , prefer_main_shift_(false)
     , start_time_(0)
     , end_time_(0)
+    , actual_start_time_(0)
+    , duration_(0)
     , required_qualification_(0)
     , can_new_employee_(false)
-    , allow_overlap_(false)
+    , allow_overlap_(true)  // 默认允许重叠（Y）
     , max_overlap_time_(0)
     , required_count_(1)
     , is_assigned_(false)
     , is_short_staffed_(false)
+    , task_date_("")
+    , arrival_flight_id_("")
+    , departure_flight_id_("")
+    , arrival_flight_number_("")
+    , departure_flight_number_("")
+    , terminal_("")
+    , stand_(0)
 {
 }
 
@@ -76,8 +85,8 @@ bool TaskDefinition::isFixedPerson(const std::string& employee_id,
         // 遍历该班次的所有位置，查找员工
         for (const auto& pos_pair : position_map) {
             if (pos_pair.second == employee_id) {
-                int32_t position = pos_pair.first;
-                int32_t shift_type = shift.getShiftType();
+                int position = pos_pair.first;
+                int shift_type = shift.getShiftType();
                 
                 // 将ShiftType转换为ShiftCategory
                 ShiftCategory category;

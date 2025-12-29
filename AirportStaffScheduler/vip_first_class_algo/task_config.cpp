@@ -7,7 +7,6 @@
 #include "shift.h"
 #include "task_definition.h"
 #include "employee_manager.h"
-#include <cstdint>
 #include <set>
 #include <algorithm>
 #include <vector>
@@ -44,37 +43,37 @@ void TaskConfig::initializeDefaultConfig()
     
     // 使用任务类型枚举值作为ID的基础
     // 1. 调度：仅固定主1
-    int64_t task_id = static_cast<int64_t>(TaskType::DISPATCH);
+    long task_id = static_cast<long>(TaskType::DISPATCH);
     task_type_to_id_[TaskType::DISPATCH] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::MAIN, 1));
     
     // 2. 国际前台早班：仅固定副1
-    task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_FRONT_DESK_EARLY);
+    task_id = static_cast<long>(TaskType::INTERNATIONAL_FRONT_DESK_EARLY);
     task_type_to_id_[TaskType::INTERNATIONAL_FRONT_DESK_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 1));
     
     // 3. 国际前台晚班：仅固定副2
-    task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_FRONT_DESK_LATE);
+    task_id = static_cast<long>(TaskType::INTERNATIONAL_FRONT_DESK_LATE);
     task_type_to_id_[TaskType::INTERNATIONAL_FRONT_DESK_LATE] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 2));
     
     // 4. 国际厅内早班：仅固定副3
-    task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_HALL_EARLY);
+    task_id = static_cast<long>(TaskType::INTERNATIONAL_HALL_EARLY);
     task_type_to_id_[TaskType::INTERNATIONAL_HALL_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 3));
     
     // 5. 国际厅内晚班：固定副5
-    task_id = static_cast<int64_t>(TaskType::INTERNATIONAL_HALL_LATE);
+    task_id = static_cast<long>(TaskType::INTERNATIONAL_HALL_LATE);
     task_type_to_id_[TaskType::INTERNATIONAL_HALL_LATE] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 5));
     
     // 6. 国内厅内早班：固定副4
-    task_id = static_cast<int64_t>(TaskType::DOMESTIC_HALL_EARLY);
+    task_id = static_cast<long>(TaskType::DOMESTIC_HALL_EARLY);
     task_type_to_id_[TaskType::DOMESTIC_HALL_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 4));
     
     // 7. 国内前台早班：有副6和主5
-    task_id = static_cast<int64_t>(TaskType::DOMESTIC_FRONT_DESK_EARLY);
+    task_id = static_cast<long>(TaskType::DOMESTIC_FRONT_DESK_EARLY);
     task_type_to_id_[TaskType::DOMESTIC_FRONT_DESK_EARLY] = task_id;
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::SUB, 6));
     task_id_to_fixed_persons_[task_id].push_back(FixedPersonInfo(ShiftCategory::MAIN, 5));
@@ -82,7 +81,7 @@ void TaskConfig::initializeDefaultConfig()
     
 }
 
-const vector<FixedPersonInfo>& TaskConfig::getFixedPersons(int64_t task_id) const
+const vector<FixedPersonInfo>& TaskConfig::getFixedPersons(long task_id) const
 {
     auto it = task_id_to_fixed_persons_.find(task_id);
     if (it != task_id_to_fixed_persons_.end()) {
@@ -100,14 +99,14 @@ const vector<FixedPersonInfo>& TaskConfig::getFixedPersonsByType(TaskType task_t
     return empty_list_;
 }
 
-void TaskConfig::addFixedPerson(int64_t task_id, const FixedPersonInfo& fixed_person)
+void TaskConfig::addFixedPerson(long task_id, const FixedPersonInfo& fixed_person)
 {
     task_id_to_fixed_persons_[task_id].push_back(fixed_person);
 }
 
 void TaskConfig::addFixedPersonByType(TaskType task_type, const FixedPersonInfo& fixed_person)
 {
-    int64_t task_id = static_cast<int64_t>(task_type);
+    long task_id = static_cast<long>(task_type);
     
     // 如果类型还没有映射到ID，创建映射
     if (task_type_to_id_.find(task_type) == task_type_to_id_.end()) {
@@ -120,12 +119,12 @@ void TaskConfig::addFixedPersonByType(TaskType task_type, const FixedPersonInfo&
     addFixedPerson(task_id, fixed_person);
 }
 
-void TaskConfig::setTaskTypeToId(TaskType task_type, int64_t task_id)
+void TaskConfig::setTaskTypeToId(TaskType task_type, long task_id)
 {
     task_type_to_id_[task_type] = task_id;
 }
 
-int64_t TaskConfig::getTaskIdByType(TaskType task_type) const
+long TaskConfig::getTaskIdByType(TaskType task_type) const
 {
     auto it = task_type_to_id_.find(task_type);
     if (it != task_type_to_id_.end()) {
@@ -134,7 +133,7 @@ int64_t TaskConfig::getTaskIdByType(TaskType task_type) const
     return 0;
 }
 
-bool TaskConfig::hasFixedPersonConfig(int64_t task_id) const
+bool TaskConfig::hasFixedPersonConfig(long task_id) const
 {
     return task_id_to_fixed_persons_.find(task_id) != task_id_to_fixed_persons_.end();
 }
@@ -155,7 +154,7 @@ void TaskConfig::clear()
     task_type_to_priority_.clear();
 }
 
-int32_t TaskConfig::getTaskPriority(TaskType task_type) const
+int TaskConfig::getTaskPriority(TaskType task_type) const
 {
     auto it = task_type_to_priority_.find(task_type);
     if (it != task_type_to_priority_.end()) {
@@ -164,7 +163,7 @@ int32_t TaskConfig::getTaskPriority(TaskType task_type) const
     return 0;  // 默认优先级为0
 }
 
-void TaskConfig::setTaskPriority(TaskType task_type, int32_t priority)
+void TaskConfig::setTaskPriority(TaskType task_type, int priority)
 {
     task_type_to_priority_[task_type] = priority;
 }
@@ -231,7 +230,7 @@ void TaskConfig::setHallMaintenanceFixedPersons(const vector<Shift>& shifts,
         if (!fixed_persons.empty()) {
             for (const auto& fixed_info : fixed_persons) {
                 for (const auto& shift : shifts) {
-                    int32_t shift_type = shift.getShiftType();
+                    int shift_type = shift.getShiftType();
                     if (shift_type == 0) continue;
                     
                     ShiftCategory category = (shift_type == 1) ? ShiftCategory::MAIN : ShiftCategory::SUB;

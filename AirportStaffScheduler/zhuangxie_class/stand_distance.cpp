@@ -1,6 +1,6 @@
 /**
  * @file stand_distance.cpp
- * @brief »úÎ»¾àÀë¹ÜÀíÀàÊµÏÖ
+ * @brief æœºä½è·ç¦»ç®¡ç†ç±»å®ç°
  */
 
 #include "stand_distance.h"
@@ -22,66 +22,66 @@ StandDistance::StandDistance() {
 StandDistance::~StandDistance() {
 }
 
-int32_t StandDistance::makeKey(int32_t stand1, int32_t stand2) const {
-    // ±£Ö¤stand1 <= stand2
+int StandDistance::makeKey(int stand1, int stand2) const {
+    // ä¿è¯stand1 <= stand2
     if (stand1 > stand2) {
         swap(stand1, stand2);
     }
-    // Ê¹ÓÃstand1 * 100 + stand2×÷Îª¼ü
+    // ä½¿ç”¨stand1 * 100 + stand2ä½œä¸ºé”®
     return stand1 * 100 + stand2;
 }
 
-int64_t StandDistance::getTravelTime(int32_t stand1, int32_t stand2) const {
-    // ÑéÖ¤»úÎ»ÓĞĞ§ĞÔ
+long StandDistance::getTravelTime(int stand1, int stand2) const {
+    // éªŒè¯æœºä½æœ‰æ•ˆæ€§
     if (stand1 <= 0 || stand1 > 24 || stand2 <= 0 || stand2 > 24) {
         return DEFAULT_TRAVEL_TIME;
     }
     
-    // ÏàÍ¬»úÎ»Â·³ÌÊ±¼äÎª0
+    // ç›¸åŒæœºä½è·¯ç¨‹æ—¶é—´ä¸º0
     if (stand1 == stand2) {
         return 0;
     }
     
-    int32_t key = makeKey(stand1, stand2);
+    int key = makeKey(stand1, stand2);
     auto it = distance_map_.find(key);
     if (it != distance_map_.end()) {
         return it->second;
     }
     
-    // Èç¹ûÎ´ÉèÖÃ£¬·µ»ØÄ¬ÈÏÖµ
+    // å¦‚æœæœªè®¾ç½®ï¼Œè¿”å›é»˜è®¤å€¼
     return DEFAULT_TRAVEL_TIME;
 }
 
-void StandDistance::setTravelTime(int32_t stand1, int32_t stand2, int64_t time) {
-    // ÑéÖ¤»úÎ»ÓĞĞ§ĞÔ
+void StandDistance::setTravelTime(int stand1, int stand2, long time) {
+    // éªŒè¯æœºä½æœ‰æ•ˆæ€§
     if (stand1 <= 0 || stand1 > 24 || stand2 <= 0 || stand2 > 24) {
         return;
     }
     
-    int32_t key = makeKey(stand1, stand2);
+    int key = makeKey(stand1, stand2);
     distance_map_[key] = time;
 }
 
 void StandDistance::initializeDefaultDistances() {
-    // ³õÊ¼»¯Ä¬ÈÏ¾àÀë¾ØÕó
-    // ÏàÁÚ»úÎ»£º3·ÖÖÓ£¨180Ãë£©
-    // Ïà½ü»úÎ»£¨Ïà²î1-2¸ö£©£º5·ÖÖÓ£¨300Ãë£©
-    // Ô¶»úÎ»£¨Ïà²î3-5¸ö£©£º8·ÖÖÓ£¨480Ãë£©
-    // ×îÔ¶»úÎ»£¨Ïà²î6¸öÒÔÉÏ£©£º12·ÖÖÓ£¨720Ãë£©
+    // åˆå§‹åŒ–é»˜è®¤è·ç¦»çŸ©é˜µ
+    // ç›¸é‚»æœºä½ï¼š3åˆ†é’Ÿï¼ˆ180ç§’ï¼‰
+    // ç›¸è¿‘æœºä½ï¼ˆç›¸å·®1-2ä¸ªï¼‰ï¼š5åˆ†é’Ÿï¼ˆ300ç§’ï¼‰
+    // è¿œæœºä½ï¼ˆç›¸å·®3-5ä¸ªï¼‰ï¼š8åˆ†é’Ÿï¼ˆ480ç§’ï¼‰
+    // æœ€è¿œæœºä½ï¼ˆç›¸å·®6ä¸ªä»¥ä¸Šï¼‰ï¼š12åˆ†é’Ÿï¼ˆ720ç§’ï¼‰
     
-    for (int32_t i = 1; i <= 24; ++i) {
-        for (int32_t j = i + 1; j <= 24; ++j) {
-            int32_t diff = j - i;
-            int64_t time;
+    for (int i = 1; i <= 24; ++i) {
+        for (int j = i + 1; j <= 24; ++j) {
+            int diff = j - i;
+            long time;
             
             if (diff == 1) {
-                time = 3 * 60;  // ÏàÁÚ»úÎ»£º3·ÖÖÓ
+                time = 3 * 60;  // ç›¸é‚»æœºä½ï¼š3åˆ†é’Ÿ
             } else if (diff <= 2) {
-                time = 5 * 60;  // Ïà½ü»úÎ»£º5·ÖÖÓ
+                time = 5 * 60;  // ç›¸è¿‘æœºä½ï¼š5åˆ†é’Ÿ
             } else if (diff <= 5) {
-                time = 8 * 60;  // Ô¶»úÎ»£º8·ÖÖÓ
+                time = 8 * 60;  // è¿œæœºä½ï¼š8åˆ†é’Ÿ
             } else {
-                time = 12 * 60; // ×îÔ¶»úÎ»£º12·ÖÖÓ
+                time = 12 * 60; // æœ€è¿œæœºä½ï¼š12åˆ†é’Ÿ
             }
             
             setTravelTime(i, j, time);

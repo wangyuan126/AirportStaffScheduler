@@ -1,6 +1,6 @@
 /**
  * @file load_scheduler.cpp
- * @brief ×°Ğ¶ÈÎÎñµ÷¶ÈÀàÊµÏÖ
+ * @brief è£…å¸ä»»åŠ¡è°ƒåº¦ç±»å®ç°
  */
 
 #include "load_scheduler.h"
@@ -12,7 +12,6 @@
 #include <climits>
 #include <iostream>
 #include <sstream>
-#include <cstdint>
 
 namespace zhuangxie_class {
 
@@ -28,349 +27,69 @@ LoadScheduler::~LoadScheduler()
 }
 
 void LoadScheduler::scheduleLoadTasks(const vector<LoadEmployeeInfo>& employees,
-                                     const vector<Flight>& flights,
+                                     vector<LoadTask>& tasks,
                                      const vector<Shift>& shifts,
-                                     vector<TaskDefinition>& tasks,
-                                     int64_t default_travel_time,
                                      const vector<ShiftBlockPeriod>& block_periods,
-                                     const vector<TaskDefinition>* previous_tasks)
+                                     const vector<LoadTask>* previous_tasks,
+                                     const map<string, vector<string>>* group_name_to_employees)
 {
-    // 1. ´Óº½°àĞÅÏ¢Éú³ÉÈÎÎñ£¬Í¬Ê±½¨Á¢ÈÎÎñIDµ½º½°àË÷ÒıµÄÓ³Éä
-    map<int64_t, size_t> flight_task_map;
-    generateTasksFromFlights(flights, tasks, default_travel_time, flight_task_map);
+    // 1. éªŒè¯ä»»åŠ¡æ—¶é—´çº¦æŸï¼šä»»åŠ¡å¿…é¡»åœ¨èµ·é£å’Œè½åœ°ä¹‹é—´å®Œæˆ
+    // æ³¨æ„ï¼šç°åœ¨ä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´å’Œæœ€æ™šç»“æŸæ—¶é—´ï¼Œä¸å†éœ€è¦è°ƒæ•´
+    // çº¦æŸæ£€æŸ¥åœ¨åˆ†é…æ—¶è¿›è¡Œï¼šactual_start_time >= earliest_start_time && actual_start_time + duration <= latest_end_time
     
-    // 2. °´ÈÎÎñ±£ÕÏÓÅÏÈ¼¶ÅÅĞòÈÎÎñ
-    sortTasksByPriority(tasks, flights, flight_task_map);
+    // 2. æŒ‰ä»»åŠ¡ä¿éšœä¼˜å…ˆçº§æ’åºä»»åŠ¡
+    sortTasksByPriority(tasks);
     
-    // 3. ·ÖÅäÈÎÎñ¸øÔ±¹¤
-    assignTasksToEmployees(tasks, employees, shifts, flights, block_periods, previous_tasks, flight_task_map);
+    // 3. åˆ†é…ä»»åŠ¡ç»™å‘˜å·¥
+    assignTasksToEmployees(tasks, employees, shifts, block_periods, previous_tasks, 
+                          group_name_to_employees ? *group_name_to_employees : map<string, vector<string>>());
 }
 
-void LoadScheduler::generateTasksFromFlights(const vector<Flight>& flights,
-                                            vector<TaskDefinition>& tasks,
-                                            int64_t default_travel_time,
-                                            map<int64_t, size_t>& flight_task_map)
-{
-    int64_t task_id = 1;
-    const int64_t MINUTES_5 = 5 * 60;      // 5·ÖÖÓ
-    const int64_t MINUTES_10 = 10 * 60;    // 10·ÖÖÓ
-    const int64_t MINUTES_15 = 15 * 60;    // 15·ÖÖÓ£¨Ô¶»úÎ»½Ğ³µÊ±¼ä£©
-    const int64_t MINUTES_60 = 60 * 60;    // 60·ÖÖÓ
-    const int64_t MINUTES_90 = 90 * 60;    // 90·ÖÖÓ£¨³¤¹ıÕ¾ãĞÖµ£©
-    
-    for (size_t flight_idx = 0; flight_idx < flights.size(); ++flight_idx) {
-        const auto& flight = flights[flight_idx];
-        int32_t flight_type = flight.getFlightType();
-        int64_t arrival_time = flight.getArrivalTime();
-        int64_t departure_time = flight.getDepartureTime();
-        int64_t vip_travel_time = flight.getVipTravelTime();
-        bool is_remote_stand = flight.isRemoteStand();
-        double arrival_cargo = flight.getArrivalCargo();
-        double departure_cargo = flight.getDepartureCargo();
-        
-        // Èç¹ûÃ»ÓĞÖ¸¶¨Í¨ÇÚÊ±¼ä£¬Ê¹ÓÃÄ¬ÈÏÍ¨ÇÚÊ±¼ä
-        if (vip_travel_time <= 0) {
-            vip_travel_time = default_travel_time;
-        }
-        
-        // Ô¶»úÎ»ĞèÒªÌáÇ°15·ÖÖÓ½Ğ³µ
-        int64_t vehicle_call_time = is_remote_stand ? MINUTES_15 : 0;
-        
-        bool is_domestic = (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-                           flight_type == static_cast<int32_t>(FlightType::DOMESTIC_DEPARTURE) ||
-                           flight_type == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT));
-        bool is_international = (flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL) ||
-                                flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_DEPARTURE) ||
-                                flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT));
-        
-        if (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-            flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL)) {
-            // ½ø¸ÛÈÎÎñ£ºÂäµØÇ°5·ÖÖÓ ~ Æğ·ÉÇ°5·ÖÖÓ
-            // ¿ªÊ¼Ê±¼ä = ½ø¸ÛÊ±¼ä - 5·ÖÖÓ - Í¨ÇÚÊ±¼ä - Ô¶»úÎ»½Ğ³µÊ±¼ä
-            // ½áÊøÊ±¼ä = Æğ·ÉÇ°5·ÖÖÓ£¨Èç¹ûÓĞÆğ·ÉÊ±¼ä£©£¬·ñÔòÎªÂäµØºóÒ»¶¨Ê±¼ä
-            TaskDefinition task;
-            task.setTaskId(task_id++);
-            int64_t task_start_time = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
-            int64_t task_end_time;
-            // Èç¹ûdeparture_timeÓĞĞ§ÇÒ´óÓÚarrival_time£¬Ê¹ÓÃÆğ·ÉÇ°5·ÖÖÓ£»·ñÔòÊ¹ÓÃÂäµØºó30·ÖÖÓ
-            if (departure_time > arrival_time) {
-                task_end_time = departure_time - MINUTES_5;
-            } else {
-                task_end_time = arrival_time + 30 * 60;  // ÂäµØºó30·ÖÖÓ
-            }
-            
-            // È·±£¿ªÊ¼Ê±¼ä < ½áÊøÊ±¼ä
-            if (task_start_time >= task_end_time) {
-                task_end_time = task_start_time + 60 * 60;  // ÖÁÉÙ1Ğ¡Ê±
-            }
-            
-            task.setStartTime(task_start_time);
-            task.setEndTime(task_end_time);
-            task.setTaskName(is_domestic ? "¹úÄÚ½ø¸Û×°Ğ¶" : "¹ú¼Ê½ø¸Û×°Ğ¶");
-            
-            // ¼ÆËãĞèÒªÈËÊı£ºÕı³£3ÈË£¬µ¥½ø2.5tÒÔÉÏ6ÈË
-            int32_t required_count = 3;
-            if (arrival_cargo >= 2.5) {
-                required_count = 6;
-            }
-            
-            // ¹ú¼ÊÍ¨³£ÅÉ2¸ö×é±£ÕÏ£¨6ÈË£©
-            if (is_international && required_count < 6) {
-                required_count = 6;
-            }
-            
-            task.setRequiredCount(required_count);
-            task.setPreferMainShift(true);
-            task.setAllowOverlap(false);
-            task.setMaxOverlapTime(0);
-            task.setCanNewEmployee(false);
-            task.setAssigned(false);
-            task.setShortStaffed(false);
-            
-            tasks.push_back(task);
-            flight_task_map[task.getTaskId()] = flight_idx;
-            
-        } else if (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_DEPARTURE) ||
-                   flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_DEPARTURE)) {
-            // ³ö¸ÛÈÎÎñ£ºÆğ·ÉÇ°60·ÖÖÓ ~ Æğ·ÉÇ°10·ÖÖÓ
-            // ¿ªÊ¼Ê±¼ä = ³ö¸ÛÊ±¼ä - 60·ÖÖÓ - Í¨ÇÚÊ±¼ä - Ô¶»úÎ»½Ğ³µÊ±¼ä
-            // ½áÊøÊ±¼ä = ³ö¸ÛÊ±¼ä - 10·ÖÖÓ
-            TaskDefinition task;
-            task.setTaskId(task_id++);
-            int64_t task_start_time = departure_time - MINUTES_60 - vip_travel_time - vehicle_call_time;
-            int64_t task_end_time = departure_time - MINUTES_10;
-            
-            // È·±£¿ªÊ¼Ê±¼ä < ½áÊøÊ±¼ä
-            if (task_start_time >= task_end_time) {
-                task_end_time = task_start_time + 60 * 60;  // ÖÁÉÙ1Ğ¡Ê±
-            }
-            
-            task.setStartTime(task_start_time);
-            task.setEndTime(task_end_time);
-            task.setTaskName(is_domestic ? "¹úÄÚ³ö¸Û×°Ğ¶" : "¹ú¼Ê³ö¸Û×°Ğ¶");
-            
-            // ¼ÆËãĞèÒªÈËÊı£ºÕı³£3ÈË£¬µ¥³ö2tÒÔÉÏ6ÈË
-            int32_t required_count = 3;
-            if (departure_cargo >= 2.0) {
-                required_count = 6;
-            }
-            
-            // ¹ú¼ÊÍ¨³£ÅÉ2¸ö×é±£ÕÏ£¨6ÈË£©
-            if (is_international && required_count < 6) {
-                required_count = 6;
-            }
-            
-            task.setRequiredCount(required_count);
-            task.setPreferMainShift(true);
-            task.setAllowOverlap(false);
-            task.setMaxOverlapTime(0);
-            task.setCanNewEmployee(false);
-            task.setAssigned(false);
-            task.setShortStaffed(false);
-            
-            tasks.push_back(task);
-            flight_task_map[task.getTaskId()] = flight_idx;
-            
-        } else if (flight_type == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT) ||
-                   flight_type == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT)) {
-            // ¹ıÕ¾ÈÎÎñ
-            int64_t transit_duration = departure_time - arrival_time;
-            bool is_long_transit = transit_duration > MINUTES_90;
-            
-            if (is_long_transit) {
-                // ³¤¹ıÕ¾£¨>90·ÖÖÓ£©¿É·ÖÎªÁ½²¿·Ö£º½ø¸ÛĞ¶»õ¡¢³ö¸Û×°»õ
-                
-                // ½ø¸ÛĞ¶»õÈÎÎñ£ºÂäµØÇ°5·ÖÖÓ ~ ÂäµØºó£¨¼ò»¯´¦Àí£¬ÉèÎªÂäµØºó10·ÖÖÓ£©
-                TaskDefinition arrival_task;
-                arrival_task.setTaskId(task_id++);
-                int64_t arrival_task_start = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
-                int64_t arrival_task_end = arrival_time + MINUTES_10;  // ÂäµØºó10·ÖÖÓ
-                
-                // È·±£¿ªÊ¼Ê±¼ä < ½áÊøÊ±¼ä
-                if (arrival_task_start >= arrival_task_end) {
-                    arrival_task_end = arrival_task_start + 60 * 60;  // ÖÁÉÙ1Ğ¡Ê±
-                }
-                
-                arrival_task.setStartTime(arrival_task_start);
-                arrival_task.setEndTime(arrival_task_end);
-                arrival_task.setTaskName(is_domestic ? "¹úÄÚ¹ıÕ¾-½ø¸ÛĞ¶»õ" : "¹ú¼Ê¹ıÕ¾-½ø¸ÛĞ¶»õ");
-                
-                // ¼ÆËãĞèÒªÈËÊı£ºÕı³£3ÈË£¬µ¥½ø2.5tÒÔÉÏ6ÈË
-                int32_t arrival_count = 3;
-                if (arrival_cargo >= 2.5) {
-                    arrival_count = 6;
-                }
-                // ¹ú¼ÊÍ¨³£ÅÉ2¸ö×é±£ÕÏ£¨6ÈË£©
-                if (is_international && arrival_count < 6) {
-                    arrival_count = 6;
-                }
-                arrival_task.setRequiredCount(arrival_count);
-                
-                arrival_task.setPreferMainShift(true);
-                arrival_task.setAllowOverlap(false);
-                arrival_task.setMaxOverlapTime(0);
-                arrival_task.setCanNewEmployee(false);
-                arrival_task.setAssigned(false);
-                arrival_task.setShortStaffed(false);
-                
-                tasks.push_back(arrival_task);
-                flight_task_map[arrival_task.getTaskId()] = flight_idx;
-                
-                // ³ö¸Û×°»õÈÎÎñ£ºÆğ·ÉÇ°60·ÖÖÓ ~ Æğ·ÉÇ°10·ÖÖÓ
-                TaskDefinition departure_task;
-                departure_task.setTaskId(task_id++);
-                int64_t departure_task_start = departure_time - MINUTES_60 - vip_travel_time - vehicle_call_time;
-                int64_t departure_task_end = departure_time - MINUTES_10;
-                
-                // È·±£¿ªÊ¼Ê±¼ä < ½áÊøÊ±¼ä
-                if (departure_task_start >= departure_task_end) {
-                    departure_task_end = departure_task_start + 60 * 60;  // ÖÁÉÙ1Ğ¡Ê±
-                }
-                
-                departure_task.setStartTime(departure_task_start);
-                departure_task.setEndTime(departure_task_end);
-                departure_task.setTaskName(is_domestic ? "¹úÄÚ¹ıÕ¾-³ö¸Û×°»õ" : "¹ú¼Ê¹ıÕ¾-³ö¸Û×°»õ");
-                
-                // ¼ÆËãĞèÒªÈËÊı£ºÕı³£3ÈË£¬µ¥³ö2tÒÔÉÏ6ÈË
-                int32_t departure_count = 3;
-                if (departure_cargo >= 2.0) {
-                    departure_count = 6;
-                }
-                // ¹ú¼ÊÍ¨³£ÅÉ2¸ö×é±£ÕÏ£¨6ÈË£©
-                if (is_international && departure_count < 6) {
-                    departure_count = 6;
-                }
-                departure_task.setRequiredCount(departure_count);
-                
-                departure_task.setPreferMainShift(true);
-                departure_task.setAllowOverlap(false);
-                departure_task.setMaxOverlapTime(0);
-                departure_task.setCanNewEmployee(false);
-                departure_task.setAssigned(false);
-                departure_task.setShortStaffed(false);
-                
-                tasks.push_back(departure_task);
-                flight_task_map[departure_task.getTaskId()] = flight_idx;
-                
-            } else {
-                // ¶Ì¹ıÕ¾£ºÂäµØÇ°5·ÖÖÓ ~ Æğ·ÉÇ°5·ÖÖÓ
-                TaskDefinition task;
-                task.setTaskId(task_id++);
-                int64_t task_start_time = arrival_time - MINUTES_5 - vip_travel_time - vehicle_call_time;
-                int64_t task_end_time = departure_time - MINUTES_5;
-                
-                // È·±£¿ªÊ¼Ê±¼ä < ½áÊøÊ±¼ä
-                if (task_start_time >= task_end_time) {
-                    task_end_time = task_start_time + 60 * 60;  // ÖÁÉÙ1Ğ¡Ê±
-                }
-                
-                task.setStartTime(task_start_time);
-                task.setEndTime(task_end_time);
-                task.setTaskName(is_domestic ? "¹úÄÚ¹ıÕ¾×°Ğ¶" : "¹ú¼Ê¹ıÕ¾×°Ğ¶");
-                
-                // ¼ÆËãĞèÒªÈËÊı£ºÕı³£3ÈË£¬½ø³ö¸Û»õÁ¿ºÍÏÂ2tÒÔÉÏĞèÒª6ÈË
-                int32_t required_count = 3;
-                double total_cargo = arrival_cargo + departure_cargo;
-                if (total_cargo >= 2.0) {
-                    required_count = 6;
-                }
-                
-                // ¹ú¼ÊÍ¨³£ÅÉ2¸ö×é±£ÕÏ£¨6ÈË£©
-                if (is_international && required_count < 6) {
-                    required_count = 6;
-                }
-                
-                task.setRequiredCount(required_count);
-                task.setPreferMainShift(true);
-                task.setAllowOverlap(false);
-                task.setMaxOverlapTime(0);
-                task.setCanNewEmployee(false);
-                task.setAssigned(false);
-                task.setShortStaffed(false);
-                
-                tasks.push_back(task);
-                flight_task_map[task.getTaskId()] = flight_idx;
-            }
-        }
-    }
-}
 
-void LoadScheduler::sortTasksByPriority(vector<TaskDefinition>& tasks,
-                                       const vector<Flight>& flights,
-                                       const map<int64_t, size_t>& flight_task_map)
+void LoadScheduler::sortTasksByPriority(vector<LoadTask>& tasks)
 {
-    // ÈÎÎñ±£ÕÏÓÅÏÈ¼¶ÅÅĞò¹æÔò£º
-    // 1. ÒÑ±¨Ê± > Î´±¨Ê±
-    // 2. ½ø¸Û > ³ö¸Û
-    // 3. Ê¼·¢º½°àºÍ¹ıÕ¾º½°à > º½ºóº½°à£¨ÕâÀï¼ÙÉèÃ»ÓĞº½ºóº½°à£¬ÓÃ½ø¸Û³ö¸ÛÇø·Ö£©
-    // 4. ÂäµØÊ±¼äÔçµÄ > ÂäµØÊ±¼äÍíµÄ
+    // ä»»åŠ¡ä¿éšœä¼˜å…ˆçº§æ’åºè§„åˆ™ï¼š
+    // 1. è¿›æ¸¯ > å‡ºæ¸¯
+    // 2. è½åœ°æ—¶é—´æ—©çš„ > è½åœ°æ—¶é—´æ™šçš„
     
-    sort(tasks.begin(), tasks.end(), [&](const TaskDefinition& a, const TaskDefinition& b) {
-        auto a_it = flight_task_map.find(a.getTaskId());
-        auto b_it = flight_task_map.find(b.getTaskId());
+    sort(tasks.begin(), tasks.end(), [](const LoadTask& a, const LoadTask& b) {
+        // 1. è¿›æ¸¯ > å‡ºæ¸¯
+        int type_a = a.getFlightType();
+        int type_b = b.getFlightType();
+        bool a_is_arrival = (type_a == static_cast<int>(FlightType::DOMESTIC_ARRIVAL) ||
+                            type_a == static_cast<int>(FlightType::INTERNATIONAL_ARRIVAL));
+        bool b_is_arrival = (type_b == static_cast<int>(FlightType::DOMESTIC_ARRIVAL) ||
+                            type_b == static_cast<int>(FlightType::INTERNATIONAL_ARRIVAL));
+        bool a_is_transit_arrival = (type_a == static_cast<int>(FlightType::DOMESTIC_TRANSIT) ||
+                                    type_a == static_cast<int>(FlightType::INTERNATIONAL_TRANSIT));
+        bool b_is_transit_arrival = (type_b == static_cast<int>(FlightType::DOMESTIC_TRANSIT) ||
+                                    type_b == static_cast<int>(FlightType::INTERNATIONAL_TRANSIT));
         
-        if (a_it == flight_task_map.end() || b_it == flight_task_map.end()) {
-            return a.getTaskId() < b.getTaskId();  // Èç¹ûÕÒ²»µ½º½°àĞÅÏ¢£¬°´IDÅÅĞò
-        }
-        
-        const Flight& flight_a = flights[a_it->second];
-        const Flight& flight_b = flights[b_it->second];
-        
-        // 1. ÒÑ±¨Ê± > Î´±¨Ê±
-        bool a_reported = flight_a.hasReported();
-        bool b_reported = flight_b.hasReported();
-        if (a_reported != b_reported) {
-            return a_reported > b_reported;
-        }
-        
-        // 2. ½ø¸Û > ³ö¸Û
-        int32_t type_a = flight_a.getFlightType();
-        int32_t type_b = flight_b.getFlightType();
-        bool a_is_arrival = (type_a == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-                            type_a == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL));
-        bool b_is_arrival = (type_b == static_cast<int32_t>(FlightType::DOMESTIC_ARRIVAL) ||
-                            type_b == static_cast<int32_t>(FlightType::INTERNATIONAL_ARRIVAL));
-        bool a_is_transit_arrival = (type_a == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT) ||
-                                    type_a == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT));
-        bool b_is_transit_arrival = (type_b == static_cast<int32_t>(FlightType::DOMESTIC_TRANSIT) ||
-                                    type_b == static_cast<int32_t>(FlightType::INTERNATIONAL_TRANSIT));
-        
-        // ½ø¸ÛÈÎÎñ£¨°üÀ¨¹ıÕ¾µÄ½ø¸Û²¿·Ö£©ÓÅÏÈ
-        if (a_is_arrival || (a_is_transit_arrival && a.getTaskName().find("½ø¸Û") != string::npos)) {
-            if (!(b_is_arrival || (b_is_transit_arrival && b.getTaskName().find("½ø¸Û") != string::npos))) {
-                return true;  // aÊÇ½ø¸Û£¬b²»ÊÇ£¬aÓÅÏÈ
+        // è¿›æ¸¯ä»»åŠ¡ï¼ˆåŒ…æ‹¬è¿‡ç«™çš„è¿›æ¸¯éƒ¨åˆ†ï¼‰ä¼˜å…ˆ
+        if (a_is_arrival || (a_is_transit_arrival && a.getTaskName().find("è¿›æ¸¯") != string::npos)) {
+            if (!(b_is_arrival || (b_is_transit_arrival && b.getTaskName().find("è¿›æ¸¯") != string::npos))) {
+                return true;  // aæ˜¯è¿›æ¸¯ï¼Œbä¸æ˜¯ï¼Œaä¼˜å…ˆ
             }
-        } else if (b_is_arrival || (b_is_transit_arrival && b.getTaskName().find("½ø¸Û") != string::npos)) {
-            return false;  // bÊÇ½ø¸Û£¬a²»ÊÇ£¬bÓÅÏÈ
+        } else if (b_is_arrival || (b_is_transit_arrival && b.getTaskName().find("è¿›æ¸¯") != string::npos)) {
+            return false;  // bæ˜¯è¿›æ¸¯ï¼Œaä¸æ˜¯ï¼Œbä¼˜å…ˆ
         }
         
-        // 4. ÂäµØÊ±¼äÔçµÄ > ÂäµØÊ±¼äÍíµÄ
-        int64_t arrival_a = flight_a.getArrivalTime();
-        int64_t arrival_b = flight_b.getArrivalTime();
+        // 3. è½åœ°æ—¶é—´æ—©çš„ > è½åœ°æ—¶é—´æ™šçš„
+        long arrival_a = a.getArrivalTime();
+        long arrival_b = b.getArrivalTime();
         if (arrival_a != arrival_b) {
             return arrival_a < arrival_b;
         }
         
-        // Èç¹û¶¼ÏàÍ¬£¬°´ÈÎÎñIDÅÅĞò
+        // å¦‚æœéƒ½ç›¸åŒï¼ŒæŒ‰ä»»åŠ¡IDæ’åº
         return a.getTaskId() < b.getTaskId();
     });
 }
 
-bool LoadScheduler::isShiftBlocked(int32_t shift_type, int64_t time,
-                                   const vector<ShiftBlockPeriod>& block_periods) const
-{
-    for (const auto& period : block_periods) {
-        if (period.shift_type == shift_type &&
-            time >= period.start_time && time <= period.end_time) {
-            return true;
-        }
-    }
-    return false;
-}
 
-// ¸¨Öúº¯Êı£º¼ì²éÔ±¹¤ÔÚÖ¸¶¨Ê±¼ä¶ÎÊÇ·ñ¿ÕÏĞ
-static bool isEmployeeAvailable(const string& employee_id, int64_t task_start, int64_t task_end,
-                                const map<int64_t, TaskDefinition*>& task_ptr_map,
+// è¾…åŠ©å‡½æ•°ï¼šæ£€æŸ¥å‘˜å·¥åœ¨æŒ‡å®šæ—¶é—´æ®µæ˜¯å¦ç©ºé—²
+static bool isEmployeeAvailable(const string& employee_id, long task_actual_start, long task_duration,
+                                const map<string, LoadTask*>& task_ptr_map,
                                 const map<string, const LoadEmployeeInfo*>& employee_map)
 {
     auto emp_it = employee_map.find(employee_id);
@@ -381,33 +100,40 @@ static bool isEmployeeAvailable(const string& employee_id, int64_t task_start, i
     const LoadEmployeeInfo* emp = emp_it->second;
     const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
     
-    for (int64_t assigned_task_id : assigned_task_ids) {
+    long task_actual_end = task_actual_start + task_duration;
+    
+    for (const string& assigned_task_id : assigned_task_ids) {
         auto task_it = task_ptr_map.find(assigned_task_id);
         if (task_it == task_ptr_map.end() || task_it->second == nullptr) {
             continue;
         }
         
-        const TaskDefinition& assigned_task = *(task_it->second);
-        int64_t assigned_start = assigned_task.getStartTime();
-        int64_t assigned_end = assigned_task.getEndTime();
+        const LoadTask& assigned_task = *(task_it->second);
+        long assigned_start = assigned_task.getActualStartTime();
+        long assigned_end = assigned_task.getActualEndTime();
         
-        // ¼ì²éÊ±¼ä¶ÎÊÇ·ñÖØµş
-        if (!(assigned_end <= task_start || task_end <= assigned_start)) {
-            return false;  // Ê±¼ä¶ÎÖØµş£¬Ô±¹¤²»¿ÕÏĞ
+        // å¦‚æœå·²åˆ†é…ä»»åŠ¡çš„å®é™…å¼€å§‹æ—¶é—´ä¸º0ï¼Œè¯´æ˜æœªåˆ†é…ï¼Œè·³è¿‡
+        if (assigned_start <= 0) {
+            continue;
+        }
+        
+        // æ£€æŸ¥æ—¶é—´æ®µæ˜¯å¦é‡å 
+        if (!(assigned_end <= task_actual_start || task_actual_end <= assigned_start)) {
+            return false;  // æ—¶é—´æ®µé‡å ï¼Œå‘˜å·¥ä¸ç©ºé—²
         }
     }
     
-    return true;  // Ô±¹¤¿ÕÏĞ
+    return true;  // å‘˜å·¥ç©ºé—²
 }
 
-// ¸¨Öúº¯Êı£º¼ÆËã×éµÄµ±ÈÕÈÎÎñ×ÜÊ±³¤
-static int64_t calculateGroupDailyTaskTime(const vector<string>& group_members, int64_t current_task_start,
-                                           const map<int64_t, TaskDefinition*>& task_ptr_map,
+// è¾…åŠ©å‡½æ•°ï¼šè®¡ç®—ç»„çš„å½“æ—¥ä»»åŠ¡æ€»æ—¶é•¿
+static long calculateGroupDailyTaskTime(const vector<string>& group_members, long current_task_start,
+                                           const map<string, LoadTask*>& task_ptr_map,
                                            const map<string, const LoadEmployeeInfo*>& employee_map)
 {
-    const int64_t SECONDS_PER_DAY = 24 * 3600;
-    int64_t current_day = current_task_start / SECONDS_PER_DAY;
-    int64_t total_time = 0;
+    const long SECONDS_PER_DAY = 24 * 3600;
+    long current_day = current_task_start / SECONDS_PER_DAY;
+    long total_time = 0;
     
     for (const string& employee_id : group_members) {
         auto emp_it = employee_map.find(employee_id);
@@ -418,19 +144,24 @@ static int64_t calculateGroupDailyTaskTime(const vector<string>& group_members, 
         const LoadEmployeeInfo* emp = emp_it->second;
         const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
         
-        for (int64_t assigned_task_id : assigned_task_ids) {
+        for (const string& assigned_task_id : assigned_task_ids) {
             auto task_it = task_ptr_map.find(assigned_task_id);
             if (task_it == task_ptr_map.end() || task_it->second == nullptr) {
                 continue;
             }
             
-            const TaskDefinition& assigned_task = *(task_it->second);
-            int64_t assigned_start = assigned_task.getStartTime();
-            int64_t task_day = assigned_start / SECONDS_PER_DAY;
+            const LoadTask& assigned_task = *(task_it->second);
+            long assigned_start = assigned_task.getActualStartTime();
+            
+            // å¦‚æœå®é™…å¼€å§‹æ—¶é—´ä¸º0ï¼Œè¯´æ˜æœªåˆ†é…ï¼Œè·³è¿‡
+            if (assigned_start <= 0) {
+                continue;
+            }
+            
+            long task_day = assigned_start / SECONDS_PER_DAY;
             
             if (task_day == current_day) {
-                int64_t assigned_end = assigned_task.getEndTime();
-                int64_t task_duration = assigned_end - assigned_start;
+                long task_duration = assigned_task.getDuration();
                 if (task_duration > 0) {
                     total_time += task_duration;
                 }
@@ -441,86 +172,39 @@ static int64_t calculateGroupDailyTaskTime(const vector<string>& group_members, 
     return total_time;
 }
 
-void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
+void LoadScheduler::assignTasksToEmployees(vector<LoadTask>& tasks,
                                           const vector<LoadEmployeeInfo>& employees,
                                           const vector<Shift>& shifts,
-                                          const vector<Flight>& flights,
                                           const vector<ShiftBlockPeriod>& block_periods,
-                                          const vector<TaskDefinition>* previous_tasks,
-                                          const map<int64_t, size_t>& flight_task_map)
+                                          const vector<LoadTask>* previous_tasks,
+                                          const map<string, vector<string>>& group_name_to_employees)
 {
-    const int GROUP_SIZE = 3;  // Ã¿¸ö×é3¸öÈË
+    const int GROUP_SIZE = 3;  // æ¯ä¸ªç»„3ä¸ªäºº
     
-    // ´´½¨ÈÎÎñIDµ½TaskDefinitionÖ¸ÕëµÄÓ³Éä
-    map<int64_t, TaskDefinition*> task_ptr_map;
+    // åˆ›å»ºä»»åŠ¡IDåˆ°LoadTaskæŒ‡é’ˆçš„æ˜ å°„
+    map<string, LoadTask*> task_ptr_map;
     for (auto& task : tasks) {
         task_ptr_map[task.getTaskId()] = &task;
     }
     
-    // ´´½¨Ô±¹¤IDµ½LoadEmployeeInfoµÄÓ³Éä
+    // åˆ›å»ºå‘˜å·¥IDåˆ°LoadEmployeeInfoçš„æ˜ å°„
     map<string, const LoadEmployeeInfo*> employee_map;
     for (const auto& emp : employees) {
         employee_map[emp.getEmployeeId()] = &emp;
     }
     
-    // °´×°Ğ¶×é×éÖ¯Ô±¹¤£¨×éID -> ¸Ã×éµÄËùÓĞÔ±¹¤IDÁĞ±í£©
-    // ×¢Òâ£ºÍ¬Ò»load_groupµÄÖ÷°àºÍ¸±°àÓ¦¸Ã·Ö¿ª³É×é£¬²»ÄÜºÏ²¢
-    map<int32_t, vector<string>> groups;
-    int32_t internal_group_id = 1;
+    // ç›´æ¥ä»group_name_to_employeesæ„å»ºç»„åˆ°å‘˜å·¥çš„æ˜ å°„
+    // ç­ç»„åä¸€è‡´çš„å°±æ˜¯ä¸€ä¸ªå°ç»„
+    map<int, vector<string>> groups;  // å†…éƒ¨ç»„ID -> å‘˜å·¥IDåˆ—è¡¨
+    map<int, string> group_id_to_name;  // å†…éƒ¨ç»„ID -> ç­ç»„å
+    int internal_group_id = 1;
     
-    for (const auto& shift : shifts) {
-        // Ìø¹ıĞİÏ¢µÄ°à´Î
-        if (shift.getShiftType() == 0) {
-            continue;
-        }
+    // ä»group_name_to_employeesä¸­æå–å‘˜å·¥ï¼ŒæŒ‰ç­ç»„ååˆ†ç»„
+    for (const auto& g_pair : group_name_to_employees) {
+        const string& group_name = g_pair.first;
+        const vector<string>& emp_list = g_pair.second;
         
-        const auto& position_map = shift.getPositionToEmployeeId();
-        vector<string> shift_employees;
-        
-        // ÊÕ¼¯¸Ã°à´ÎµÄËùÓĞÔ±¹¤
-        for (const auto& pos_pair : position_map) {
-            const string& employee_id = pos_pair.second;
-            auto emp_it = employee_map.find(employee_id);
-            if (emp_it == employee_map.end()) {
-                continue;
-            }
-            shift_employees.push_back(employee_id);
-        }
-        
-        // °´load_group·Ö×é
-        map<int32_t, vector<string>> load_group_employees;
-        for (const string& employee_id : shift_employees) {
-            auto emp_it = employee_map.find(employee_id);
-            if (emp_it == employee_map.end()) {
-                continue;
-            }
-            const LoadEmployeeInfo* emp = emp_it->second;
-            int32_t load_group = emp->getLoadGroup();
-            
-            // Èç¹ûÔ±¹¤Ã»ÓĞ×éĞÅÏ¢£¬³¢ÊÔ×Ô¶¯·ÖÅä×é
-            if (load_group <= 0) {
-                // ÕÒµ½Ò»¸ö¿ÉÓÃµÄload_group
-                load_group = 1;
-                while (true) {
-                    // ¼ì²é¸Ãload_groupÊÇ·ñÒÑ¾­ÓĞÍêÕûµÄ×é
-                    bool found = false;
-                    for (const auto& g_pair : groups) {
-                        // ¼òµ¥¼ì²é£ºÈç¹ûÓĞÍêÕûµÄ×éÇÒÊıÁ¿ºÏÀí£¬¾ÍÊ¹ÓÃÏÂÒ»¸ö
-                        // ÕâÀï¼ò»¯´¦Àí£¬Ö±½Ó·ÖÅä
-                    }
-                    break;
-                }
-                const_cast<LoadEmployeeInfo*>(emp)->setLoadGroup(load_group);
-            }
-            
-            load_group_employees[load_group].push_back(employee_id);
-        }
-        
-        // ÎªÃ¿¸öload_group´´½¨Ò»¸ö¶ÀÁ¢µÄ×é£¨Ö÷°àºÍ¸±°à·Ö¿ª£¬Ã¿¸öshift¶ÀÁ¢£©
-        for (const auto& lg_pair : load_group_employees) {
-            const vector<string>& emp_list = lg_pair.second;
-            
-            // °´3ÈËÒ»×é·Ö¸î£¨Í¨³£Ò»¸öshift¾ÍÊÇÒ»¸öÍêÕûµÄ×é£©
+        // æŒ‰3äººä¸€ç»„åˆ†å‰²
             for (size_t i = 0; i < emp_list.size(); i += GROUP_SIZE) {
                 vector<string> group_members;
                 for (size_t j = i; j < emp_list.size() && j < i + GROUP_SIZE; ++j) {
@@ -528,79 +212,67 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                 }
                 
                 if (group_members.size() == GROUP_SIZE) {
-                    // ÍêÕûµÄ3ÈË×é£¬·ÖÅäÒ»¸öĞÂµÄÄÚ²¿×éID
+                    // å®Œæ•´çš„3äººç»„ï¼Œåˆ†é…ä¸€ä¸ªæ–°çš„å†…éƒ¨ç»„ID
                     groups[internal_group_id] = group_members;
+                group_id_to_name[internal_group_id] = group_name;
                     internal_group_id++;
                 }
             }
         }
+    
+    // è°ƒè¯•è¾“å‡ºï¼šæ£€æŸ¥ç»„æ„å»ºæƒ…å†µ
+    cerr << "DEBUG: Built " << groups.size() << " groups from " << group_name_to_employees.size() << " group names" << endl;
+    for (const auto& g_pair : groups) {
+        cerr << "DEBUG: Group " << g_pair.first << " (" << group_id_to_name[g_pair.first] << ") has " << g_pair.second.size() << " members" << endl;
     }
     
-    // ×¢Òâ£ºÈÎÎñÒÑ¾­°´ÓÅÏÈ¼¶ÅÅĞò£¬ÕâÀï²»ÔÙÖØĞÂÅÅĞò£¬±£³ÖÓÅÏÈ¼¶Ë³Ğò
-    // Ê¹ÓÃÈÎÎñID¼¯ºÏÀ´¸ú×ÙÒÑ´¦ÀíµÄÈÎÎñ
-    set<int64_t> processed_task_ids;
+    // æ³¨æ„ï¼šä»»åŠ¡å·²ç»æŒ‰ä¼˜å…ˆçº§æ’åºï¼Œè¿™é‡Œä¸å†é‡æ–°æ’åºï¼Œä¿æŒä¼˜å…ˆçº§é¡ºåº
+    // ä½¿ç”¨ä»»åŠ¡IDé›†åˆæ¥è·Ÿè¸ªå·²å¤„ç†çš„ä»»åŠ¡
+    set<string> processed_task_ids;
     
-    // ÂÖ×ª»úÖÆ£º¼ÇÂ¼µ±Ç°ÂÖµ½ÄÄ¸ö×é
-    // °´°à´ÎÀàĞÍºÍload_groupÅÅĞò£ºÖ÷°à1,2,3 -> ¸±°à1,2,3
-    vector<int32_t> rotation_order;  // °´ÂÖ×ªË³Ğò´æ´¢×éID
+    // è½®è½¬æœºåˆ¶ï¼šè®°å½•å½“å‰è½®åˆ°å“ªä¸ªç»„
+    // æ ¹æ®ç­ç»„åå‡ºç°çš„é¡ºåºï¼Œkä¸ªå°ç»„è½®æµæ´¾å·¥ï¼ˆä¸å›ºå®šä¸º8ä¸ªï¼‰
+    vector<int> rotation_order;  // æŒ‰è½®è½¬é¡ºåºå­˜å‚¨ç»„ID
     
-    // ¹¹½¨ÂÖ×ªË³Ğò£ºÖ÷°à1,2,3 -> ¸±°à1,2,3
-    // Ê×ÏÈÊÕ¼¯ËùÓĞ×éµÄĞÅÏ¢£¨load_group, shift_type£©
-    map<int32_t, pair<int32_t, int32_t>> group_info_map;  // group_id -> (load_group, shift_type)
+    // æ„å»ºè½®è½¬é¡ºåºï¼šæŒ‰ç­ç»„ååœ¨group_name_to_employeesä¸­å‡ºç°çš„é¡ºåº
+    vector<string> group_name_order;
+    for (const auto& g_pair : group_name_to_employees) {
+        group_name_order.push_back(g_pair.first);
+    }
     
+    // æŒ‰ç­ç»„åå‡ºç°çš„é¡ºåºæ„å»ºè½®è½¬é¡ºåº
+    vector<pair<int, string>> temp_groups;  // (group_id, group_name)
     for (const auto& group_pair : groups) {
-        int32_t group_id = group_pair.first;
+        int group_id = group_pair.first;
         if (group_pair.second.empty()) {
             continue;
         }
         
-        // ´ÓµÚÒ»¸öÔ±¹¤»ñÈ¡load_groupºÍshift_type
-        auto emp_it = employee_map.find(group_pair.second[0]);
-        if (emp_it == employee_map.end()) {
-            continue;
-        }
-        
-        const LoadEmployeeInfo* emp = emp_it->second;
-        int32_t load_group = emp->getLoadGroup();
-        int32_t shift_type = 0;
-        
-        // ²éÕÒÔ±¹¤ËùÔÚµÄ°à´ÎÀàĞÍ
-        for (const auto& shift : shifts) {
-            const auto& position_map = shift.getPositionToEmployeeId();
-            for (const auto& pos_pair : position_map) {
-                if (pos_pair.second == group_pair.second[0]) {
-                    shift_type = shift.getShiftType();
-                    break;
-                }
-            }
-            if (shift_type > 0) break;
-        }
-        
-        if (shift_type > 0) {
-            group_info_map[group_id] = make_pair(load_group, shift_type);
+        // ä»group_id_to_nameä¸­è·å–ç­ç»„å
+        string group_name;
+        if (group_id_to_name.find(group_id) != group_id_to_name.end()) {
+            group_name = group_id_to_name[group_id];
+            temp_groups.push_back({group_id, group_name});
         }
     }
     
-    // °´ÂÖ×ªË³ĞòÅÅĞò£ºÖ÷°à1,2,3 -> ¸±°à1,2,3
-    for (int shift_type = 1; shift_type <= 2; ++shift_type) {  // 1=Ö÷°à, 2=¸±°à
-        vector<pair<int32_t, int32_t>> temp_groups;  // (group_id, load_group)
-        for (const auto& info_pair : group_info_map) {
-            if (info_pair.second.second == shift_type) {
-                temp_groups.push_back({info_pair.first, info_pair.second.first});
-            }
-        }
-        // °´load_groupÅÅĞò
-        sort(temp_groups.begin(), temp_groups.end(), 
-             [](const pair<int32_t, int32_t>& a, const pair<int32_t, int32_t>& b) {
-                 return a.second < b.second;
-             });
-        // Ìí¼Óµ½ÂÖ×ªË³Ğò
-        for (const auto& tg : temp_groups) {
-            rotation_order.push_back(tg.first);
-        }
+    // æŒ‰ç­ç»„åå‡ºç°çš„é¡ºåºæ’åº
+    sort(temp_groups.begin(), temp_groups.end(), 
+         [&group_name_order](const pair<int, string>& a, const pair<int, string>& b) {
+             auto it_a = find(group_name_order.begin(), group_name_order.end(), a.second);
+             auto it_b = find(group_name_order.begin(), group_name_order.end(), b.second);
+             if (it_a != group_name_order.end() && it_b != group_name_order.end()) {
+                 return it_a < it_b;
+             }
+             return a.second < b.second;
+         });
+    
+    // æ·»åŠ åˆ°è½®è½¬é¡ºåº
+    for (const auto& tg : temp_groups) {
+        rotation_order.push_back(tg.first);
     }
     
-    // Èç¹ûÃ»ÓĞÕÒµ½ÂÖ×ªË³Ğò£¬°´×éIDÅÅĞò
+    // å¦‚æœæ²¡æœ‰æ‰¾åˆ°è½®è½¬é¡ºåºï¼ŒæŒ‰ç»„IDæ’åº
     if (rotation_order.empty()) {
         for (const auto& group_pair : groups) {
             rotation_order.push_back(group_pair.first);
@@ -608,69 +280,189 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
         sort(rotation_order.begin(), rotation_order.end());
     }
     
-    int32_t current_rotation_index = 0;  // µ±Ç°ÂÖ×ªË÷Òı
+    // åˆ›å»º1000ä¸ªå…ƒç´ çš„è½®æ¢æ•°ç»„ï¼Œå†…å®¹æ˜¯å¾ªç¯çš„ï¼š2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3...
+    vector<int> rotation_array(1000);
+    int pattern[] = {2, 3, 4, 5, 6, 7, 8, 1};  // å¾ªç¯æ¨¡å¼
+    int pattern_size = 8;
+    for (int i = 0; i < 1000; ++i) {
+        rotation_array[i] = pattern[i % pattern_size];
+    }
     
-    // ±éÀúÈÎÎñÁĞ±í£¬Öğ¸ö·ÖÅäÈÎÎñ
-    for (auto& task : tasks) {
-        int64_t task_id = task.getTaskId();
+    int current_rotation_index = 0;  // å½“å‰è½®è½¬ç´¢å¼•
+    
+    // å°ç»„ä½ç½®äº¤æ¢é€»è¾‘ï¼šå½“æŸä¸ªå°ç»„ç¹å¿™æ—¶ï¼Œå°è¯•äº¤æ¢è½®æ¢æ•°ç»„ä¸­ä¸¤ä¸ªæ•°å­—çš„ä½ç½®
+    auto trySwapInRotationArray = [&](int busy_group_value, long task_actual_start, long task_duration,
+                                     const map<string, LoadTask*>& task_ptr_map,
+                                     const map<string, const LoadEmployeeInfo*>& employee_map) -> bool {
+        // åœ¨è½®æ¢æ•°ç»„ä¸­æŸ¥æ‰¾ä¸€ä¸ªå¯ç”¨çš„ç»„å€¼æ¥äº¤æ¢ä½ç½®
+        for (int i = 0; i < 1000; ++i) {
+            int candidate_value = rotation_array[i];
+            if (candidate_value == busy_group_value) {
+                continue;
+            }
+            
+            // æ£€æŸ¥æ˜¯å¦æœ‰å¯¹åº”è¿™ä¸ªå€¼çš„ç»„ï¼Œä¸”è¯¥ç»„åœ¨ä»»åŠ¡æ—¶é—´æ®µå¯ç”¨
+            bool found_available_group = false;
+            for (const auto& group_pair : groups) {
+                int group_id = group_pair.first;
+                // æ£€æŸ¥ç»„IDæ˜¯å¦åŒ¹é…å€™é€‰å€¼ï¼ˆè¿™é‡Œå‡è®¾ç»„IDå°±æ˜¯å€¼ï¼Œæˆ–è€…éœ€è¦å»ºç«‹æ˜ å°„ï¼‰
+                // å¦‚æœç»„IDèŒƒå›´æ˜¯1-8ï¼Œç›´æ¥æ¯”è¾ƒ
+                if (group_id == candidate_value) {
+                    const vector<string>& candidate_members = group_pair.second;
+                    bool all_available = true;
+                    
+                    for (const string& emp_id : candidate_members) {
+                        auto emp_it = employee_map.find(emp_id);
+                        if (emp_it == employee_map.end()) {
+                            all_available = false;
+                            break;
+                        }
+                        
+                        if (!isEmployeeAvailable(emp_id, task_actual_start, task_duration, task_ptr_map, employee_map)) {
+                            all_available = false;
+                            break;
+                        }
+                    }
+                    
+                    if (all_available) {
+                        found_available_group = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (found_available_group) {
+                // äº¤æ¢ä¸¤ä¸ªå€¼çš„ä½ç½®
+                for (int j = 0; j < 1000; ++j) {
+                    if (rotation_array[j] == busy_group_value) {
+                        rotation_array[j] = candidate_value;
+                        rotation_array[i] = busy_group_value;
+                        return true;  // äº¤æ¢æˆåŠŸ
+                    }
+                }
+            }
+        }
         
-        // Ìø¹ıÒÑ¾­´¦Àí¹ıµÄÈÎÎñ
+        return false;  // æ²¡æœ‰æ‰¾åˆ°å¯äº¤æ¢çš„ç»„
+    };
+    
+    // éå†ä»»åŠ¡åˆ—è¡¨ï¼Œé€ä¸ªåˆ†é…ä»»åŠ¡
+    int task_index = 0;
+    cerr << "DEBUG: Total tasks to process: " << tasks.size() << endl;
+    
+    for (auto& task : tasks) {
+        task_index++;
+        string task_id = task.getTaskId();
+        
+        // å¦‚æœä»»åŠ¡IDä¸ºç©ºï¼Œä½¿ç”¨ç´¢å¼•ä½œä¸ºå”¯ä¸€æ ‡è¯†ç¬¦
+        if (task_id.empty()) {
+            task_id = "task_" + to_string(task_index);
+            task.setTaskId(task_id);
+        }
+        
+        // è¾“å‡ºå‰20ä¸ªä»»åŠ¡çš„IDï¼Œæ£€æŸ¥æ˜¯å¦æœ‰é‡å¤
+        if (task_index <= 20) {
+            cerr << "DEBUG: Processing task index " << task_index << ", task_id=" << task_id 
+                 << ", name=" << task.getTaskName() << endl;
+        }
+        
+        // è·³è¿‡å·²ç»å¤„ç†è¿‡çš„ä»»åŠ¡
         if (processed_task_ids.find(task_id) != processed_task_ids.end()) {
+            if (task_index <= 20) {
+                cerr << "DEBUG: Task " << task_id << " (index " << task_index << ") already processed, skipping" << endl;
+            }
             continue;
         }
         
-        // Ìø¹ıÒÑ¾­·ÖÅäµÄÈÎÎñ
+        // è·³è¿‡å·²ç»åˆ†é…çš„ä»»åŠ¡
         if (task.isAssigned() && task.getAssignedEmployeeCount() > 0) {
             processed_task_ids.insert(task_id);
+            if (task_index <= 10) {
+                cerr << "DEBUG: Task " << task_id << " already assigned, skipping" << endl;
+            }
             continue;
         }
         
         int assigned_count = static_cast<int>(task.getAssignedEmployeeCount());
         int required_count = task.getRequiredCount();
         
-        int64_t task_start = task.getStartTime();
-        int64_t task_end = task.getEndTime();
+        long earliest_start = task.getEarliestStartTime();
+        long latest_end = task.getLatestEndTime();
+        long duration = task.getDuration();
         
-        // »ñÈ¡µ±Ç°ÈÎÎñµÄ»úÎ»ĞÅÏ¢
-        int32_t task_stand = 0;
-        auto task_flight_it = flight_task_map.find(task_id);
-        if (task_flight_it != flight_task_map.end() && task_flight_it->second < flights.size()) {
-            task_stand = flights[task_flight_it->second].getStand();
+        // è°ƒè¯•è¾“å‡ºï¼šæ£€æŸ¥ä»»åŠ¡æ—¶é—´
+        if (task_index <= 10) {  // è¾“å‡ºå‰10ä¸ªä»»åŠ¡çš„è°ƒè¯•ä¿¡æ¯
+            cerr << "DEBUG: Task " << task_id << " (" << task.getTaskName() << ") earliest_start: " << earliest_start 
+                 << ", latest_end: " << latest_end << ", duration: " << duration
+                 << ", required: " << required_count << ", assigned: " << assigned_count << endl;
         }
         
-        // ¼ÆËãĞèÒªµÄ×éÊı£¨3ÈËÒ»×é£©
-        int required_groups = (required_count + GROUP_SIZE - 1) / GROUP_SIZE;  // ÏòÉÏÈ¡Õû
+        // å¦‚æœä»»åŠ¡æ—¶é—´æ— æ•ˆï¼Œè·³è¿‡ï¼ˆä½†ä¸æ ‡è®°ä¸ºå·²å¤„ç†ï¼Œå› ä¸ºå¯èƒ½åç»­å¯ä»¥ä¿®å¤ï¼‰
+        if (earliest_start <= 0 || latest_end <= 0 || duration <= 0 || earliest_start + duration > latest_end) {
+            if (task_index <= 10) {
+                cerr << "DEBUG: Task " << task_id << " has invalid time (earliest_start: " << earliest_start 
+                     << ", latest_end: " << latest_end << ", duration: " << duration << "), skipping" << endl;
+            }
+            // ä¸æ ‡è®°ä¸ºå·²å¤„ç†ï¼Œå› ä¸ºæ—¶é—´å¯èƒ½åç»­å¯ä»¥ä¿®å¤
+            continue;
+        }
         
-        // ¼ì²éÊÇ·ñ¿ÉÒÔÔÚÉÏÒ»´ÎÔ¤ÅÅ·½°¸ÖĞ±£Áô·ÖÅä£¨¼õÉÙµ÷Õû£©
+        // è·å–å½“å‰ä»»åŠ¡çš„æœºä½ä¿¡æ¯ï¼ˆç›´æ¥ä»taskä¸­è·å–ï¼‰
+        int task_stand = task.getStand();
+        
+        // åˆ¤æ–­æ˜¯å¦æ˜¯æ—©å‡ºæ¸¯ä»»åŠ¡ï¼ˆ08:00å‰ï¼‰
+        const long EIGHT_AM_SECONDS = 8 * 3600;  // 08:00 = 28800ç§’ï¼ˆä»å½“å¤©0ç‚¹å¼€å§‹ï¼‰
+        long task_day = earliest_start / (24 * 3600);
+        long task_time_in_day = earliest_start % (24 * 3600);
+        bool is_early_departure = (task_time_in_day < EIGHT_AM_SECONDS) && 
+                                   (task.getTaskName().find("å‡ºæ¸¯") != string::npos);
+        
+        // è®¡ç®—éœ€è¦çš„ç»„æ•°ï¼ˆ3äººä¸€ç»„ï¼‰
+        int required_groups = (required_count + GROUP_SIZE - 1) / GROUP_SIZE;  // å‘ä¸Šå–æ•´
+        
+        // æ£€æŸ¥æ˜¯å¦å¯ä»¥åœ¨ä¸Šä¸€æ¬¡é¢„æ’æ–¹æ¡ˆä¸­ä¿ç•™åˆ†é…ï¼ˆå‡å°‘è°ƒæ•´ï¼‰
         if (previous_tasks != nullptr) {
-            // ²éÕÒÉÏÒ»´ÎÔ¤ÅÅ·½°¸ÖĞÏàÍ¬ÈÎÎñIDµÄ·ÖÅä
+            // æŸ¥æ‰¾ä¸Šä¸€æ¬¡é¢„æ’æ–¹æ¡ˆä¸­ç›¸åŒä»»åŠ¡IDçš„åˆ†é…
             for (const auto& prev_task : *previous_tasks) {
                 if (prev_task.getTaskId() == task_id && 
                     prev_task.isAssigned() && 
                     prev_task.getAssignedEmployeeCount() > 0) {
-                    // ¼ì²éÉÏÒ»´Î·ÖÅäµÄĞ¡×éÊÇ·ñÈÔÈ»¿ÉÓÃ
+                    // æ£€æŸ¥ä¸Šä¸€æ¬¡åˆ†é…çš„å°ç»„æ˜¯å¦ä»ç„¶å¯ç”¨
                     const auto& prev_assigned = prev_task.getAssignedEmployeeIds();
                     bool can_reuse = true;
                     
-                    // ¼ì²é×éÊÇ·ñÈÔÈ»ÍêÕûÇÒÔÚÈÎÎñÊ±¼ä¶Î¿ÕÏĞ
-                    // ×¢Òâ£ºĞèÒªÈ·±£ÉÏÒ»´Î·ÖÅäµÄÈËÊıÊÇ3µÄ±¶Êı£¨Õû×é£©
+                    // æ£€æŸ¥ç»„æ˜¯å¦ä»ç„¶å®Œæ•´ä¸”åœ¨ä»»åŠ¡æ—¶é—´æ®µç©ºé—²
+                    // æ³¨æ„ï¼šéœ€è¦ç¡®ä¿ä¸Šä¸€æ¬¡åˆ†é…çš„äººæ•°æ˜¯3çš„å€æ•°ï¼ˆæ•´ç»„ï¼‰
                     if (prev_assigned.size() % GROUP_SIZE != 0) {
-                        can_reuse = false;  // ²»ÊÇÕû×é£¬²»ÄÜÖØÓÃ
+                        can_reuse = false;  // ä¸æ˜¯æ•´ç»„ï¼Œä¸èƒ½é‡ç”¨
                     }
                     
                     if (can_reuse) {
-                        for (const string& emp_id : prev_assigned) {
-                            if (employee_map.find(emp_id) == employee_map.end() ||
-                                task.isAssignedToEmployee(emp_id) ||
-                                !isEmployeeAvailable(emp_id, task_start, task_end, task_ptr_map, employee_map)) {
-                                can_reuse = false;
-                                break;
+                        // è®¡ç®—å®é™…å¼€å§‹æ—¶é—´ï¼ˆä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´ï¼‰
+                        long actual_start = earliest_start;
+                        long actual_end = actual_start + duration;
+                        
+                        // æ£€æŸ¥çº¦æŸï¼šå®é™…å¼€å§‹æ—¶é—´ + æ—¶é•¿ <= æœ€æ™šç»“æŸæ—¶é—´
+                        if (actual_end > latest_end) {
+                            can_reuse = false;  // ä¸æ»¡è¶³çº¦æŸ
+                        } else {
+                            for (const string& emp_id : prev_assigned) {
+                                if (employee_map.find(emp_id) == employee_map.end() ||
+                                    task.isAssignedToEmployee(emp_id) ||
+                                    !isEmployeeAvailable(emp_id, actual_start, duration, task_ptr_map, employee_map)) {
+                                    can_reuse = false;
+                                    break;
+                                }
                             }
                         }
                     }
                     
                     if (can_reuse) {
-                        // ÖØÓÃÉÏÒ»´ÎµÄ·ÖÅä£¨Õû×éÖØÓÃ£©
+                        // é‡ç”¨ä¸Šä¸€æ¬¡çš„åˆ†é…ï¼ˆæ•´ç»„é‡ç”¨ï¼‰
+                        // è®¾ç½®å®é™…å¼€å§‹æ—¶é—´ï¼ˆä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´ï¼‰
+                        long actual_start = earliest_start;
+                        task.setActualStartTime(actual_start);
+                        
                         for (const string& emp_id : prev_assigned) {
                             task.addAssignedEmployeeId(emp_id);
                             auto emp_it = employee_map.find(emp_id);
@@ -681,10 +473,10 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                             assigned_count++;
                         }
                         if (assigned_count >= required_count) {
-                            // ÒÑÍêÈ«·ÖÅä£¬Ìø¹ıºóĞø·ÖÅäÂß¼­
+                            // å·²å®Œå…¨åˆ†é…ï¼Œè·³è¿‡åç»­åˆ†é…é€»è¾‘
                             task.setAssigned(true);
                             processed_task_ids.insert(task_id);
-                            continue;  // ¼ÌĞøÏÂÒ»¸öÈÎÎñ
+                            continue;  // ç»§ç»­ä¸‹ä¸€ä¸ªä»»åŠ¡
                         }
                     }
                     break;
@@ -692,21 +484,26 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
             }
         }
         
-        // ·ÖÅäÈÎÎñ¸ø×é£¨²»²ğ×é£©
+        // åˆ†é…ä»»åŠ¡ç»™ç»„ï¼ˆä¸æ‹†ç»„ï¼‰
         while (assigned_count < required_count) {
-            // ÕÒµ½ËùÓĞ¿ÉÓÃµÄ×é£¨×éÄÚËùÓĞ³ÉÔ±¶¼¿ÕÏĞ£©
-            vector<pair<int32_t, vector<string>>> available_groups;
+            // æ‰¾åˆ°æ‰€æœ‰å¯ç”¨çš„ç»„ï¼ˆç»„å†…æ‰€æœ‰æˆå‘˜éƒ½ç©ºé—²ï¼‰
+            vector<pair<int, vector<string>>> available_groups;
+            
+            if (task_index <= 10) {
+                cerr << "DEBUG: Task " << task_id << " (" << task.getTaskName() << ") requires " << required_count << " people, currently assigned " << assigned_count << endl;
+                cerr << "DEBUG: Checking " << groups.size() << " groups for availability" << endl;
+            }
             
             for (const auto& group_pair : groups) {
-                int32_t group_id = group_pair.first;
+                int group_id = group_pair.first;
                 const vector<string>& group_members = group_pair.second;
                 
-                // ¼ì²é×éÊÇ·ñÍêÕû£¨±ØĞëÓĞ3¸öÈË£©
+                // æ£€æŸ¥ç»„æ˜¯å¦å®Œæ•´ï¼ˆå¿…é¡»æœ‰3ä¸ªäººï¼‰
                 if (group_members.size() < GROUP_SIZE) {
                     continue;
                 }
                 
-                // ¼ì²é×éÄÚËùÓĞ³ÉÔ±ÊÇ·ñ¶¼ÒÑ·ÖÅä¸øµ±Ç°ÈÎÎñ
+                // æ£€æŸ¥ç»„å†…æ‰€æœ‰æˆå‘˜æ˜¯å¦éƒ½å·²åˆ†é…ç»™å½“å‰ä»»åŠ¡
                 bool all_assigned = true;
                 for (const string& emp_id : group_members) {
                     if (!task.isAssignedToEmployee(emp_id)) {
@@ -715,56 +512,39 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                     }
                 }
                 if (all_assigned) {
-                    continue;  // ¸Ã×éÒÑ¾­ÍêÈ«·ÖÅä¸øµ±Ç°ÈÎÎñ
+                    continue;  // è¯¥ç»„å·²ç»å®Œå…¨åˆ†é…ç»™å½“å‰ä»»åŠ¡
                 }
+            
                 
-                // ¼ì²é×é¶ÔÓ¦µÄ°à´ÎÊÇ·ñÔÚÈÎÎñÊ±¼ä¶Î±»Õ¼Î»£¨Æ£ÀÍ¶È¿ØÖÆ£©
-                bool shift_blocked = false;
-                for (const string& emp_id : group_members) {
-                    // ²éÕÒÔ±¹¤ËùÔÚµÄ°à´Î
-                    for (const auto& shift : shifts) {
-                        const auto& position_map = shift.getPositionToEmployeeId();
-                        for (const auto& pos_pair : position_map) {
-                            if (pos_pair.second == emp_id) {
-                                int32_t shift_type = shift.getShiftType();
-                                if (isShiftBlocked(shift_type, task_start, block_periods)) {
-                                    shift_blocked = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (shift_blocked) break;
-                    }
-                    if (shift_blocked) break;
-                }
-                if (shift_blocked) {
-                    continue;  // °à´Î±»Õ¼Î»£¬Ìø¹ı
-                }
-                
-                // ¼ì²é×éÄÚËùÓĞ³ÉÔ±ÔÚÈÎÎñÊ±¼ä¶ÎÊÇ·ñ¶¼¿ÕÏĞ
+                // æ£€æŸ¥ç»„å†…æ‰€æœ‰æˆå‘˜åœ¨ä»»åŠ¡æ—¶é—´æ®µæ˜¯å¦éƒ½ç©ºé—²
                 bool all_available = true;
+                string unavailable_reason = "";
                 for (const string& emp_id : group_members) {
-                    // Èç¹ûÒÑ¾­·ÖÅä¸øµ±Ç°ÈÎÎñ£¬Ìø¹ı
+                    // å¦‚æœå·²ç»åˆ†é…ç»™å½“å‰ä»»åŠ¡ï¼Œè·³è¿‡
                     if (task.isAssignedToEmployee(emp_id)) {
                         continue;
                     }
                     
-                    if (!isEmployeeAvailable(emp_id, task_start, task_end, task_ptr_map, employee_map)) {
+                    // è®¡ç®—å®é™…å¼€å§‹æ—¶é—´ï¼ˆä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´ï¼‰
+                    long actual_start = earliest_start;
+                    if (!isEmployeeAvailable(emp_id, actual_start, duration, task_ptr_map, employee_map)) {
                         all_available = false;
+                        unavailable_reason = "employee " + emp_id + " not available";
                         break;
                     }
                 }
                 
                 if (!all_available) {
+                    // ç§»é™¤è°ƒè¯•è¾“å‡ºï¼Œå‡å°‘æ—¥å¿—å™ªéŸ³
                     continue;
                 }
                 
-                // Èç¹ûÈÎÎñÓĞ»úÎ»ĞÅÏ¢£¬¼ì²éĞ¡×éÊÇ·ñÄÜ°´Ê±µ½´ï£¨Â·³ÌÊ±¼äÏÎ½Ó£©
-                // ×¢Òâ£ºÕâÀïÖ»×ö»ù±¾ÑéÖ¤£¬Èç¹ûÊ±¼ä·Ç³£½ôÕÅ£¨±ÈÈçÖ»²î¼¸Ãë£©£¬ÈÔÈ»ÔÊĞí·ÖÅä
+                // å¦‚æœä»»åŠ¡æœ‰æœºä½ä¿¡æ¯ï¼Œæ£€æŸ¥å°ç»„æ˜¯å¦èƒ½æŒ‰æ—¶åˆ°è¾¾ï¼ˆè·¯ç¨‹æ—¶é—´è¡”æ¥ï¼‰
+                // æ³¨æ„ï¼šè¿™é‡ŒåªåšåŸºæœ¬éªŒè¯ï¼Œå¦‚æœæ—¶é—´éå¸¸ç´§å¼ ï¼ˆæ¯”å¦‚åªå·®å‡ ç§’ï¼‰ï¼Œä»ç„¶å…è®¸åˆ†é…
                 if (task_stand > 0) {
-                    // »ñÈ¡¸Ã×é×î½ü½áÊøµÄÈÎÎñµÄ»úÎ»ºÍÊ±¼ä
-                    int32_t last_stand = 0;
-                    int64_t last_end_time = -1;
+                    // è·å–è¯¥ç»„æœ€è¿‘ç»“æŸçš„ä»»åŠ¡çš„æœºä½å’Œæ—¶é—´
+                    int last_stand = 0;
+                    long last_end_time = -1;
                     
                     for (const string& emp_id : group_members) {
                         auto emp_it = employee_map.find(emp_id);
@@ -775,63 +555,65 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         const LoadEmployeeInfo* emp = emp_it->second;
                         const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                         
-                        // ÕÒµ½¸Ã³ÉÔ±×î½ü½áÊøµÄÈÎÎñ£¨ÔÚµ±Ç°ÈÎÎñ¿ªÊ¼Ö®Ç°£©
-                        for (int64_t assigned_task_id : assigned_task_ids) {
+                        // æ‰¾åˆ°è¯¥æˆå‘˜æœ€è¿‘ç»“æŸçš„ä»»åŠ¡ï¼ˆåœ¨å½“å‰ä»»åŠ¡å¼€å§‹ä¹‹å‰ï¼‰
+                        for (const string& assigned_task_id : assigned_task_ids) {
                             auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                             if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                 continue;
                             }
                             
-                            const TaskDefinition& assigned_task = *(assigned_task_it->second);
-                            if (assigned_task.getEndTime() < task_start && 
-                                assigned_task.getEndTime() > last_end_time) {
-                                last_end_time = assigned_task.getEndTime();
-                                // »ñÈ¡¸ÃÈÎÎñµÄ»úÎ»
-                                auto last_task_flight_it = flight_task_map.find(assigned_task_id);
-                                if (last_task_flight_it != flight_task_map.end() && 
-                                    last_task_flight_it->second < flights.size()) {
-                                    last_stand = flights[last_task_flight_it->second].getStand();
-                                }
+                            const LoadTask& assigned_task = *(assigned_task_it->second);
+                            long assigned_end = assigned_task.getActualEndTime();
+                            if (assigned_end > 0 && assigned_end < earliest_start && 
+                                assigned_end > last_end_time) {
+                                last_end_time = assigned_end;
+                                // è·å–è¯¥ä»»åŠ¡çš„æœºä½ï¼ˆç›´æ¥ä»taskä¸­è·å–ï¼‰
+                                last_stand = assigned_task.getStand();
                             }
                         }
                     }
                     
-                    // Èç¹ûÕÒµ½ÉÏ´ÎÈÎÎñ£¬ÑéÖ¤ÊÇ·ñÓĞ×ã¹»Ê±¼äµ½´ïµ±Ç°ÈÎÎñ
-                    // ·Å¿íÌõ¼ş£ºÔÊĞíÓĞ5·ÖÖÓµÄ»º³åÊ±¼ä£¨300Ãë£©
+                    // å¦‚æœæ‰¾åˆ°ä¸Šæ¬¡ä»»åŠ¡ï¼ŒéªŒè¯æ˜¯å¦æœ‰è¶³å¤Ÿæ—¶é—´åˆ°è¾¾å½“å‰ä»»åŠ¡
+                    // æ”¾å®½æ¡ä»¶ï¼šå…è®¸æœ‰5åˆ†é’Ÿçš„ç¼“å†²æ—¶é—´ï¼ˆ300ç§’ï¼‰
                     if (last_stand > 0 && last_end_time > 0) {
-                        int64_t travel_time = StandDistance::getInstance().getTravelTime(last_stand, task_stand);
-                        const int64_t BUFFER_TIME = 5 * 60;  // 5·ÖÖÓ»º³å
-                        if ((last_end_time + travel_time + BUFFER_TIME) > task_start) {
-                            // ÎŞ·¨°´Ê±µ½´ï£¬Ìø¹ı¸Ã×é
+                        long travel_time = StandDistance::getInstance().getTravelTime(last_stand, task_stand);
+                        const long BUFFER_TIME = 5 * 60;  // 5åˆ†é’Ÿç¼“å†²
+                        long actual_start = earliest_start;  // ä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´
+                        if ((last_end_time + travel_time + BUFFER_TIME) > actual_start) {
+                            // æ— æ³•æŒ‰æ—¶åˆ°è¾¾ï¼Œè·³è¿‡è¯¥ç»„
                             continue;
                         }
                     }
                 }
                 
-                // ×é¿ÉÓÃÇÒÄÜ°´Ê±µ½´ï
+                // ç»„å¯ç”¨ä¸”èƒ½æŒ‰æ—¶åˆ°è¾¾
                 available_groups.push_back({group_id, group_members});
             }
             
-            // Ñ¡Ôñ×îÓÅµÄ×é£ºÓÅÏÈ¼¶ 1.ÂÖ×ªË³Ğò 2.Á¬Ğø¹¤×÷Ê±³¤ 3.»úÎ»Ô¶½ü
-            int64_t best_score = INT64_MAX;
-            int32_t selected_group_id = -1;
+            if (task_index <= 10) {
+                cerr << "DEBUG: Found " << available_groups.size() << " available groups for task " << task_id << endl;
+            }
+            
+            // é€‰æ‹©æœ€ä¼˜çš„ç»„ï¼šä¼˜å…ˆçº§ 1.è½®è½¬é¡ºåº 2.è¿ç»­å·¥ä½œæ—¶é•¿ 3.æœºä½è¿œè¿‘
+            long best_score = LONG_MAX;
+            int selected_group_id = -1;
             vector<string> selected_group_members;
-            bool forced_assignment = false;  // ±ê¼ÇÊÇ·ñÊÇÇ¿ÖÆ·ÖÅä£¨Ê±¼ä¶Î±»Õ¼Âú£©
+            bool forced_assignment = false;  // æ ‡è®°æ˜¯å¦æ˜¯å¼ºåˆ¶åˆ†é…ï¼ˆæ—¶é—´æ®µè¢«å æ»¡ï¼‰
             
             if (available_groups.empty()) {
-                // Ã»ÓĞ¿ÉÓÃµÄ×é£¬ÕÒµ½×îÏÈ½áÊøÈÎÎñµÄ×é½øĞĞÇ¿ÖÆ·ÖÅä
-                int64_t earliest_end_time = INT64_MAX;
+                // æ²¡æœ‰å¯ç”¨çš„ç»„ï¼Œæ‰¾åˆ°æœ€å…ˆç»“æŸä»»åŠ¡çš„ç»„è¿›è¡Œå¼ºåˆ¶åˆ†é…
+                long earliest_end_time = LONG_MAX;
                 
                 for (const auto& group_pair : groups) {
-                    int32_t group_id = group_pair.first;
+                    int group_id = group_pair.first;
                     const vector<string>& group_members = group_pair.second;
                     
-                    // ¼ì²é×éÊÇ·ñÍêÕû£¨±ØĞëÓĞ3¸öÈË£©
+                    // æ£€æŸ¥ç»„æ˜¯å¦å®Œæ•´ï¼ˆå¿…é¡»æœ‰3ä¸ªäººï¼‰
                     if (group_members.size() < GROUP_SIZE) {
                         continue;
                     }
                     
-                    // ¼ì²é×éÄÚËùÓĞ³ÉÔ±ÊÇ·ñ¶¼ÒÑ·ÖÅä¸øµ±Ç°ÈÎÎñ£¨Èç¹ûÈ«²¿ÒÑ·ÖÅä£¬Ç¿ÖÆ·ÖÅäÒ²Ã»ÓÃ£©
+                    // æ£€æŸ¥ç»„å†…æ‰€æœ‰æˆå‘˜æ˜¯å¦éƒ½å·²åˆ†é…ç»™å½“å‰ä»»åŠ¡ï¼ˆå¦‚æœå…¨éƒ¨å·²åˆ†é…ï¼Œå¼ºåˆ¶åˆ†é…ä¹Ÿæ²¡ç”¨ï¼‰
                     bool all_assigned_to_current_task = true;
                     for (const string& emp_id : group_members) {
                         if (!task.isAssignedToEmployee(emp_id)) {
@@ -840,33 +622,11 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         }
                     }
                     if (all_assigned_to_current_task) {
-                        continue;  // ¸Ã×éÒÑ¾­ÍêÈ«·ÖÅä¸øµ±Ç°ÈÎÎñ£¬Ìø¹ı
+                        continue;  // è¯¥ç»„å·²ç»å®Œå…¨åˆ†é…ç»™å½“å‰ä»»åŠ¡ï¼Œè·³è¿‡
                     }
                     
-                    // ¼ì²é×é¶ÔÓ¦µÄ°à´ÎÊÇ·ñÔÚÈÎÎñÊ±¼ä¶Î±»Õ¼Î»£¨Æ£ÀÍ¶È¿ØÖÆ£©
-                    bool shift_blocked = false;
-                    for (const string& emp_id : group_members) {
-                        for (const auto& shift : shifts) {
-                            const auto& position_map = shift.getPositionToEmployeeId();
-                            for (const auto& pos_pair : position_map) {
-                                if (pos_pair.second == emp_id) {
-                                    int32_t shift_type = shift.getShiftType();
-                                    if (isShiftBlocked(shift_type, task_start, block_periods)) {
-                                        shift_blocked = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (shift_blocked) break;
-                        }
-                        if (shift_blocked) break;
-                    }
-                    if (shift_blocked) {
-                        continue;  // °à´Î±»Õ¼Î»£¬Ìø¹ı
-                    }
-                    
-                    // ÕÒµ½¸Ã×éËùÓĞ³ÉÔ±ÖĞ×î½ü½áÊøµÄÈÎÎñ
-                    int64_t group_last_end_time = -1;
+                    // æ‰¾åˆ°è¯¥ç»„æ‰€æœ‰æˆå‘˜ä¸­æœ€è¿‘ç»“æŸçš„ä»»åŠ¡
+                    long group_last_end_time = -1;
                     for (const string& emp_id : group_members) {
                         auto emp_it = employee_map.find(emp_id);
                         if (emp_it == employee_map.end()) {
@@ -876,25 +636,26 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         const LoadEmployeeInfo* emp = emp_it->second;
                         const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                         
-                        for (int64_t assigned_task_id : assigned_task_ids) {
+                        for (const string& assigned_task_id : assigned_task_ids) {
                             auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                             if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                 continue;
                             }
                             
-                            const TaskDefinition& assigned_task = *(assigned_task_it->second);
-                            if (assigned_task.getEndTime() > group_last_end_time) {
-                                group_last_end_time = assigned_task.getEndTime();
+                            const LoadTask& assigned_task = *(assigned_task_it->second);
+                            long assigned_end = assigned_task.getActualEndTime();
+                            if (assigned_end > 0 && assigned_end > group_last_end_time) {
+                                group_last_end_time = assigned_end;
                             }
                         }
                     }
                     
-                    // Èç¹ûÃ»ÓĞÒÑ·ÖÅäÈÎÎñ£¬ÉèÎª0£¨×îÔç£©
+                    // å¦‚æœæ²¡æœ‰å·²åˆ†é…ä»»åŠ¡ï¼Œè®¾ä¸º0ï¼ˆæœ€æ—©ï¼‰
                     if (group_last_end_time < 0) {
                         group_last_end_time = 0;
                     }
                     
-                    // Ñ¡Ôñ×îÏÈ½áÊøÈÎÎñµÄ×é£¨Èç¹ûÃ»ÓĞÈÎÎñ£¬ÔòÑ¡Ôñ×îÔç£©
+                    // é€‰æ‹©æœ€å…ˆç»“æŸä»»åŠ¡çš„ç»„ï¼ˆå¦‚æœæ²¡æœ‰ä»»åŠ¡ï¼Œåˆ™é€‰æ‹©æœ€æ—©ï¼‰
                     if (group_last_end_time < earliest_end_time) {
                         earliest_end_time = group_last_end_time;
                         selected_group_id = group_id;
@@ -904,62 +665,315 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                 }
                 
                 if (selected_group_id < 0) {
-                    // ÊµÔÚÕÒ²»µ½×é£¬±ê¼ÇÎªÈ±ÉÙÈËÊÖ
+                    // å®åœ¨æ‰¾ä¸åˆ°ç»„ï¼Œæ ‡è®°ä¸ºç¼ºå°‘äººæ‰‹
                     task.setShortStaffed(true);
                     break;
                 }
             } else {
-                // ÓĞ¿ÉÓÃ×é£¬°´Õı³£ÂÖ×ªÂß¼­Ñ¡Ôñ
-                // ´´½¨¿ÉÓÃ×éµÄÓ³Éä£¬±ãÓÚ²éÕÒ
-                map<int32_t, vector<string>> available_groups_map;
+                // æœ‰å¯ç”¨ç»„ï¼ŒæŒ‰æ­£å¸¸è½®è½¬é€»è¾‘é€‰æ‹©
+                // åˆ›å»ºå¯ç”¨ç»„çš„æ˜ å°„ï¼Œä¾¿äºæŸ¥æ‰¾
+                map<int, vector<string>> available_groups_map;
                 for (const auto& group_pair : available_groups) {
                     available_groups_map[group_pair.first] = group_pair.second;
                 }
                 
-                // °´ÂÖ×ªË³Ğò²éÕÒ¿ÉÓÃ×é£¨´Óµ±Ç°ÂÖ×ªË÷Òı¿ªÊ¼£©
-                bool found_by_rotation = false;
-                for (size_t offset = 0; offset < rotation_order.size(); ++offset) {
-                    size_t idx = (current_rotation_index + offset) % rotation_order.size();
-                    int32_t candidate_group_id = rotation_order[idx];
+                // æ—©å‡ºæ¸¯æ´¾å·¥ï¼ˆ08:00å‰ï¼‰ï¼šä¸´è¿‘æœºä½å°½é‡åŒç»„ä¿éšœ
+                if (is_early_departure && task_stand > 0) {
+                    // æŸ¥æ‰¾æ˜¯å¦æœ‰ç»„åœ¨ä¸´è¿‘æœºä½ï¼ˆç›¸é‚»æˆ–ç›¸è¿‘æœºä½ï¼‰
+                    int best_group_id = -1;
+                    int min_stand_distance = INT_MAX;
+                    long min_group_task_time = LONG_MAX;
                     
-                    auto it = available_groups_map.find(candidate_group_id);
-                    if (it != available_groups_map.end()) {
-                        // ÕÒµ½µÚÒ»¸öÔÚÂÖ×ªË³ĞòÖĞÇÒ¿ÉÓÃµÄ×é
-                        selected_group_id = candidate_group_id;
-                        selected_group_members = it->second;
-                        found_by_rotation = true;
-                        // ¸üĞÂÂÖ×ªË÷Òıµ½ÏÂÒ»¸ö
-                        current_rotation_index = (idx + 1) % rotation_order.size();
-                        break;
+                    for (const auto& group_pair : available_groups) {
+                        int group_id = group_pair.first;
+                        const vector<string>& group_members = group_pair.second;
+                        
+                        // è·å–è¯¥ç»„æœ€è¿‘ä»»åŠ¡çš„æœºä½
+                        int last_stand = 0;
+                        long last_end_time = -1;
+                        for (const string& emp_id : group_members) {
+                            auto emp_it = employee_map.find(emp_id);
+                            if (emp_it == employee_map.end()) {
+                                continue;
+                            }
+                            const LoadEmployeeInfo* emp = emp_it->second;
+                            const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
+                            
+                            for (const string& assigned_task_id : assigned_task_ids) {
+                                auto assigned_task_it = task_ptr_map.find(assigned_task_id);
+                                if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
+                                    continue;
+                                }
+                                const LoadTask& assigned_task = *(assigned_task_it->second);
+                                long assigned_end = assigned_task.getActualEndTime();
+                                if (assigned_end > 0 && assigned_end < earliest_start && 
+                                    assigned_end > last_end_time) {
+                                    last_end_time = assigned_end;
+                                    // è·å–è¯¥ä»»åŠ¡çš„æœºä½ï¼ˆç›´æ¥ä»taskä¸­è·å–ï¼‰
+                                    last_stand = assigned_task.getStand();
+                                }
+                            }
+                        }
+                        
+                        if (last_stand > 0) {
+                            // è®¡ç®—æœºä½è·ç¦»ï¼ˆç»å¯¹å€¼ï¼‰
+                            int stand_distance = abs(last_stand - task_stand);
+                            if (stand_distance < min_stand_distance) {
+                                min_stand_distance = stand_distance;
+                                best_group_id = group_id;
+                                min_group_task_time = calculateGroupDailyTaskTime(group_members, earliest_start, task_ptr_map, employee_map);
+                            } else if (stand_distance == min_stand_distance) {
+                                // å¦‚æœè·ç¦»ç›¸åŒï¼Œé€‰æ‹©å½“æ—¥å·¥æ—¶è¾ƒå°‘çš„ç»„ï¼ˆå‡è¡¡ç–²åŠ³åº¦ï¼‰
+                                long group_task_time = calculateGroupDailyTaskTime(group_members, earliest_start, task_ptr_map, employee_map);
+                                if (group_task_time < min_group_task_time) {
+                                    min_group_task_time = group_task_time;
+                                    best_group_id = group_id;
+                                }
+                            }
+                        } else {
+                            // å¦‚æœè¯¥ç»„æ²¡æœ‰ä¸Šä¸€ä¸ªä»»åŠ¡ï¼Œä¹Ÿè€ƒè™‘ï¼ˆé€‰æ‹©å½“æ—¥å·¥æ—¶è¾ƒå°‘çš„ç»„ï¼‰
+                            long group_task_time = calculateGroupDailyTaskTime(group_members, earliest_start, task_ptr_map, employee_map);
+                            if (min_stand_distance == INT_MAX && group_task_time < min_group_task_time) {
+                                min_group_task_time = group_task_time;
+                                best_group_id = group_id;
+                            }
+                        }
+                    }
+                    
+                    if (best_group_id >= 0) {
+                        selected_group_id = best_group_id;
+                        selected_group_members = available_groups_map[best_group_id];
+                        // æ›´æ–°è½®è½¬ç´¢å¼•
+                        for (size_t i = 0; i < rotation_order.size(); ++i) {
+                            if (rotation_order[i] == best_group_id) {
+                                current_rotation_index = (i + 1) % rotation_order.size();
+                                break;
+                            }
+                        }
                     }
                 }
-            
-                // Èç¹û°´ÂÖ×ªË³ĞòÃ»ÓĞÕÒµ½¿ÉÓÃ×é£¬Ôò°´×ÛºÏµÃ·ÖÑ¡Ôñ£¨¼õÉÙµ÷Õû£©
-                if (!found_by_rotation) {
-                    for (const auto& group_pair : available_groups) {
-                    int32_t group_id = group_pair.first;
+                
+                // å¦‚æœæ—©å‡ºæ¸¯æ²¡æœ‰æ‰¾åˆ°ä¸´è¿‘æœºä½çš„ç»„ï¼Œæˆ–è€…ä¸æ˜¯æ—©å‡ºæ¸¯ï¼ŒæŒ‰æ­£å¸¸è½®è½¬é€»è¾‘
+                bool found_by_rotation = false;  // ç§»åˆ°å¤–å±‚ä½œç”¨åŸŸï¼Œä»¥ä¾¿åç»­ä½¿ç”¨
+                if (selected_group_id < 0) {
+                    // è®¡ç®—å®é™…å¼€å§‹æ—¶é—´ï¼ˆä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´ï¼‰
+                    long actual_start = earliest_start;
                     
-                    // ÓÅÏÈ¼¶1£ºÂÖ×ªË³Ğò
-                    int32_t rotation_position = INT32_MAX;
-                    for (size_t i = 0; i < rotation_order.size(); ++i) {
-                        if (rotation_order[i] == group_id) {
-                            int32_t distance = static_cast<int32_t>(i) - current_rotation_index;
-                            if (distance < 0) {
-                                distance += static_cast<int32_t>(rotation_order.size());
+                    // ç»´æŠ¤ä¸€ä¸ªsetæ¥è®°å½•ä¸å¯ç”¨çš„å°ç»„ï¼ˆ1-8ç»„ï¼‰
+                    set<int> unavailable_groups;
+                    
+                    // ä»è½®æ¢æ•°ç»„çš„å½“å‰ä½ç½®å¼€å§‹ï¼Œä¾æ¬¡æ£€æŸ¥å¯¹åº”çš„å°ç»„æ˜¯å¦å¯ç”¨
+                    for (int offset = 0; offset < 1000; ++offset) {
+                        int idx = (current_rotation_index + offset) % 1000;
+                        int candidate_group_value = rotation_array[idx];
+                        
+                        // åªå¤„ç†1-8ç»„
+                        if (candidate_group_value < 1 || candidate_group_value > 8) {
+                            continue;
+                        }
+                        
+                        // æŸ¥æ‰¾å¯¹åº”è¿™ä¸ªå€¼çš„ç»„
+                        bool group_found = false;
+                        for (const auto& group_pair : groups) {
+                            int group_id = group_pair.first;
+                            // æ£€æŸ¥ç»„IDæ˜¯å¦åŒ¹é…å€™é€‰å€¼ï¼ˆå‡è®¾ç»„IDèŒƒå›´æ˜¯1-8ï¼‰
+                            if (group_id == candidate_group_value) {
+                                group_found = true;
+                                auto it = available_groups_map.find(group_id);
+                                if (it != available_groups_map.end()) {
+                                    // æ‰¾åˆ°å¯ç”¨çš„ç»„ï¼Œåˆ†é…ä»»åŠ¡
+                                    selected_group_id = group_id;
+                                    selected_group_members = it->second;
+                                    found_by_rotation = true;
+                                    // æ›´æ–°è½®è½¬ç´¢å¼•åˆ°ä¸‹ä¸€ä¸ª
+                                    current_rotation_index = (idx + 1) % 1000;
+                                    break;
+                                } else {
+                                    // ç»„ä¸å¯ç”¨ï¼ŒåŠ å…¥set
+                                    unavailable_groups.insert(group_id);
+                                    
+                                    // å¦‚æœæ‰€æœ‰1-8ç»„éƒ½ä¸å¯ç”¨ï¼Œæ‰¾åˆ°æœ€å…ˆç»“æŸçš„å°ç»„è¿›è¡Œå¼ºåˆ¶åˆ†é…
+                                    if (unavailable_groups.size() == 8) {
+                                        long earliest_end_time = LONG_MAX;
+                                        int earliest_end_group_id = -1;
+                                        vector<string> earliest_end_group_members;
+                                        
+                                        for (const auto& group_pair : groups) {
+                                            int gid = group_pair.first;
+                                            // åªè€ƒè™‘1-8ç»„
+                                            if (gid < 1 || gid > 8) {
+                                                continue;
+                                            }
+                                            
+                                            const vector<string>& g_members = group_pair.second;
+                                            
+                                            // æ£€æŸ¥ç»„æ˜¯å¦å®Œæ•´ï¼ˆå¿…é¡»æœ‰3ä¸ªäººï¼‰
+                                            if (g_members.size() < GROUP_SIZE) {
+                                                continue;
+                                            }
+                                            
+                                            // æ‰¾åˆ°è¯¥ç»„æ‰€æœ‰æˆå‘˜ä¸­æœ€è¿‘ç»“æŸçš„ä»»åŠ¡
+                                            long group_last_end_time = -1;
+                                            for (const string& emp_id : g_members) {
+                                                auto emp_it = employee_map.find(emp_id);
+                                                if (emp_it == employee_map.end()) {
+                                                    continue;
+                                                }
+                                                
+                                                const LoadEmployeeInfo* emp = emp_it->second;
+                                                const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
+                                                
+                                                for (const string& assigned_task_id : assigned_task_ids) {
+                                                    auto assigned_task_it = task_ptr_map.find(assigned_task_id);
+                                                    if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
+                                                        continue;
+                                                    }
+                                                    
+                                                    const LoadTask& assigned_task = *(assigned_task_it->second);
+                                                    long assigned_end = assigned_task.getActualEndTime();
+                                                    if (assigned_end > 0 && assigned_end > group_last_end_time) {
+                                                        group_last_end_time = assigned_end;
+                                                    }
+                                                }
+                                            }
+                                            
+                                            // å¦‚æœæ²¡æœ‰å·²åˆ†é…ä»»åŠ¡ï¼Œè®¾ä¸º0ï¼ˆæœ€æ—©ï¼‰
+                                            if (group_last_end_time < 0) {
+                                                group_last_end_time = 0;
+                                            }
+                                            
+                                            // é€‰æ‹©æœ€å…ˆç»“æŸä»»åŠ¡çš„ç»„
+                                            if (group_last_end_time < earliest_end_time) {
+                                                earliest_end_time = group_last_end_time;
+                                                earliest_end_group_id = gid;
+                                                earliest_end_group_members = g_members;
+                                            }
+                                        }
+                                        
+                                        if (earliest_end_group_id >= 0) {
+                                            selected_group_id = earliest_end_group_id;
+                                            selected_group_members = earliest_end_group_members;
+                                            forced_assignment = true;
+                                            // æ›´æ–°è½®è½¬ç´¢å¼•åˆ°ä¸‹ä¸€ä¸ª
+                                            current_rotation_index = (idx + 1) % 1000;
+                                        }
+                                        break;
+                                    }
+                                }
+                                break;
                             }
-                            rotation_position = distance;
+                        }
+                        
+                        if (found_by_rotation || forced_assignment) {
+                            break;
+                        }
+                        
+                        // å¦‚æœç»„ä¸å­˜åœ¨ï¼Œä¹ŸåŠ å…¥setï¼ˆé¿å…æ— é™å¾ªç¯ï¼‰
+                        if (!group_found && candidate_group_value >= 1 && candidate_group_value <= 8) {
+                            unavailable_groups.insert(candidate_group_value);
+                            if (unavailable_groups.size() == 8) {
+                                // æ‰€æœ‰1-8ç»„éƒ½ä¸å¯ç”¨æˆ–ä¸å­˜åœ¨ï¼Œæ‰¾åˆ°æœ€å…ˆç»“æŸçš„å°ç»„
+                                long earliest_end_time = LONG_MAX;
+                                int earliest_end_group_id = -1;
+                                vector<string> earliest_end_group_members;
+                                
+                                for (const auto& group_pair : groups) {
+                                    int gid = group_pair.first;
+                                    if (gid < 1 || gid > 8) {
+                                        continue;
+                                    }
+                                    
+                                    const vector<string>& g_members = group_pair.second;
+                                    if (g_members.size() < GROUP_SIZE) {
+                                        continue;
+                                    }
+                                    
+                                    long group_last_end_time = -1;
+                                    for (const string& emp_id : g_members) {
+                                        auto emp_it = employee_map.find(emp_id);
+                                        if (emp_it == employee_map.end()) {
+                                            continue;
+                                        }
+                                        
+                                        const LoadEmployeeInfo* emp = emp_it->second;
+                                        const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
+                                        
+                                        for (const string& assigned_task_id : assigned_task_ids) {
+                                            auto assigned_task_it = task_ptr_map.find(assigned_task_id);
+                                            if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
+                                                continue;
+                                            }
+                                            
+                                            const LoadTask& assigned_task = *(assigned_task_it->second);
+                                            long assigned_end = assigned_task.getActualEndTime();
+                                            if (assigned_end > 0 && assigned_end > group_last_end_time) {
+                                                group_last_end_time = assigned_end;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (group_last_end_time < 0) {
+                                        group_last_end_time = 0;
+                                    }
+                                    
+                                    if (group_last_end_time < earliest_end_time) {
+                                        earliest_end_time = group_last_end_time;
+                                        earliest_end_group_id = gid;
+                                        earliest_end_group_members = g_members;
+                                    }
+                                }
+                                
+                                if (earliest_end_group_id >= 0) {
+                                    selected_group_id = earliest_end_group_id;
+                                    selected_group_members = earliest_end_group_members;
+                                    forced_assignment = true;
+                                    current_rotation_index = (idx + 1) % 1000;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // å¦‚æœselected_group_id >= 0ï¼Œè¯´æ˜å·²ç»é€šè¿‡å‰é¢çš„é€»è¾‘æ‰¾åˆ°äº†ï¼Œä¸æ˜¯é€šè¿‡è½®è½¬
+                    found_by_rotation = false;
+                }
+            
+                // å¦‚æœæŒ‰è½®è½¬é¡ºåºæ²¡æœ‰æ‰¾åˆ°å¯ç”¨ç»„ï¼Œåˆ™æŒ‰ç»¼åˆå¾—åˆ†é€‰æ‹©ï¼ˆå‡å°‘è°ƒæ•´ï¼‰
+                // åŒæ—¶è€ƒè™‘ï¼šä¸´è¿‘ä¸‹ç­å°ç»„ä»»åŠ¡æŒ‡æ´¾ã€å°ç»„ä¼‘æ¯æ—¶ä¼˜å…ˆä¸ºå½“æ—¥å·¥æ—¶è¾ƒå°‘çš„å°ç»„åˆ†é…ä»»åŠ¡
+                if (selected_group_id < 0) {
+                    for (const auto& group_pair : available_groups) {
+                    int group_id = group_pair.first;
+                    
+                    // ä¼˜å…ˆçº§1ï¼šè½®è½¬é¡ºåºï¼ˆåŸºäºè½®æ¢æ•°ç»„ï¼‰
+                    int rotation_position = INT_MAX;
+                    for (int i = 0; i < 1000; ++i) {
+                        int idx = (current_rotation_index + i) % 1000;
+                        if (rotation_array[idx] == group_id) {
+                            rotation_position = i;
                             break;
                         }
                     }
-                    if (rotation_position == INT32_MAX) {
+                    if (rotation_position == INT_MAX) {
                         rotation_position = 10000;
                     }
                 
-                    // ÓÅÏÈ¼¶2£º¼ÆËãÁ¬Ğø¹¤×÷Ê±³¤
-                    int64_t continuous_work_duration = 0;
+                    // ä¼˜å…ˆçº§2ï¼šä¸´è¿‘ä¸‹ç­å°ç»„ä»»åŠ¡æŒ‡æ´¾ï¼ˆå°½é‡ä¸ºå°ç»„åˆ†é…ä¸å»¶è¯¯ä¸‹ç­æ—¶é—´çš„æœºä½ä»»åŠ¡ï¼‰
+                    // æ£€æŸ¥ä»»åŠ¡ç»“æŸæ—¶é—´æ˜¯å¦åœ¨ä¸‹ç­æ—¶é—´ä¹‹åï¼ˆè¿™é‡Œç®€åŒ–å¤„ç†ï¼Œå‡è®¾ä¸‹ç­æ—¶é—´ä¸º22:00ï¼‰
+                    const long DEFAULT_OFF_DUTY_TIME = 22 * 3600;  // 22:00 = 79200ç§’
+                    long actual_start = earliest_start;
+                    long actual_end = actual_start + duration;
+                    long task_day = actual_start / (24 * 3600);
+                    long off_duty_time = task_day * (24 * 3600) + DEFAULT_OFF_DUTY_TIME;
+                    bool task_delays_off_duty = (actual_end > off_duty_time);
+                    
+                    // å¦‚æœä»»åŠ¡ä¼šå»¶è¯¯ä¸‹ç­ï¼Œä¼˜å…ˆé€‰æ‹©å½“æ—¥å·¥æ—¶è¾ƒå°‘çš„ç»„ï¼ˆè¿™äº›ç»„å¯èƒ½æ›´æ—©ä¸‹ç­ï¼‰
+                    long group_daily_task_time = calculateGroupDailyTaskTime(group_pair.second, actual_start, task_ptr_map, employee_map);
+                    
+                    // ä¼˜å…ˆçº§3ï¼šè®¡ç®—è¿ç»­å·¥ä½œæ—¶é•¿
+                    long continuous_work_duration = 0;
                     if (task_stand > 0) {
-                        // ÊÕ¼¯¸Ã×éËùÓĞ³ÉÔ±µÄËùÓĞÒÑ·ÖÅäÈÎÎñ£¨ÔÚµ±Ç°ÈÎÎñ¿ªÊ¼Ö®Ç°µÄ£©
-                        vector<tuple<int64_t, int64_t, int32_t>> prev_tasks;  // (start_time, end_time, stand)
+                        // æ”¶é›†è¯¥ç»„æ‰€æœ‰æˆå‘˜çš„æ‰€æœ‰å·²åˆ†é…ä»»åŠ¡ï¼ˆåœ¨å½“å‰ä»»åŠ¡å¼€å§‹ä¹‹å‰çš„ï¼‰
+                        vector<tuple<long, long, int>> prev_tasks;  // (start_time, end_time, stand)
                         
                         for (const string& emp_id : group_pair.second) {
                             auto emp_it = employee_map.find(emp_id);
@@ -970,79 +984,80 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                             const LoadEmployeeInfo* emp = emp_it->second;
                             const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                             
-                            for (int64_t assigned_task_id : assigned_task_ids) {
+                            for (const string& assigned_task_id : assigned_task_ids) {
                                 auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                                 if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                     continue;
                                 }
                                 
-                                const TaskDefinition& assigned_task = *(assigned_task_it->second);
-                                // Ö»¿¼ÂÇÔÚµ±Ç°ÈÎÎñ¿ªÊ¼Ö®Ç°µÄÈÎÎñ
-                                if (assigned_task.getEndTime() < task_start) {
-                                    // »ñÈ¡¸ÃÈÎÎñµÄ»úÎ»
-                                    int32_t assigned_stand = 0;
-                                    auto assigned_flight_it = flight_task_map.find(assigned_task_id);
-                                    if (assigned_flight_it != flight_task_map.end() && 
-                                        assigned_flight_it->second < flights.size()) {
-                                        assigned_stand = flights[assigned_flight_it->second].getStand();
-                                    }
+                                const LoadTask& assigned_task = *(assigned_task_it->second);
+                                long assigned_end = assigned_task.getActualEndTime();
+                                // åªè€ƒè™‘åœ¨å½“å‰ä»»åŠ¡å¼€å§‹ä¹‹å‰çš„ä»»åŠ¡
+                                if (assigned_end > 0 && assigned_end < earliest_start) {
+                                    // è·å–è¯¥ä»»åŠ¡çš„æœºä½ï¼ˆç›´æ¥ä»taskä¸­è·å–ï¼‰
+                                    int assigned_stand = assigned_task.getStand();
                                     
-                                    prev_tasks.push_back({assigned_task.getStartTime(), 
-                                                          assigned_task.getEndTime(), 
+                                    prev_tasks.push_back({assigned_task.getActualStartTime(), 
+                                                          assigned_end, 
                                                           assigned_stand});
                                 }
                             }
                         }
                         
-                        // Èç¹ûÓĞÉÏÒ»¸öÈÎÎñ£¬¼ÆËãÁ¬Ğø¹¤×÷Ê±³¤
+                        // å¦‚æœæœ‰ä¸Šä¸€ä¸ªä»»åŠ¡ï¼Œè®¡ç®—è¿ç»­å·¥ä½œæ—¶é•¿
                         if (!prev_tasks.empty()) {
-                            // °´¿ªÊ¼Ê±¼äÅÅĞò
+                            // æŒ‰å¼€å§‹æ—¶é—´æ’åº
                             sort(prev_tasks.begin(), prev_tasks.end());
                             
-                            // ´Ó×î½üµÄÈÎÎñ¿ªÊ¼£¬ÏòÇ°²éÕÒÁ¬ĞøµÄÈÎÎñÁ´
-                            int64_t current_end = task_end;
-                            int64_t current_start = task_start;
-                            int32_t current_stand = task_stand;
-                            int64_t chain_start = task_start;
+                            // ä»æœ€è¿‘çš„ä»»åŠ¡å¼€å§‹ï¼Œå‘å‰æŸ¥æ‰¾è¿ç»­çš„ä»»åŠ¡é“¾
+                            long actual_start = earliest_start;
+                            long actual_end = actual_start + duration;
+                            long current_end = actual_end;
+                            long current_start = actual_start;
+                            int current_stand = task_stand;
+                            long chain_start = actual_start;
                             
-                            // ·´Ïò±éÀú£¬²éÕÒÁ¬ĞøµÄÈÎÎñ
+                            // åå‘éå†ï¼ŒæŸ¥æ‰¾è¿ç»­çš„ä»»åŠ¡
                             for (int i = static_cast<int>(prev_tasks.size()) - 1; i >= 0; --i) {
-                                int64_t prev_start = get<0>(prev_tasks[i]);
-                                int64_t prev_end = get<1>(prev_tasks[i]);
-                                int32_t prev_stand = get<2>(prev_tasks[i]);
+                                long prev_start = get<0>(prev_tasks[i]);
+                                long prev_end = get<1>(prev_tasks[i]);
+                                int prev_stand = get<2>(prev_tasks[i]);
                                 
-                                // ¼ÆËãÂ·³ÌÊ±¼ä
-                                int64_t travel_time = 0;
+                                // è®¡ç®—è·¯ç¨‹æ—¶é—´
+                                long travel_time = 0;
                                 if (prev_stand > 0 && current_stand > 0) {
                                     travel_time = StandDistance::getInstance().getTravelTime(prev_stand, current_stand);
                                 } else if (prev_stand > 0) {
-                                    travel_time = 5 * 60;  // Ä¬ÈÏ5·ÖÖÓ
+                                    travel_time = 5 * 60;  // é»˜è®¤5åˆ†é’Ÿ
                                 }
                                 
-                                // Èç¹ûÉÏÒ»¸öÈÎÎñ½áÊøÊ±¼ä + Â·³ÌÊ±¼ä <= µ±Ç°ÈÎÎñ¿ªÊ¼Ê±¼ä£¬ÈÏÎªÊÇÁ¬ĞøµÄ
+                                // å¦‚æœä¸Šä¸€ä¸ªä»»åŠ¡ç»“æŸæ—¶é—´ + è·¯ç¨‹æ—¶é—´ <= å½“å‰ä»»åŠ¡å¼€å§‹æ—¶é—´ï¼Œè®¤ä¸ºæ˜¯è¿ç»­çš„
                                 if (prev_end + travel_time <= current_start) {
-                                    // ¸üĞÂÁ¬ĞøÁ´µÄ¿ªÊ¼Ê±¼ä
+                                    // æ›´æ–°è¿ç»­é“¾çš„å¼€å§‹æ—¶é—´
                                     chain_start = prev_start;
                                     current_start = prev_start;
                                     current_stand = prev_stand;
-                                    // ¼ÌĞøÏòÇ°²éÕÒ
+                                    // ç»§ç»­å‘å‰æŸ¥æ‰¾
                                 } else {
-                                    // ²»Á¬Ğø£¬Í£Ö¹²éÕÒ
+                                    // ä¸è¿ç»­ï¼Œåœæ­¢æŸ¥æ‰¾
                                     break;
                                 }
                             }
                             
-                            // ¼ÆËãÁ¬Ğø¹¤×÷Ê±³¤
+                            // è®¡ç®—è¿ç»­å·¥ä½œæ—¶é•¿
                             continuous_work_duration = current_end - chain_start;
+                        } else {
+                            // æ²¡æœ‰ä¸Šä¸€ä¸ªä»»åŠ¡ï¼Œè¿ç»­å·¥ä½œæ—¶é•¿å°±æ˜¯å½“å‰ä»»åŠ¡æ—¶é•¿
+                            continuous_work_duration = duration;
                         }
                     }
                     
-                    // ÓÅÏÈ¼¶3£º¼ÆËãÂ·³ÌÊ±¼ä£¨»úÎ»Ô¶½ü£©
-                    int64_t travel_time_score = 0;
+                    // ä¼˜å…ˆçº§4ï¼šè®¡ç®—è·¯ç¨‹æ—¶é—´ï¼ˆæœºä½è¿œè¿‘ï¼‰
+                    long travel_time_score = 0;
                     if (task_stand > 0) {
-                        // »ñÈ¡¸Ã×éÉÏ´ÎÈÎÎñµÄ½áÊø»úÎ»
-                        int32_t last_stand = 0;
-                        int64_t last_end_time = -1;
+                        // è·å–è¯¥ç»„ä¸Šæ¬¡ä»»åŠ¡çš„ç»“æŸæœºä½
+                        int last_stand = 0;
+                        long last_end_time = -1;
                         
                         for (const string& emp_id : group_pair.second) {
                             auto emp_it = employee_map.find(emp_id);
@@ -1053,23 +1068,20 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                             const LoadEmployeeInfo* emp = emp_it->second;
                             const auto& assigned_task_ids = emp->getEmployeeInfo().getAssignedTaskIds();
                             
-                            // ÕÒµ½¸Ã×éËùÓĞ³ÉÔ±ÖĞ×î½ü½áÊøµÄÈÎÎñ
-                            for (int64_t assigned_task_id : assigned_task_ids) {
+                            // æ‰¾åˆ°è¯¥ç»„æ‰€æœ‰æˆå‘˜ä¸­æœ€è¿‘ç»“æŸçš„ä»»åŠ¡
+                            for (const string& assigned_task_id : assigned_task_ids) {
                                 auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                                 if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                                     continue;
                                 }
                                 
-                                const TaskDefinition& assigned_task = *(assigned_task_it->second);
-                                if (assigned_task.getEndTime() < task_start && 
-                                    assigned_task.getEndTime() > last_end_time) {
-                                    last_end_time = assigned_task.getEndTime();
-                                    // »ñÈ¡¸ÃÈÎÎñµÄ»úÎ»
-                                    auto last_task_flight_it = flight_task_map.find(assigned_task_id);
-                                    if (last_task_flight_it != flight_task_map.end() && 
-                                        last_task_flight_it->second < flights.size()) {
-                                        last_stand = flights[last_task_flight_it->second].getStand();
-                                    }
+                                const LoadTask& assigned_task = *(assigned_task_it->second);
+                                long assigned_end = assigned_task.getActualEndTime();
+                                if (assigned_end > 0 && assigned_end < earliest_start && 
+                                    assigned_end > last_end_time) {
+                                    last_end_time = assigned_end;
+                                    // è·å–è¯¥ä»»åŠ¡çš„æœºä½ï¼ˆç›´æ¥ä»taskä¸­è·å–ï¼‰
+                                    last_stand = assigned_task.getStand();
                                 }
                             }
                         }
@@ -1079,11 +1091,22 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                         }
                     }
                     
-                    // ×ÛºÏµÃ·Ö£ºÓÅÏÈ¼¶1£¨ÂÖ×ªË³Ğò£©* 1000000 + ÓÅÏÈ¼¶2£¨Á¬Ğø¹¤×÷Ê±³¤£©* 100 + ÓÅÏÈ¼¶3£¨Â·³ÌÊ±¼ä£©
-                    // µÃ·ÖÔ½Ğ¡Ô½ºÃ
-                    int64_t total_score = rotation_position * 1000000 + 
+                    // ç»¼åˆå¾—åˆ†ï¼šä¼˜å…ˆçº§1ï¼ˆè½®è½¬é¡ºåºï¼‰* 1000000 + ä¼˜å…ˆçº§2ï¼ˆè¿ç»­å·¥ä½œæ—¶é•¿ï¼‰* 100 + ä¼˜å…ˆçº§3ï¼ˆè·¯ç¨‹æ—¶é—´ï¼‰
+                    // å¾—åˆ†è¶Šå°è¶Šå¥½
+                    // å¦‚æœä»»åŠ¡ä¼šå»¶è¯¯ä¸‹ç­ï¼Œå¢åŠ å½“æ—¥å·¥æ—¶è¾ƒå°‘çš„ç»„çš„æƒé‡ï¼ˆä¼˜å…ˆé€‰æ‹©ï¼‰
+                    long off_duty_penalty = 0;
+                    if (task_delays_off_duty) {
+                        // å½“æ—¥å·¥æ—¶è¾ƒå°‘çš„ç»„å¾—åˆ†æ›´ä½ï¼ˆæ›´ä¼˜å…ˆï¼‰
+                        off_duty_penalty = group_daily_task_time / 100;  // å·¥æ—¶è¶Šå°‘ï¼Œæƒ©ç½šè¶Šå°
+                    } else {
+                        // ä»»åŠ¡ä¸ä¼šå»¶è¯¯ä¸‹ç­ï¼Œä¼˜å…ˆé€‰æ‹©å½“æ—¥å·¥æ—¶è¾ƒå°‘çš„ç»„ï¼ˆå°ç»„ä¼‘æ¯æ—¶ä¼˜å…ˆåˆ†é…ï¼‰
+                        off_duty_penalty = group_daily_task_time / 100;
+                    }
+                    
+                    long total_score = rotation_position * 1000000 + 
                                          continuous_work_duration * 100 + 
-                                         travel_time_score;
+                                         travel_time_score +
+                                         off_duty_penalty;
                     
                     if (total_score < best_score) {
                         best_score = total_score;
@@ -1092,11 +1115,12 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                     }
                     }
                 
-                    // Èç¹ûÍ¨¹ı×ÛºÏµÃ·ÖÑ¡ÔñÁË×é£¬¸üĞÂÂÖ×ªË÷Òı
+                    // å¦‚æœé€šè¿‡ç»¼åˆå¾—åˆ†é€‰æ‹©äº†ç»„ï¼Œæ›´æ–°è½®è½¬ç´¢å¼•ï¼ˆåŸºäºè½®æ¢æ•°ç»„ï¼‰
                     if (!found_by_rotation && selected_group_id >= 0) {
-                        for (size_t i = 0; i < rotation_order.size(); ++i) {
-                            if (rotation_order[i] == selected_group_id) {
-                                current_rotation_index = (i + 1) % rotation_order.size();
+                        for (int i = 0; i < 1000; ++i) {
+                            int idx = (current_rotation_index + i) % 1000;
+                            if (rotation_array[idx] == selected_group_id) {
+                                current_rotation_index = (idx + 1) % 1000;
                                 break;
                             }
                         }
@@ -1105,22 +1129,48 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
             }
             
             if (selected_group_id < 0) {
+                if (task_index <= 10) {
+                    cerr << "DEBUG: Task " << task_id << " no available groups found, marking as short-staffed" << endl;
+                }
                 task.setShortStaffed(true);
                 break;
             }
             
-            // ·ÖÅä¸Ã×éµÄËùÓĞ³ÉÔ±µ½ÈÎÎñ
-            int assigned_in_this_iteration = 0;  // ¼ÇÂ¼±¾´ÎÑ­»·ÖĞÊµ¼Ê·ÖÅäµÄÈËÊı
+            if (task_index <= 10) {
+                cerr << "DEBUG: Task " << task_id << " selected group " << selected_group_id << " with " << selected_group_members.size() << " members" << endl;
+            }
+            
+            // è®¡ç®—å®é™…å¼€å§‹æ—¶é—´ï¼ˆä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´ï¼‰
+            long actual_start = earliest_start;
+            long actual_end = actual_start + duration;
+            
+            // æ£€æŸ¥çº¦æŸï¼šå®é™…å¼€å§‹æ—¶é—´ + æ—¶é•¿ <= æœ€æ™šç»“æŸæ—¶é—´
+            if (actual_end > latest_end) {
+                if (task_index <= 10) {
+                    cerr << "DEBUG: Task " << task_id << " cannot be scheduled: actual_end (" << actual_end 
+                         << ") > latest_end (" << latest_end << ")" << endl;
+                }
+                task.setShortStaffed(true);
+                break;
+            }
+            
+            // è®¾ç½®å®é™…å¼€å§‹æ—¶é—´ï¼ˆåªåœ¨ç¬¬ä¸€æ¬¡åˆ†é…æ—¶è®¾ç½®ï¼‰
+            if (task.getActualStartTime() == 0) {
+                task.setActualStartTime(actual_start);
+            }
+            
+            // åˆ†é…è¯¥ç»„çš„æ‰€æœ‰æˆå‘˜åˆ°ä»»åŠ¡
+            int assigned_in_this_iteration = 0;  // è®°å½•æœ¬æ¬¡å¾ªç¯ä¸­å®é™…åˆ†é…çš„äººæ•°
             for (const string& emp_id : selected_group_members) {
-                // Èç¹ûÒÑ¾­·ÖÅä£¬Ìø¹ı
+                // å¦‚æœå·²ç»åˆ†é…ï¼Œè·³è¿‡
                 if (task.isAssignedToEmployee(emp_id)) {
                     continue;
                 }
                 
-                // ·ÖÅäÈÎÎñ¸øÔ±¹¤£¨¼´Ê¹ÊÇÇ¿ÖÆ·ÖÅäÒ²Ö´ĞĞ£©
+                // åˆ†é…ä»»åŠ¡ç»™å‘˜å·¥ï¼ˆå³ä½¿æ˜¯å¼ºåˆ¶åˆ†é…ä¹Ÿæ‰§è¡Œï¼‰
                 task.addAssignedEmployeeId(emp_id);
                 
-                // Î¬»¤Ë«ÏòÓ³Éä£ºÔ±¹¤->ÈÎÎñ
+                // ç»´æŠ¤åŒå‘æ˜ å°„ï¼šå‘˜å·¥->ä»»åŠ¡
                 auto emp_it = employee_map.find(emp_id);
                 if (emp_it != employee_map.end()) {
                     const_cast<LoadEmployeeInfo*>(emp_it->second)->getEmployeeInfo()
@@ -1131,43 +1181,52 @@ void LoadScheduler::assignTasksToEmployees(vector<TaskDefinition>& tasks,
                 assigned_in_this_iteration++;
             }
             
-            // ·ÀÖ¹ËÀÑ­»·£ºÈç¹û±¾´ÎÑ­»·ÖĞÃ»ÓĞÈÎºÎĞÂµÄÈËÔ±±»·ÖÅä£¨ËùÓĞ³ÉÔ±¶¼ÒÑ·ÖÅä£©£¬
-            // ËµÃ÷ÎŞ·¨¼ÌĞø·ÖÅä£¬Ó¦¸ÃÍË³öÑ­»·
+            // é˜²æ­¢æ­»å¾ªç¯ï¼šå¦‚æœæœ¬æ¬¡å¾ªç¯ä¸­æ²¡æœ‰ä»»ä½•æ–°çš„äººå‘˜è¢«åˆ†é…ï¼ˆæ‰€æœ‰æˆå‘˜éƒ½å·²åˆ†é…ï¼‰ï¼Œ
+            // è¯´æ˜æ— æ³•ç»§ç»­åˆ†é…ï¼Œåº”è¯¥é€€å‡ºå¾ªç¯
             if (assigned_in_this_iteration == 0) {
-                // ±¾´ÎÑ­»·Ã»ÓĞ·ÖÅäÈÎºÎÈË£¬ËµÃ÷ÒÑ¾­Ã»ÓĞ¿ÉÓÃµÄ×éÁË
+                // æœ¬æ¬¡å¾ªç¯æ²¡æœ‰åˆ†é…ä»»ä½•äººï¼Œè¯´æ˜å·²ç»æ²¡æœ‰å¯ç”¨çš„ç»„äº†
                 task.setShortStaffed(true);
                 break;
             }
             
-            // Èç¹ûÊ¹ÓÃÁËÇ¿ÖÆ·ÖÅä£¨Ê±¼ä¶Î±»Õ¼Âú£©£¬¼ÌĞøÏòºóÂÖ×ª
+            // å¦‚æœä½¿ç”¨äº†å¼ºåˆ¶åˆ†é…ï¼ˆæ—¶é—´æ®µè¢«å æ»¡ï¼‰ï¼Œç»§ç»­å‘åè½®è½¬
             if (forced_assignment) {
-                // ÕÒµ½±»·ÖÅä×éÔÚÂÖ×ªË³ĞòÖĞµÄÎ»ÖÃ£¬È»ºó¼ÌĞøÏòºóÂÖ×ª
-                for (size_t i = 0; i < rotation_order.size(); ++i) {
-                    if (rotation_order[i] == selected_group_id) {
-                        current_rotation_index = (i + 1) % rotation_order.size();
+                // æ‰¾åˆ°è¢«åˆ†é…ç»„åœ¨è½®æ¢æ•°ç»„ä¸­çš„ä½ç½®ï¼Œç„¶åç»§ç»­å‘åè½®è½¬
+                for (int i = 0; i < 1000; ++i) {
+                    int idx = (current_rotation_index + i) % 1000;
+                    if (rotation_array[idx] == selected_group_id) {
+                        current_rotation_index = (idx + 1) % 1000;
                         break;
                     }
                 }
-                // Èç¹ûÃ»ÓĞÔÚÂÖ×ªË³ĞòÖĞÕÒµ½£¨ÀíÂÛÉÏ²»Ó¦¸Ã·¢Éú£©£¬Ôò²»ĞèÒª¸üĞÂÂÖ×ªË÷Òı
+                // å¦‚æœæ²¡æœ‰åœ¨è½®æ¢æ•°ç»„ä¸­æ‰¾åˆ°ï¼ˆç†è®ºä¸Šä¸åº”è¯¥å‘ç”Ÿï¼‰ï¼Œåˆ™ä¸éœ€è¦æ›´æ–°è½®è½¬ç´¢å¼•
             }
         }
         
-        // ¸üĞÂÈÎÎñ×´Ì¬
+        // æ›´æ–°ä»»åŠ¡çŠ¶æ€
         if (assigned_count > 0) {
             task.setAssigned(true);
+            if (task_index <= 10) {
+                cerr << "DEBUG: Task " << task_id << " assigned " << assigned_count << " out of " << required_count << " required" << endl;
+        }
+        cout << "ä»»åŠ¡ ID " << task_id 
+             << " (åç§°: " << task.getTaskName() 
+             << ") å·²åˆ†é… " << assigned_count 
+             << " äººï¼Œéœ€æ±‚ " << required_count << " äººã€‚" << endl;
+        } else {
+            if (task_index <= 10) {
+                cerr << "DEBUG: Task " << task_id << " failed to assign any employees" << endl;
+            }
         }
         
-        // ±ê¼ÇÎªÒÑ´¦Àí
+        // æ ‡è®°ä¸ºå·²å¤„ç†ï¼ˆæ— è®ºæ˜¯å¦æˆåŠŸåˆ†é…ï¼Œéƒ½æ ‡è®°ä¸ºå·²å¤„ç†ï¼Œé¿å…é‡å¤å¤„ç†ï¼‰
         processed_task_ids.insert(task_id);
-        
-        cout << "ÈÎÎñ ID " << task_id 
-             << " (Ãû³Æ: " << task.getTaskName() 
-             << ") ÒÑ·ÖÅä " << assigned_count 
-             << " ÈË£¬ĞèÇó " << required_count << " ÈË¡£" << endl;
     }
     
-    cout << "×°Ğ¶ÈÎÎñµ÷¶ÈÍê³É£¡" << endl;
+    cout << "è£…å¸ä»»åŠ¡è°ƒåº¦å®Œæˆï¼" << endl;
 }
+
+// å·²åºŸå¼ƒï¼šscheduleLoadTasksFromCommonå‡½æ•°å·²åˆ é™¤ï¼Œè¯·ç›´æ¥ä½¿ç”¨loadLoadTasksFromCSVåŠ è½½LoadTaskï¼Œç„¶åè°ƒç”¨scheduleLoadTasks
 
 }  // namespace zhuangxie_class
 

@@ -11,7 +11,6 @@
 
 #include <map>
 #include <vector>
-#include <cstdint>
 #include <string>
 #include "task_type.h"
 namespace vip_first_class {
@@ -35,10 +34,10 @@ enum class ShiftCategory {
  */
 struct FixedPersonInfo {
     ShiftCategory shift_category;  ///< 班次类型（主班/副班）
-    int32_t position;              ///< 固定人选的位置（第几个人，从1开始）
+    int position;              ///< 固定人选的位置（第几个人，从1开始）
     
     FixedPersonInfo() : shift_category(ShiftCategory::MAIN), position(0) {}
-    FixedPersonInfo(ShiftCategory category, int32_t pos) 
+    FixedPersonInfo(ShiftCategory category, int pos) 
         : shift_category(category), position(pos) {}
 };
 
@@ -67,7 +66,7 @@ public:
      * @param task_id 任务ID
      * @return 固定人选信息列表的常量引用
      */
-    const vector<FixedPersonInfo>& getFixedPersons(int64_t task_id) const;
+    const vector<FixedPersonInfo>& getFixedPersons(long task_id) const;
     
     /**
      * @brief 根据任务类型获取固定人选列表
@@ -81,7 +80,7 @@ public:
      * @param task_id 任务ID
      * @param fixed_person 固定人选信息
      */
-    void addFixedPerson(int64_t task_id, const FixedPersonInfo& fixed_person);
+    void addFixedPerson(long task_id, const FixedPersonInfo& fixed_person);
     
     /**
      * @brief 添加任务固定人选配置（通过任务类型）
@@ -95,21 +94,21 @@ public:
      * @param task_type 任务类型
      * @param task_id 任务ID
      */
-    void setTaskTypeToId(TaskType task_type, int64_t task_id);
+    void setTaskTypeToId(TaskType task_type, long task_id);
     
     /**
      * @brief 根据任务类型获取任务ID
      * @param task_type 任务类型
      * @return 任务ID，如果不存在则返回0
      */
-    int64_t getTaskIdByType(TaskType task_type) const;
+    long getTaskIdByType(TaskType task_type) const;
     
     /**
      * @brief 检查任务是否有固定人选配置
      * @param task_id 任务ID
      * @return true表示有配置，false表示没有配置
      */
-    bool hasFixedPersonConfig(int64_t task_id) const;
+    bool hasFixedPersonConfig(long task_id) const;
     
     /**
      * @brief 检查任务是否有固定人选配置（通过任务类型）
@@ -128,14 +127,14 @@ public:
      * @param task_type 任务类型
      * @return 任务优先级，数值越大优先级越高
      */
-    int32_t getTaskPriority(TaskType task_type) const;
+    int getTaskPriority(TaskType task_type) const;
     
     /**
      * @brief 设置任务优先级
      * @param task_type 任务类型
      * @param priority 优先级，数值越大优先级越高
      */
-    void setTaskPriority(TaskType task_type, int32_t priority);
+    void setTaskPriority(TaskType task_type, int priority);
     
     /**
      * @brief 初始化任务优先级配置
@@ -183,13 +182,13 @@ private:
     TaskConfig& operator=(const TaskConfig&) = delete;
     
     // 任务ID到固定人选列表的映射
-    map<int64_t, vector<FixedPersonInfo>> task_id_to_fixed_persons_;
+    map<long, vector<FixedPersonInfo>> task_id_to_fixed_persons_;
     
     // 任务类型到任务ID的映射（用于通过类型查找）
-    map<TaskType, int64_t> task_type_to_id_;
+    map<TaskType, long> task_type_to_id_;
     
     // 任务类型到优先级的映射（数值越大优先级越高）
-    map<TaskType, int32_t> task_type_to_priority_;
+    map<TaskType, int> task_type_to_priority_;
     
     // 空的固定人选列表（用于返回默认值）
     static const vector<FixedPersonInfo> empty_list_;
