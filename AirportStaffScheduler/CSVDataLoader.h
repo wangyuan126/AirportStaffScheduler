@@ -1,8 +1,8 @@
 /**
  * @file CSVDataLoader.h
- * @brief CSVÊı¾İ¼ÓÔØÆ÷
+ * @brief CSVæ•°æ®åŠ è½½å™¨
  * 
- * ´ÓCSVÎÄ¼ş¶ÁÈ¡Êı¾İ²¢×ª»»ÎªËã·¨ËùĞèµÄÊı¾İ½á¹¹
+ * ä»CSVæ–‡ä»¶è¯»å–æ•°æ®å¹¶è½¬æ¢ä¸ºç®—æ³•æ‰€éœ€çš„æ•°æ®ç»“æ„
  */
 
 #pragma once
@@ -12,19 +12,22 @@
 #include "vip_first_class_algo/shift.h"
 #include "vip_first_class_algo/task_definition.h"
 #include "zhuangxie_class/load_employee_info.h"
-#include "zhuangxie_class/flight.h"
+#include "zhuangxie_class/load_task.h"
 #include "CommonAdapterUtils.h"
+#include "Task.h"
+#include "DateTimeUtils.h"
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <ctime>
 
 namespace AirportStaffScheduler {
 namespace CSVLoader {
 
 /**
- * @brief ¸ù¾İ¸ÚÎ»Ãû³ÆÍÆ¶Ï×ÊÖÊÑÚÂë
- * @param position ¸ÚÎ»Ãû³Æ£¨Èç"xaÄÚ³¡ĞÂÈË"¡¢"xaÅäÔØÄÚ³¡"¡¢"xa×°»ú"µÈ£©
- * @return ×ÊÖÊÑÚÂë
+ * @brief æ ¹æ®å²—ä½åç§°æ¨æ–­èµ„è´¨æ©ç 
+ * @param position å²—ä½åç§°ï¼ˆå¦‚"xaå†…åœºæ–°äºº"ã€"xaé…è½½å†…åœº"ã€"xaè£…æœº"ç­‰ï¼‰
+ * @return èµ„è´¨æ©ç 
  */
 inline int inferQualificationFromPosition(const std::string& position) {
     std::string pos_lower = position;
@@ -32,17 +35,17 @@ inline int inferQualificationFromPosition(const std::string& position) {
     
     int mask = 0;
     
-    // ¸ù¾İ¸ÚÎ»¹Ø¼ü´ÊÍÆ¶Ï×ÊÖÊ
-    if (pos_lower.find("ÄÚ³¡") != std::string::npos || pos_lower.find("ÅäÔØ") != std::string::npos) {
+    // æ ¹æ®å²—ä½å…³é”®è¯æ¨æ–­èµ„è´¨
+    if (pos_lower.find("å†…åœº") != std::string::npos || pos_lower.find("é…è½½") != std::string::npos) {
         mask |= static_cast<int>(vip_first_class::QualificationMask::HALL_INTERNAL);
         mask |= static_cast<int>(vip_first_class::QualificationMask::FRONT_DESK);
     }
     
-    if (pos_lower.find("×°»ú") != std::string::npos) {
+    if (pos_lower.find("è£…æœº") != std::string::npos) {
         mask |= static_cast<int>(vip_first_class::QualificationMask::EXTERNAL);
     }
     
-    // Ä¬ÈÏ¸øÓèÌüÄÚ×ÊÖÊ
+    // é»˜è®¤ç»™äºˆå…å†…èµ„è´¨
     if (mask == 0) {
         mask = static_cast<int>(vip_first_class::QualificationMask::HALL_INTERNAL) |
                static_cast<int>(vip_first_class::QualificationMask::FRONT_DESK);
@@ -52,24 +55,24 @@ inline int inferQualificationFromPosition(const std::string& position) {
 }
 
 /**
- * @brief ´ÓCSVÎÄ¼ş¼ÓÔØÔ±¹¤Êı¾İ£¨VIP/Í·µÈ²Õ£©
- * @param filename CSVÎÄ¼şÂ·¾¶
- * @return Ô±¹¤ĞÅÏ¢ÁĞ±í
+ * @brief ä»CSVæ–‡ä»¶åŠ è½½å‘˜å·¥æ•°æ®ï¼ˆVIP/å¤´ç­‰èˆ±ï¼‰
+ * @param filename CSVæ–‡ä»¶è·¯å¾„
+ * @return å‘˜å·¥ä¿¡æ¯åˆ—è¡¨
  */
 inline std::vector<vip_first_class::EmployeeInfo> loadEmployeesFromCSV(const std::string& filename) {
     std::vector<vip_first_class::EmployeeInfo> employees;
     
     auto rows = CSVUtils::readCSV(filename, true);
     if (rows.empty()) {
-        std::cerr << "¾¯¸æ£ºCSVÎÄ¼şÎª¿Õ»òÎŞ·¨¶ÁÈ¡: " << filename << std::endl;
+        std::cerr << "è­¦å‘Šï¼šCSVæ–‡ä»¶ä¸ºç©ºæˆ–æ— æ³•è¯»å–: " << filename << std::endl;
         return employees;
     }
     
-    // ¶ÁÈ¡±íÍ·£¨µÚÒ»ĞĞ£©
+    // è¯»å–è¡¨å¤´ï¼ˆç¬¬ä¸€è¡Œï¼‰
     std::ifstream header_file(filename);
     std::string header_line;
     if (std::getline(header_file, header_line)) {
-        // È¥³ıBOM
+        // å»é™¤BOM
         if (header_line.length() >= 3 && 
             static_cast<unsigned char>(header_line[0]) == 0xEF &&
             static_cast<unsigned char>(header_line[1]) == 0xBB &&
@@ -85,38 +88,38 @@ inline std::vector<vip_first_class::EmployeeInfo> loadEmployeesFromCSV(const std
     for (const auto& row : data_map) {
         vip_first_class::EmployeeInfo emp;
         
-        // ÌáÈ¡×Ö¶Î£¨È¥³ıÒıºÅ£©
-        std::string emp_id = CSVUtils::trimQuotes(row.count("Ô±¹¤±àºÅ") ? row.at("Ô±¹¤±àºÅ") : "");
-        std::string emp_name = CSVUtils::trimQuotes(row.count("Ô±¹¤ĞÕÃû") ? row.at("Ô±¹¤ĞÕÃû") : "");
-        std::string position = CSVUtils::trimQuotes(row.count("¸ÚÎ»") ? row.at("¸ÚÎ»") : "");
+        // æå–å­—æ®µï¼ˆå»é™¤å¼•å·ï¼‰
+        std::string emp_id = CSVUtils::trimQuotes(row.count("å‘˜å·¥ç¼–å·") ? row.at("å‘˜å·¥ç¼–å·") : "");
+        std::string emp_name = CSVUtils::trimQuotes(row.count("å‘˜å·¥å§“å") ? row.at("å‘˜å·¥å§“å") : "");
+        std::string position = CSVUtils::trimQuotes(row.count("å²—ä½") ? row.at("å²—ä½") : "");
         
         if (emp_id.empty()) {
-            continue;  // Ìø¹ıÎŞĞ§Êı¾İ
+            continue;  // è·³è¿‡æ— æ•ˆæ•°æ®
         }
         
         emp.setEmployeeId(emp_id);
         emp.setEmployeeName(emp_name);
         
-        // ¸ù¾İ¸ÚÎ»ÍÆ¶Ï×ÊÖÊ£¨ÒòÎªCSVÖĞµÄ×ÊÖÊÊÇº½¿Õ¹«Ë¾Ãû³ÆÁĞ±í£¬²»ÊÇËã·¨ĞèÒªµÄ×ÊÖÊÀàĞÍ£©
+        // æ ¹æ®å²—ä½æ¨æ–­èµ„è´¨ï¼ˆå› ä¸ºCSVä¸­çš„èµ„è´¨æ˜¯èˆªç©ºå…¬å¸åç§°åˆ—è¡¨ï¼Œä¸æ˜¯ç®—æ³•éœ€è¦çš„èµ„è´¨ç±»å‹ï¼‰
         int qualification_mask = inferQualificationFromPosition(position);
         emp.setQualificationMask(qualification_mask);
         
         employees.push_back(emp);
     }
     
-    // std::cout << "´ÓCSV¼ÓÔØÁË " << employees.size() << " ¸öÔ±¹¤" << std::endl;  // ¼õÉÙÊä³ö
+    // std::cout << "ä»CSVåŠ è½½äº† " << employees.size() << " ä¸ªå‘˜å·¥" << std::endl;  // å‡å°‘è¾“å‡º
     return employees;
 }
 
 /**
- * @brief ´ÓCSVÎÄ¼ş¼ÓÔØ×°Ğ¶Ô±¹¤Êı¾İ
- * @param filename CSVÎÄ¼şÂ·¾¶
- * @return ×°Ğ¶Ô±¹¤ĞÅÏ¢ÁĞ±í
+ * @brief ä»CSVæ–‡ä»¶åŠ è½½è£…å¸å‘˜å·¥æ•°æ®
+ * @param filename CSVæ–‡ä»¶è·¯å¾„
+ * @return è£…å¸å‘˜å·¥ä¿¡æ¯åˆ—è¡¨
  */
 inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(const std::string& filename) {
     std::vector<zhuangxie_class::LoadEmployeeInfo> employees;
     
-    // ¼ì²éÎÄ¼şÊÇ·ñ´æÔÚ
+    // æ£€æŸ¥æ–‡ä»¶æ˜¯å¦å­˜åœ¨
     std::ifstream test_file(filename);
     if (!test_file.is_open()) {
         std::cerr << "ERROR: Cannot open CSV file: " << filename << std::endl;
@@ -130,7 +133,7 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
         return employees;
     }
     
-    // ¶ÁÈ¡±íÍ·
+    // è¯»å–è¡¨å¤´
     std::ifstream header_file(filename);
     std::string header_line;
     if (std::getline(header_file, header_line)) {
@@ -145,16 +148,23 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
     
     auto header = CSVUtils::parseCSVLine(header_line);
     
-    // ÇåÀí±íÍ·£¬È¥³ıÒıºÅºÍ¿Õ¸ñ£¬²¢´´½¨Ô­Ê¼ÁĞÃûµ½ÇåÀíºóÁĞÃûµÄÓ³Éä
+    // DEBUG: è¾“å‡ºåŸå§‹è¡¨å¤´
+    std::cerr << "DEBUG: Raw header size: " << header.size() << std::endl;
+    for (size_t i = 0; i < header.size(); ++i) {
+        std::cerr << "DEBUG: Raw header[" << i << "]: [" << header[i] << "]" << std::endl;
+    }
+    
+    // æ¸…ç†è¡¨å¤´ï¼Œå»é™¤å¼•å·å’Œç©ºæ ¼ï¼Œå¹¶åˆ›å»ºåŸå§‹åˆ—ååˆ°æ¸…ç†ååˆ—åçš„æ˜ å°„
     std::vector<std::string> cleaned_header;
-    std::map<std::string, std::string> header_to_cleaned;  // Ô­Ê¼ÁĞÃû -> ÇåÀíºóµÄÁĞÃû
+    std::map<std::string, std::string> header_to_cleaned;  // åŸå§‹åˆ—å -> æ¸…ç†åçš„åˆ—å
     for (const auto& h : header) {
         std::string cleaned = CSVUtils::trimQuotes(h);
         cleaned_header.push_back(cleaned);
         header_to_cleaned[h] = cleaned;
+        std::cerr << "DEBUG: Header mapping: [" << h << "] -> [" << cleaned << "]" << std::endl;
     }
     
-    // ´´½¨ÇåÀíºóÁĞÃûµ½Ô­Ê¼ÁĞÃûµÄ·´ÏòÓ³Éä£¨ÓÃÓÚ²éÕÒ£©
+    // åˆ›å»ºæ¸…ç†ååˆ—ååˆ°åŸå§‹åˆ—åçš„åå‘æ˜ å°„ï¼ˆç”¨äºæŸ¥æ‰¾ï¼‰
     std::map<std::string, std::string> cleaned_to_header;
     for (const auto& pair : header_to_cleaned) {
         cleaned_to_header[pair.second] = pair.first;
@@ -162,12 +172,12 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
     
     auto data_map = CSVUtils::csvToMap(header, rows);
     
-    // µ÷ÊÔ£º¼ì²é±íÍ·£¨Ê¹ÓÃ¸ü¿íËÉµÄÆ¥Åä·½Ê½£©
+    // è°ƒè¯•ï¼šæ£€æŸ¥è¡¨å¤´ï¼ˆä½¿ç”¨æ›´å®½æ¾çš„åŒ¹é…æ–¹å¼ï¼‰
     bool has_emp_id = false, has_emp_name = false;
     std::string emp_id_key, emp_name_key;
     
     for (const auto& h : cleaned_header) {
-        // È¥³ıÊ×Î²¿Õ¸ñºóÔÙ±È½Ï
+        // å»é™¤é¦–å°¾ç©ºæ ¼åå†æ¯”è¾ƒ
         std::string trimmed = h;
         while (!trimmed.empty() && (trimmed.front() == ' ' || trimmed.front() == '\t')) {
             trimmed.erase(trimmed.begin());
@@ -176,28 +186,54 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
             trimmed.pop_back();
         }
         
-        if (trimmed == "Ô±¹¤±àºÅ" || trimmed.find("Ô±¹¤±àºÅ") != std::string::npos) {
+        if (trimmed == "å‘˜å·¥ç¼–å·" || trimmed.find("å‘˜å·¥ç¼–å·") != std::string::npos) {
             has_emp_id = true;
-            emp_id_key = h;  // ±£´æÔ­Ê¼ÁĞÃû
+            // éœ€è¦æ‰¾åˆ°å¯¹åº”çš„åŸå§‹åˆ—åï¼ˆå¸¦å¼•å·çš„ï¼‰
+            if (cleaned_to_header.count(h)) {
+                emp_id_key = cleaned_to_header.at(h);
+            } else {
+                // å¦‚æœcleaned_to_headerä¸­æ²¡æœ‰ï¼Œå°è¯•ä»headerä¸­æŸ¥æ‰¾
+                for (const auto& orig_h : header) {
+                    if (CSVUtils::trimQuotes(orig_h) == h) {
+                        emp_id_key = orig_h;
+                        break;
+                    }
+                }
+                if (emp_id_key.empty()) {
+                    emp_id_key = h;  // å¦‚æœæ‰¾ä¸åˆ°ï¼Œä½¿ç”¨æ¸…ç†åçš„åˆ—å
+                }
+            }
         }
-        if (trimmed == "Ô±¹¤ĞÕÃû" || trimmed.find("Ô±¹¤ĞÕÃû") != std::string::npos) {
+        if (trimmed == "å‘˜å·¥å§“å" || trimmed.find("å‘˜å·¥å§“å") != std::string::npos) {
             has_emp_name = true;
+            if (cleaned_to_header.count(h)) {
+                emp_name_key = cleaned_to_header.at(h);
+            } else {
+                for (const auto& orig_h : header) {
+                    if (CSVUtils::trimQuotes(orig_h) == h) {
+                        emp_name_key = orig_h;
+                        break;
+                    }
+                }
+                if (emp_name_key.empty()) {
             emp_name_key = h;
+                }
+            }
         }
     }
     
-    // Èç¹û¾«È·Æ¥ÅäÊ§°Ü£¬³¢ÊÔÔÚcleaned_to_headerÖĞ²éÕÒ
+    // å¦‚æœç²¾ç¡®åŒ¹é…å¤±è´¥ï¼Œå°è¯•åœ¨cleaned_to_headerä¸­æŸ¥æ‰¾
     if (!has_emp_id) {
         for (const auto& pair : cleaned_to_header) {
             std::string key = pair.first;
-            // È¥³ıÊ×Î²¿Õ¸ñ
+            // å»é™¤é¦–å°¾ç©ºæ ¼
             while (!key.empty() && (key.front() == ' ' || key.front() == '\t')) {
                 key.erase(key.begin());
             }
             while (!key.empty() && (key.back() == ' ' || key.back() == '\t')) {
                 key.pop_back();
             }
-            if (key == "Ô±¹¤±àºÅ" || key.find("Ô±¹¤±àºÅ") != std::string::npos) {
+            if (key == "å‘˜å·¥ç¼–å·" || key.find("å‘˜å·¥ç¼–å·") != std::string::npos) {
                 has_emp_id = true;
                 emp_id_key = pair.second;
                 break;
@@ -206,10 +242,10 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
     }
     
     if (!has_emp_id) {
-        // ³¢ÊÔ¸ü¿íËÉµÄÆ¥Åä£ºÖ±½ÓÔÚËùÓĞÁĞÃûÖĞ²éÕÒ
+        // å°è¯•æ›´å®½æ¾çš„åŒ¹é…ï¼šç›´æ¥åœ¨æ‰€æœ‰åˆ—åä¸­æŸ¥æ‰¾
         for (const auto& h : cleaned_header) {
             std::string trimmed = h;
-            // È¥³ıÊ×Î²¿Õ¸ñºÍÒıºÅ
+            // å»é™¤é¦–å°¾ç©ºæ ¼å’Œå¼•å·
             while (!trimmed.empty() && (trimmed.front() == ' ' || trimmed.front() == '\t' || trimmed.front() == '"')) {
                 trimmed.erase(trimmed.begin());
             }
@@ -217,11 +253,11 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
                 trimmed.pop_back();
             }
             
-            // ¼ì²éÊÇ·ñ°üº¬"Ô±¹¤"ºÍ"±àºÅ"
-            if ((trimmed.find("Ô±¹¤") != std::string::npos && trimmed.find("±àºÅ") != std::string::npos) ||
-                trimmed == "Ô±¹¤±àºÅ") {
+            // æ£€æŸ¥æ˜¯å¦åŒ…å«"å‘˜å·¥"å’Œ"ç¼–å·"
+            if ((trimmed.find("å‘˜å·¥") != std::string::npos && trimmed.find("ç¼–å·") != std::string::npos) ||
+                trimmed == "å‘˜å·¥ç¼–å·") {
                 has_emp_id = true;
-                // ÕÒµ½¶ÔÓ¦µÄÔ­Ê¼ÁĞÃû
+                // æ‰¾åˆ°å¯¹åº”çš„åŸå§‹åˆ—å
                 for (const auto& pair : cleaned_to_header) {
                     if (CSVUtils::trimQuotes(pair.first) == trimmed || pair.first == h) {
                         emp_id_key = pair.second;
@@ -237,20 +273,15 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
     }
     
     if (!has_emp_id) {
-        std::cerr << "ERROR: CSV file missing required column 'Ô±¹¤±àºÅ' (employee ID). Available columns: ";
-        for (size_t i = 0; i < cleaned_header.size(); ++i) {
-            std::cerr << cleaned_header[i];
-            if (i < cleaned_header.size() - 1) std::cerr << ", ";
-        }
-        std::cerr << std::endl;
+        std::cerr << "ERROR: CSV file missing required column 'å‘˜å·¥ç¼–å·' (employee ID)." << std::endl;
         return employees;
     }
     
-    // È·±£emp_id_keyºÍemp_name_keyÓĞÖµ
+    // ç¡®ä¿emp_id_keyå’Œemp_name_keyæœ‰å€¼
     if (emp_id_key.empty()) {
-        // ×îºó³¢ÊÔ£ºÖ±½ÓÊ¹ÓÃcleaned_headerÖĞµÄÖµ
+        // æœ€åå°è¯•ï¼šç›´æ¥ä½¿ç”¨cleaned_headerä¸­çš„å€¼
         for (const auto& h : cleaned_header) {
-            if (h.find("Ô±¹¤±àºÅ") != std::string::npos || h == "Ô±¹¤±àºÅ") {
+            if (h.find("å‘˜å·¥ç¼–å·") != std::string::npos || h == "å‘˜å·¥ç¼–å·") {
                 emp_id_key = cleaned_to_header.count(h) ? cleaned_to_header.at(h) : h;
                 break;
             }
@@ -258,14 +289,14 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
     }
     if (emp_name_key.empty()) {
         for (const auto& h : cleaned_header) {
-            if (h.find("Ô±¹¤ĞÕÃû") != std::string::npos || h == "Ô±¹¤ĞÕÃû") {
+            if (h.find("å‘˜å·¥å§“å") != std::string::npos || h == "å‘˜å·¥å§“å") {
                 emp_name_key = cleaned_to_header.count(h) ? cleaned_to_header.at(h) : h;
                 break;
             }
         }
     }
     
-    // ÓÃÓÚ¸ù¾İ°à×éÃûÓ³Éäµ½×°Ğ¶×éID
+    // ç”¨äºæ ¹æ®ç­ç»„åæ˜ å°„åˆ°è£…å¸ç»„ID
     std::map<std::string, int> group_name_to_id;
     int next_group_id = 1;
     int skipped_rows = 0;
@@ -273,17 +304,17 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
     for (const auto& row : data_map) {
         zhuangxie_class::LoadEmployeeInfo emp;
         
-        // Ê¹ÓÃÇåÀíºóµÄÁĞÃû²éÕÒÔ­Ê¼ÁĞÃû£¬È»ºó´ÓrowÖĞ»ñÈ¡Öµ
-        // Èç¹ûÖ®Ç°ÒÑ¾­ÕÒµ½ÁËkey£¬Ö±½ÓÊ¹ÓÃ£»·ñÔò³¢ÊÔ²éÕÒ
-        std::string group_name_key = cleaned_to_header.count("°à×éÃû") ? cleaned_to_header.at("°à×éÃû") : "°à×éÃû";
-        std::string position_key = cleaned_to_header.count("¸ÚÎ»") ? cleaned_to_header.at("¸ÚÎ»") : "¸ÚÎ»";
+        // ä½¿ç”¨æ¸…ç†åçš„åˆ—åæŸ¥æ‰¾åŸå§‹åˆ—åï¼Œç„¶åä»rowä¸­è·å–å€¼
+        // å¦‚æœä¹‹å‰å·²ç»æ‰¾åˆ°äº†keyï¼Œç›´æ¥ä½¿ç”¨ï¼›å¦åˆ™å°è¯•æŸ¥æ‰¾
+        std::string group_name_key = cleaned_to_header.count("ç­ç»„å") ? cleaned_to_header.at("ç­ç»„å") : "ç­ç»„å";
+        std::string position_key = cleaned_to_header.count("å²—ä½") ? cleaned_to_header.at("å²—ä½") : "å²—ä½";
         
-        // ³¢ÊÔÔÚrowÖĞÖ±½Ó²éÕÒ£¨¿ÉÄÜÁĞÃûÓĞ±ä»¯£©
+        // å°è¯•åœ¨rowä¸­ç›´æ¥æŸ¥æ‰¾ï¼ˆå¯èƒ½åˆ—åæœ‰å˜åŒ–ï¼‰
         if (row.count(emp_id_key) == 0) {
-            // ³¢ÊÔÆäËû¿ÉÄÜµÄÁĞÃû
+            // å°è¯•å…¶ä»–å¯èƒ½çš„åˆ—å
             for (const auto& pair : row) {
                 std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key == "Ô±¹¤±àºÅ" || key.find("Ô±¹¤±àºÅ") != std::string::npos) {
+                if (key == "å‘˜å·¥ç¼–å·" || key.find("å‘˜å·¥ç¼–å·") != std::string::npos) {
                     emp_id_key = pair.first;
                     break;
                 }
@@ -292,7 +323,7 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
         if (row.count(emp_name_key) == 0) {
             for (const auto& pair : row) {
                 std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key == "Ô±¹¤ĞÕÃû" || key.find("Ô±¹¤ĞÕÃû") != std::string::npos) {
+                if (key == "å‘˜å·¥å§“å" || key.find("å‘˜å·¥å§“å") != std::string::npos) {
                     emp_name_key = pair.first;
                     break;
                 }
@@ -312,19 +343,19 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
         emp.setEmployeeId(emp_id);
         emp.setEmployeeName(emp_name);
         
-        // ¸ù¾İ°à×éÃû·ÖÅä×°Ğ¶×éID
+        // æ ¹æ®ç­ç»„ååˆ†é…è£…å¸ç»„ID
         if (!group_name.empty()) {
             if (group_name_to_id.find(group_name) == group_name_to_id.end()) {
                 group_name_to_id[group_name] = next_group_id++;
             }
             emp.setLoadGroup(group_name_to_id[group_name]);
         } else {
-            emp.setLoadGroup(0);  // Î´·Ö×é
+            emp.setLoadGroup(0);  // æœªåˆ†ç»„
         }
         
-        // ¸ù¾İ¸ÚÎ»ÍÆ¶Ï×ÊÖÊ
+        // æ ¹æ®å²—ä½æ¨æ–­èµ„è´¨
         int qualification_mask = inferQualificationFromPosition(position);
-        // ×°Ğ¶Ô±¹¤Ä¬ÈÏ¾ßÓĞÍâ³¡×ÊÖÊ
+        // è£…å¸å‘˜å·¥é»˜è®¤å…·æœ‰å¤–åœºèµ„è´¨
         qualification_mask |= static_cast<int>(vip_first_class::QualificationMask::EXTERNAL);
         emp.setQualificationMask(qualification_mask);
         
@@ -335,25 +366,25 @@ inline std::vector<zhuangxie_class::LoadEmployeeInfo> loadLoadEmployeesFromCSV(c
         std::cerr << "WARNING: All " << skipped_rows << " rows were skipped due to empty employee ID" << std::endl;
     }
     
-    // std::cout << "´ÓCSV¼ÓÔØÁË " << employees.size() << " ¸ö×°Ğ¶Ô±¹¤" << std::endl;  // ¼õÉÙÊä³ö
+    // std::cout << "ä»CSVåŠ è½½äº† " << employees.size() << " ä¸ªè£…å¸å‘˜å·¥" << std::endl;  // å‡å°‘è¾“å‡º
     return employees;
 }
 
 /**
- * @brief ´ÓCSVÎÄ¼ş¼ÓÔØ°à´ÎÊı¾İ
- * @param filename CSVÎÄ¼şÂ·¾¶
- * @return °à´ÎÁĞ±í
+ * @brief ä»CSVæ–‡ä»¶åŠ è½½ç­æ¬¡æ•°æ®
+ * @param filename CSVæ–‡ä»¶è·¯å¾„
+ * @return ç­æ¬¡åˆ—è¡¨
  */
 inline std::vector<vip_first_class::Shift> loadShiftsFromCSV(const std::string& filename) {
     std::vector<vip_first_class::Shift> shifts;
     
     auto rows = CSVUtils::readCSV(filename, true);
     if (rows.empty()) {
-        std::cerr << "¾¯¸æ£ºCSVÎÄ¼şÎª¿Õ»òÎŞ·¨¶ÁÈ¡: " << filename << std::endl;
+        std::cerr << "è­¦å‘Šï¼šCSVæ–‡ä»¶ä¸ºç©ºæˆ–æ— æ³•è¯»å–: " << filename << std::endl;
         return shifts;
     }
     
-    // ¶ÁÈ¡±íÍ·
+    // è¯»å–è¡¨å¤´
     std::ifstream header_file(filename);
     std::string header_line;
     if (std::getline(header_file, header_line)) {
@@ -368,7 +399,7 @@ inline std::vector<vip_first_class::Shift> loadShiftsFromCSV(const std::string& 
     
     auto header = CSVUtils::parseCSVLine(header_line);
     
-    // ÇåÀí±íÍ·£¬È¥³ıÒıºÅºÍ¿Õ¸ñ£¬²¢´´½¨Ó³Éä
+    // æ¸…ç†è¡¨å¤´ï¼Œå»é™¤å¼•å·å’Œç©ºæ ¼ï¼Œå¹¶åˆ›å»ºæ˜ å°„
     std::vector<std::string> cleaned_header;
     std::map<std::string, std::string> cleaned_to_header;
     for (const auto& h : header) {
@@ -379,33 +410,24 @@ inline std::vector<vip_first_class::Shift> loadShiftsFromCSV(const std::string& 
     
     auto data_map = CSVUtils::csvToMap(header, rows);
     
-    // ¸ù¾İ°à×éÃû·Ö×é£¬´ÓÉÏµ½ÏÂµÄĞ¡×é·Ö±ğÈÏÎªÊÇ1-8×é
-    std::map<std::string, int> group_name_to_id;  // °à×éÃû -> ×éID (1-8)
-    std::map<int, vip_first_class::Shift> group_shifts;  // ×éID -> Shift¶ÔÏó
+    // æ ¹æ®ç­ç»„ååˆ†ç»„ï¼Œä»ä¸Šåˆ°ä¸‹çš„å°ç»„åˆ†åˆ«è®¤ä¸ºæ˜¯1-8ç»„
+    std::map<std::string, int> group_name_to_id;  // ç­ç»„å -> ç»„ID (1-8)
+    std::map<int, vip_first_class::Shift> group_shifts;  // ç»„ID -> Shiftå¯¹è±¡
     int next_group_id = 1;
     
     for (const auto& row : data_map) {
-        std::string emp_id_key = cleaned_to_header.count("Ô±¹¤±àºÅ") ? cleaned_to_header.at("Ô±¹¤±àºÅ") : "Ô±¹¤±àºÅ";
-        std::string group_name_key = cleaned_to_header.count("°à×éÃû") ? cleaned_to_header.at("°à×éÃû") : "°à×éÃû";
-        std::string shift_name_key = cleaned_to_header.count("°à´ÎÃû³Æ") ? cleaned_to_header.at("°à´ÎÃû³Æ") : "°à´ÎÃû³Æ";
-        
-        // ³¢ÊÔÔÚrowÖĞÖ±½Ó²éÕÒ£¨¿ÉÄÜÁĞÃûÓĞ±ä»¯£©
-        if (row.count(emp_id_key) == 0) {
+        // ç›´æ¥ä»rowä¸­æŸ¥æ‰¾åˆ—åï¼ˆå› ä¸ºrowä¸­çš„é”®æ˜¯åŸå§‹è¡¨å¤´ï¼‰
+        std::string emp_id_key, group_name_key, shift_name_key;
             for (const auto& pair : row) {
                 std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key == "Ô±¹¤±àºÅ" || key.find("Ô±¹¤±àºÅ") != std::string::npos) {
+            if (emp_id_key.empty() && (key == "å‘˜å·¥ç¼–å·" || key.find("å‘˜å·¥ç¼–å·") != std::string::npos)) {
                     emp_id_key = pair.first;
-                    break;
-                }
             }
-        }
-        if (row.count(group_name_key) == 0) {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key == "°à×éÃû" || key.find("°à×éÃû") != std::string::npos) {
+            if (group_name_key.empty() && (key == "ç­ç»„å" || key.find("ç­ç»„å") != std::string::npos)) {
                     group_name_key = pair.first;
-                    break;
                 }
+            if (shift_name_key.empty() && (key == "ç­æ¬¡åç§°" || key.find("ç­æ¬¡åç§°") != std::string::npos)) {
+                shift_name_key = pair.first;
             }
         }
         
@@ -417,18 +439,18 @@ inline std::vector<vip_first_class::Shift> loadShiftsFromCSV(const std::string& 
             continue;
         }
         
-        // Èç¹ûÕâ¸ö°à×éÃû»¹Ã»ÓĞ·ÖÅä×éID£¬·ÖÅäÒ»¸öĞÂµÄ£¨×î¶à8×é£©
+        // å¦‚æœè¿™ä¸ªç­ç»„åè¿˜æ²¡æœ‰åˆ†é…ç»„IDï¼Œåˆ†é…ä¸€ä¸ªæ–°çš„ï¼ˆæœ€å¤š8ç»„ï¼‰
         if (group_name_to_id.find(group_name) == group_name_to_id.end()) {
             if (next_group_id <= 8) {
                 group_name_to_id[group_name] = next_group_id;
                 
-                // ´´½¨ĞÂµÄShift¶ÔÏó
+                // åˆ›å»ºæ–°çš„Shiftå¯¹è±¡
                 vip_first_class::Shift shift;
-                // ¸ù¾İ°à´ÎÃû³ÆÍÆ¶Ï°à´ÎÀàĞÍ
-                int shift_type = 0;  // 0=ĞİÏ¢, 1=Ö÷°à, 2=¸±°à
-                if (shift_name.find("Ö÷") != std::string::npos || shift_name.find("MAIN") != std::string::npos) {
+                // æ ¹æ®ç­æ¬¡åç§°æ¨æ–­ç­æ¬¡ç±»å‹
+                int shift_type = 0;  // 0=ä¼‘æ¯, 1=ä¸»ç­, 2=å‰¯ç­
+                if (shift_name.find("ä¸»") != std::string::npos || shift_name.find("MAIN") != std::string::npos) {
                     shift_type = 1;
-                } else if (shift_name.find("¸±") != std::string::npos || shift_name.find("SUB") != std::string::npos) {
+                } else if (shift_name.find("å‰¯") != std::string::npos || shift_name.find("SUB") != std::string::npos) {
                     shift_type = 2;
                 }
                 shift.setShiftType(shift_type);
@@ -436,45 +458,50 @@ inline std::vector<vip_first_class::Shift> loadShiftsFromCSV(const std::string& 
                 
                 next_group_id++;
             } else {
-                // ³¬¹ı8×é£¬Ìø¹ı
+                // è¶…è¿‡8ç»„ï¼Œè·³è¿‡
                 continue;
             }
         }
         
         int group_id = group_name_to_id[group_name];
         if (group_shifts.find(group_id) != group_shifts.end()) {
-            // ¸ù¾İÎ»ÖÃ»òÆäËû¹æÔòÈ·¶¨position£¨Ê¹ÓÃµİÔöµÄÎ»ÖÃ£©
+            // æ ¹æ®ä½ç½®æˆ–å…¶ä»–è§„åˆ™ç¡®å®špositionï¼ˆä½¿ç”¨é€’å¢çš„ä½ç½®ï¼‰
             int position = group_shifts[group_id].getPositionToEmployeeId().size() + 1;
             group_shifts[group_id].setEmployeeIdAtPosition(position, emp_id);
         }
     }
     
-    // ×ª»»Îªvector£¬°´×éIDÅÅĞò
+    // è½¬æ¢ä¸ºvectorï¼ŒæŒ‰ç»„IDæ’åº
     for (int i = 1; i <= 8; ++i) {
         if (group_shifts.find(i) != group_shifts.end()) {
             shifts.push_back(group_shifts[i]);
         }
     }
     
-    // std::cout << "´ÓCSV¼ÓÔØÁË " << shifts.size() << " ¸ö°à´Î" << std::endl;  // ¼õÉÙÊä³ö
+    // std::cout << "ä»CSVåŠ è½½äº† " << shifts.size() << " ä¸ªç­æ¬¡" << std::endl;  // å‡å°‘è¾“å‡º
     return shifts;
 }
 
 /**
- * @brief ´ÓÈÎÎñCSVÎÄ¼ş¼ÓÔØº½°àÊı¾İ£¨×°Ğ¶µ÷¶È£©
- * @param filename CSVÎÄ¼şÂ·¾¶
- * @return º½°àÁĞ±í
+ * @brief ä»shift.csvä¸­è¯»å–å‘˜å·¥ä¿¡æ¯å’Œç­ç»„ä¿¡æ¯
+ * @param filename shift.csvæ–‡ä»¶è·¯å¾„
+ * @param employees è¾“å‡ºå‚æ•°ï¼Œå‘˜å·¥åˆ—è¡¨
+ * @param group_name_to_employees è¾“å‡ºå‚æ•°ï¼Œç­ç»„ååˆ°å‘˜å·¥IDåˆ—è¡¨çš„æ˜ å°„
+ * @return æ˜¯å¦æˆåŠŸåŠ è½½
  */
-inline std::vector<zhuangxie_class::Flight> loadFlightsFromTaskCSV(const std::string& filename) {
-    std::vector<zhuangxie_class::Flight> flights;
+inline bool loadEmployeesFromShiftCSV(const std::string& filename,
+                                       std::vector<zhuangxie_class::LoadEmployeeInfo>& employees,
+                                       std::map<std::string, std::vector<std::string>>& group_name_to_employees) {
+    employees.clear();
+    group_name_to_employees.clear();
     
     auto rows = CSVUtils::readCSV(filename, true);
     if (rows.empty()) {
-        std::cerr << "WARNING: CSV file is empty or cannot be read: " << filename << std::endl;
-        return flights;
+        std::cerr << "è­¦å‘Šï¼šCSVæ–‡ä»¶ä¸ºç©ºæˆ–æ— æ³•è¯»å–: " << filename << std::endl;
+        return false;
     }
     
-    // ¶ÁÈ¡±íÍ·
+    // è¯»å–è¡¨å¤´
     std::ifstream header_file(filename);
     std::string header_line;
     if (std::getline(header_file, header_line)) {
@@ -488,220 +515,778 @@ inline std::vector<zhuangxie_class::Flight> loadFlightsFromTaskCSV(const std::st
     header_file.close();
     
     auto header = CSVUtils::parseCSVLine(header_line);
-    
-    // ÇåÀí±íÍ·£¬È¥³ıÒıºÅºÍ¿Õ¸ñ£¬²¢´´½¨Ó³Éä
-    std::vector<std::string> cleaned_header;
-    std::map<std::string, std::string> cleaned_to_header;
-    for (const auto& h : header) {
-        std::string cleaned = CSVUtils::trimQuotes(h);
-        cleaned_header.push_back(cleaned);
-        cleaned_to_header[cleaned] = h;
-    }
-    
     auto data_map = CSVUtils::csvToMap(header, rows);
     
-    // °´µ½´ïº½°àID»ò³ö·¢º½°àID·Ö×é£¬ºÏ²¢½ø¸ÛºÍ³ö¸ÛĞÅÏ¢
-    std::map<std::string, zhuangxie_class::Flight> flight_map;
+    // æŸ¥æ‰¾åˆ—å
+    std::string emp_id_key, emp_name_key, group_name_key;
+    for (const auto& row : data_map) {
+            for (const auto& pair : row) {
+                std::string key = CSVUtils::trimQuotes(pair.first);
+            if (emp_id_key.empty() && (key == "å‘˜å·¥ç¼–å·" || key.find("å‘˜å·¥ç¼–å·") != std::string::npos)) {
+                emp_id_key = pair.first;
+            }
+            if (emp_name_key.empty() && (key == "äººå‘˜å§“å" || key.find("äººå‘˜å§“å") != std::string::npos)) {
+                emp_name_key = pair.first;
+            }
+            if (group_name_key.empty() && (key == "ç­ç»„å" || key.find("ç­ç»„å") != std::string::npos)) {
+                group_name_key = pair.first;
+            }
+        }
+        if (!emp_id_key.empty() && !emp_name_key.empty() && !group_name_key.empty()) {
+                    break;
+                }
+            }
+    
+    if (emp_id_key.empty() || group_name_key.empty()) {
+        std::cerr << "ERROR: shift.csv missing required columns" << std::endl;
+        return false;
+    }
+    
+    // è¯»å–å‘˜å·¥ä¿¡æ¯
+    std::map<std::string, zhuangxie_class::LoadEmployeeInfo> employee_map;  // å‘˜å·¥ID -> LoadEmployeeInfo
     
     for (const auto& row : data_map) {
-        // ²éÕÒĞèÒªµÄÁĞÃû
-        std::string task_name_key, arrival_flight_id_key, departure_flight_id_key, 
-                    arrival_time_key, departure_time_key, stand_key, min_staff_key;
+        std::string emp_id = CSVUtils::trimQuotes(row.count(emp_id_key) ? row.at(emp_id_key) : "");
+        std::string emp_name = CSVUtils::trimQuotes(row.count(emp_name_key) ? row.at(emp_name_key) : "");
+        std::string group_name = CSVUtils::trimQuotes(row.count(group_name_key) ? row.at(group_name_key) : "");
         
-        // ²éÕÒÈÎÎñÃû³Æ
-        if (cleaned_to_header.count("ÈÎÎñÃû³Æ")) {
-            task_name_key = cleaned_to_header.at("ÈÎÎñÃû³Æ");
-        } else {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key.find("ÈÎÎñÃû³Æ") != std::string::npos) {
-                    task_name_key = pair.first;
-                    break;
-                }
-            }
-        }
-        
-        // ²éÕÒµ½´ïº½°àID
-        if (cleaned_to_header.count("µ½´ïº½°àID")) {
-            arrival_flight_id_key = cleaned_to_header.at("µ½´ïº½°àID");
-        } else {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key.find("µ½´ïº½°àID") != std::string::npos) {
-                    arrival_flight_id_key = pair.first;
-                    break;
-                }
-            }
-        }
-        
-        // ²éÕÒ³ö·¢º½°àID
-        if (cleaned_to_header.count("³ö·¢º½°àID")) {
-            departure_flight_id_key = cleaned_to_header.at("³ö·¢º½°àID");
-        } else {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key.find("³ö·¢º½°àID") != std::string::npos) {
-                    departure_flight_id_key = pair.first;
-                    break;
-                }
-            }
-        }
-        
-        // ²éÕÒµ½´ïº½°àÔ¤´ïÊ±¼ä
-        if (cleaned_to_header.count("µ½´ïº½°àÔ¤´ïÊ±¼ä")) {
-            arrival_time_key = cleaned_to_header.at("µ½´ïº½°àÔ¤´ïÊ±¼ä");
-        } else {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key.find("µ½´ïº½°àÔ¤´ïÊ±¼ä") != std::string::npos) {
-                    arrival_time_key = pair.first;
-                    break;
-                }
-            }
-        }
-        
-        // ²éÕÒ³ö·¢º½°àÔ¤ÀëÊ±¼ä
-        if (cleaned_to_header.count("³ö·¢º½°àÔ¤ÀëÊ±¼ä")) {
-            departure_time_key = cleaned_to_header.at("³ö·¢º½°àÔ¤ÀëÊ±¼ä");
-        } else {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key.find("³ö·¢º½°àÔ¤ÀëÊ±¼ä") != std::string::npos) {
-                    departure_time_key = pair.first;
-                    break;
-                }
-            }
-        }
-        
-        // ²éÕÒ»úÎ»
-        if (cleaned_to_header.count("»úÎ»")) {
-            stand_key = cleaned_to_header.at("»úÎ»");
-        } else {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key.find("»úÎ»") != std::string::npos) {
-                    stand_key = pair.first;
-                    break;
-                }
-            }
-        }
-        
-        // ²éÕÒÈÎÎñ¶ÔÓ¦µÄº½°àËùĞè×îÉÙÈËÊı
-        if (cleaned_to_header.count("ÈÎÎñ¶ÔÓ¦µÄº½°àËùĞè×îÉÙÈËÊı")) {
-            min_staff_key = cleaned_to_header.at("ÈÎÎñ¶ÔÓ¦µÄº½°àËùĞè×îÉÙÈËÊı");
-        } else {
-            for (const auto& pair : row) {
-                std::string key = CSVUtils::trimQuotes(pair.first);
-                if (key.find("ÈÎÎñ¶ÔÓ¦µÄº½°àËùĞè×îÉÙÈËÊı") != std::string::npos || 
-                    key.find("ËùĞè×îÉÙÈËÊı") != std::string::npos) {
-                    min_staff_key = pair.first;
-                    break;
-                }
-            }
-        }
-        
-        // ÌáÈ¡Êı¾İ
-        std::string task_name = task_name_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_name_key) ? row.at(task_name_key) : "");
-        std::string arrival_flight_id = arrival_flight_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_flight_id_key) ? row.at(arrival_flight_id_key) : "");
-        std::string departure_flight_id = departure_flight_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_flight_id_key) ? row.at(departure_flight_id_key) : "");
-        std::string arrival_time_str = arrival_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_time_key) ? row.at(arrival_time_key) : "");
-        std::string departure_time_str = departure_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_time_key) ? row.at(departure_time_key) : "");
-        std::string stand_str = stand_key.empty() ? "" : CSVUtils::trimQuotes(row.count(stand_key) ? row.at(stand_key) : "");
-        std::string min_staff_str = min_staff_key.empty() ? "" : CSVUtils::trimQuotes(row.count(min_staff_key) ? row.at(min_staff_key) : "");
-        
-        // ¸ù¾İÈÎÎñÃû³ÆÅĞ¶Ïº½°àÀàĞÍ
-        int flight_type = -1;
-        if (task_name.find("½ø¸ÛĞ¶»ú") != std::string::npos) {
-            flight_type = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_ARRIVAL);  // 0
-        } else if (task_name.find("³ö¸Û×°»ú") != std::string::npos) {
-            flight_type = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_DEPARTURE);  // 1
-        } else {
-            // Èç¹ûÈÎÎñÃû³Æ²»Æ¥Åä£¬Ìø¹ı
+        if (emp_id.empty() || group_name.empty()) {
             continue;
         }
         
-        // Ê¹ÓÃµ½´ï»ò³ö·¢º½°àID×÷ÎªÎ¨Ò»±êÊ¶
-        std::string flight_key = !arrival_flight_id.empty() ? arrival_flight_id : departure_flight_id;
-        if (flight_key.empty()) {
-            // Èç¹ûÃ»ÓĞº½°àID£¬Ê¹ÓÃÊ±¼ä×÷Îªºó±¸±êÊ¶
-            flight_key = arrival_time_str + "_" + departure_time_str;
-            if (flight_key == "_") {
-                continue;  // ÖÁÉÙĞèÒªÒ»¸öÊ±¼ä»òID
-            }
+        // å¦‚æœå‘˜å·¥å·²å­˜åœ¨ï¼Œè·³è¿‡ï¼ˆé¿å…é‡å¤ï¼‰
+        if (employee_map.find(emp_id) != employee_map.end()) {
+            continue;
         }
         
-        // ´´½¨»ò»ñÈ¡Flight¶ÔÏó
-        if (flight_map.find(flight_key) == flight_map.end()) {
-            zhuangxie_class::Flight flight;
-            flight_map[flight_key] = flight;
+        zhuangxie_class::LoadEmployeeInfo emp;
+        emp.setEmployeeId(emp_id);
+        emp.setEmployeeName(emp_name);
+        // é»˜è®¤ç»™äºˆå¤–åœºèµ„è´¨ï¼ˆè£…å¸å‘˜å·¥ï¼‰
+        emp.setQualificationMask(static_cast<int>(vip_first_class::QualificationMask::EXTERNAL));
+        
+        employee_map[emp_id] = emp;
+        group_name_to_employees[group_name].push_back(emp_id);
+    }
+    
+    // è½¬æ¢ä¸ºvector
+    for (const auto& pair : employee_map) {
+        employees.push_back(pair.second);
+    }
+    
+    return true;
+}
+
+/**
+ * @brief è¾…åŠ©å‡½æ•°ï¼šå°†DateTimeè½¬æ¢ä¸ºä»2020-01-01 00:00:00å¼€å§‹çš„ç§’æ•°
+ * @param dt DateTimeå¯¹è±¡
+ * @return ä»2020-01-01 00:00:00å¼€å§‹çš„ç§’æ•°
+ */
+inline long dateTimeToSeconds(const DateTime& dt) {
+    // 2020-01-01 00:00:00 çš„æ—¶é—´ç‚¹
+    std::tm tm_2020 = {};
+    tm_2020.tm_year = 120;  // 2020 - 1900
+    tm_2020.tm_mon = 0;      // 1æœˆ (0-based)
+    tm_2020.tm_mday = 1;
+    tm_2020.tm_hour = 0;
+    tm_2020.tm_min = 0;
+    tm_2020.tm_sec = 0;
+    auto time_2020 = std::mktime(&tm_2020);
+    auto epoch_2020 = std::chrono::system_clock::from_time_t(time_2020);
+    
+    // è®¡ç®—æ—¶é—´å·®
+    auto duration = dt - epoch_2020;
+    return std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+}
+
+/**
+ * @brief ä»stand_pos.csvåŠ è½½æœºä½ä¿¡æ¯
+ * @param filename CSVæ–‡ä»¶è·¯å¾„
+ * @return æœºä½åˆ°æ˜¯å¦è¿œæœºä½çš„æ˜ å°„ï¼ˆæœºä½å·å­—ç¬¦ä¸² -> æ˜¯å¦è¿œæœºä½ï¼‰
+ */
+inline std::map<std::string, bool> loadStandPositionsFromCSV(const std::string& filename) {
+    std::map<std::string, bool> stand_map;
+    
+    auto rows = CSVUtils::readCSV(filename, true);
+    if (rows.empty()) {
+        std::cerr << "WARNING: Stand position CSV file is empty or cannot be read: " << filename << std::endl;
+        return stand_map;
+    }
+    
+    // è¯»å–è¡¨å¤´
+    std::ifstream header_file(filename);
+    std::string header_line;
+    if (std::getline(header_file, header_line)) {
+        if (header_line.length() >= 3 && 
+            static_cast<unsigned char>(header_line[0]) == 0xEF &&
+            static_cast<unsigned char>(header_line[1]) == 0xBB &&
+            static_cast<unsigned char>(header_line[2]) == 0xBF) {
+            header_line = header_line.substr(3);
         }
+    }
+    header_file.close();
+    
+    auto header = CSVUtils::parseCSVLine(header_line);
+    auto data_map = CSVUtils::csvToMap(header, rows);
+    
+    for (const auto& row : data_map) {
+        std::string stand = CSVUtils::trimQuotes(row.count("æœºä½") ? row.at("æœºä½") : "");
+        std::string is_remote_str = CSVUtils::trimQuotes(row.count("æ˜¯å¦ä¸ºè¿œæœºä½") ? row.at("æ˜¯å¦ä¸ºè¿œæœºä½") : "");
         
-        zhuangxie_class::Flight& flight = flight_map[flight_key];
-        
-        // ÉèÖÃº½°àÀàĞÍ
-        flight.setFlightType(flight_type);
-        
-        // ÉèÖÃ½ø¸ÛÊ±¼ä£¨µ½´ïº½°àÔ¤´ïÊ±¼ä£©
-        if (!arrival_time_str.empty()) {
-            long arrival_time = CSVUtils::parseDateTimeString(arrival_time_str);
-            flight.setArrivalTime(arrival_time);
+        if (!stand.empty()) {
+            bool is_remote = (is_remote_str == "Y" || is_remote_str == "y");
+            stand_map[stand] = is_remote;
         }
-        
-        // ÉèÖÃ³ö¸ÛÊ±¼ä£¨³ö·¢º½°àÔ¤ÀëÊ±¼ä£©
-        if (!departure_time_str.empty()) {
-            long departure_time = CSVUtils::parseDateTimeString(departure_time_str);
-            flight.setDepartureTime(departure_time);
+    }
+    
+    return stand_map;
+}
+
+/**
+ * @brief ä»task.csvæ–‡ä»¶åŠ è½½LoadTaskå¯¹è±¡ï¼ˆé›†æˆFlightå’ŒTaskDefinitionçš„å­—æ®µï¼‰
+ * @param filename CSVæ–‡ä»¶è·¯å¾„
+ * @param tasks è¾“å‡ºå‚æ•°ï¼ŒLoadTaskå¯¹è±¡åˆ—è¡¨
+ * @param stand_pos_file å¯é€‰ï¼Œstand_pos.csvæ–‡ä»¶è·¯å¾„ï¼Œç”¨äºåˆ¤æ–­è¿œæœºä½
+ * @return æˆåŠŸè¿”å›trueï¼Œå¤±è´¥è¿”å›false
+ */
+inline bool loadLoadTasksFromCSV(
+    const std::string& filename,
+    std::vector<zhuangxie_class::LoadTask>& tasks,
+    const std::string& stand_pos_file = "") {
+    
+    tasks.clear();
+    
+    // åŠ è½½æœºä½ä¿¡æ¯ï¼ˆå¦‚æœæä¾›äº†stand_pos_fileï¼‰
+    std::map<std::string, bool> stand_positions;
+    if (!stand_pos_file.empty()) {
+        stand_positions = loadStandPositionsFromCSV(stand_pos_file);
+    }
+    
+    auto rows = CSVUtils::readCSV(filename, true);
+    if (rows.empty()) {
+        std::cerr << "WARNING: CSV file is empty or cannot be read: " << filename << std::endl;
+        return false;
+    }
+    
+    // è¯»å–è¡¨å¤´
+    std::ifstream header_file(filename);
+    std::string header_line;
+    if (std::getline(header_file, header_line)) {
+        if (header_line.length() >= 3 && 
+            static_cast<unsigned char>(header_line[0]) == 0xEF &&
+            static_cast<unsigned char>(header_line[1]) == 0xBB &&
+            static_cast<unsigned char>(header_line[2]) == 0xBF) {
+            header_line = header_line.substr(3);
         }
-        
-        // ÉèÖÃVIPÍ¨ÇÚÊ±¼ä£¬Ä¬ÈÏÎª5·ÖÖÓ = 300Ãë
-        flight.setVipTravelTime(5 * 60);  // 5·ÖÖÓ = 300Ãë
-        
-        // ÉèÖÃ»õÁ¿£ºÈç¹û"ÈÎÎñ¶ÔÓ¦µÄº½°àËùĞè×îÉÙÈËÊı"Îª3£¬ÔòÈÏÎªÊÇ1.5¶Ö£¬·ñÔòÈÏÎªÊÇ6¶Ö
-        double cargo_weight = 6.0;  // Ä¬ÈÏ6¶Ö
-        if (!min_staff_str.empty()) {
-            try {
-                int min_staff = std::stoi(min_staff_str);
-                if (min_staff == 3) {
-                    cargo_weight = 1.5;
-                } else {
-                    cargo_weight = 6.0;
+    }
+    header_file.close();
+    
+    auto header = CSVUtils::parseCSVLine(header_line);
+    auto data_map = CSVUtils::csvToMap(header, rows);
+    
+    for (const auto& row : data_map) {
+        // è¾…åŠ©å‡½æ•°ï¼šåœ¨rowä¸­æŸ¥æ‰¾åˆ—åï¼ˆå¤„ç†å¯èƒ½çš„å¼•å·æˆ–ç©ºæ ¼ï¼‰
+        auto findColumn = [&row](const std::vector<std::string>& possible_names) -> std::string {
+            for (const auto& name : possible_names) {
+                // ç›´æ¥åŒ¹é…
+                if (row.count(name)) {
+                    return name;
                 }
-            } catch (...) {
-                // ½âÎöÊ§°Ü£¬Ê¹ÓÃÄ¬ÈÏÖµ6¶Ö
-                cargo_weight = 6.0;
+                // å°è¯•trimQuotesååŒ¹é…
+                for (const auto& key : row) {
+                    if (CSVUtils::trimQuotes(key.first) == name || key.first.find(name) != std::string::npos) {
+                        return key.first;
+                    }
+                }
             }
+            return "";  // æ‰¾ä¸åˆ°è¿”å›ç©ºå­—ç¬¦ä¸²
+        };
+        
+        // æŸ¥æ‰¾åˆ—å
+        std::string task_id_key = findColumn({"ä»»åŠ¡ID"});
+        std::string task_name_key = findColumn({"ä»»åŠ¡åç§°"});
+        std::string task_start_time_key = findColumn({"ä»»åŠ¡å¼€å§‹æ—¶é—´"});
+        std::string task_duration_key = findColumn({"ä»»åŠ¡æ—¶é•¿"});
+        std::string arrival_estimated_time_key = findColumn({"åˆ°è¾¾èˆªç­é¢„è¾¾æ—¶é—´"});
+        std::string departure_estimated_time_key = findColumn({"å‡ºå‘èˆªç­é¢„ç¦»æ—¶é—´"});
+        std::string flight_type_key = findColumn({"èˆªç­ç±»å‹"});
+        std::string stand_key = findColumn({"æœºä½"});
+        std::string min_staff_key = findColumn({"ä»»åŠ¡å¯¹åº”çš„èˆªç­æ‰€éœ€æœ€å°‘äººæ•°"});
+        std::string cargo_weight_key = findColumn({"ä»»åŠ¡è£…å¸è´§é‡"});
+        std::string max_overlap_time_key = findColumn({"ä»»åŠ¡æœ€å¤§é‡å æ—¶é—´"});
+        
+        // æå–å­—æ®µ
+        std::string task_id_str = task_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_id_key) ? row.at(task_id_key) : "");
+        std::string task_name = task_name_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_name_key) ? row.at(task_name_key) : "");
+        std::string task_start_time_str = task_start_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_start_time_key) ? row.at(task_start_time_key) : "");
+        std::string task_duration_str = task_duration_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_duration_key) ? row.at(task_duration_key) : "");
+        std::string arrival_estimated_time_str = arrival_estimated_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_estimated_time_key) ? row.at(arrival_estimated_time_key) : "");
+        std::string departure_estimated_time_str = departure_estimated_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_estimated_time_key) ? row.at(departure_estimated_time_key) : "");
+        std::string flight_type_str = flight_type_key.empty() ? "" : CSVUtils::trimQuotes(row.count(flight_type_key) ? row.at(flight_type_key) : "");
+        std::string stand_str = stand_key.empty() ? "" : CSVUtils::trimQuotes(row.count(stand_key) ? row.at(stand_key) : "");
+        std::string min_staff_str = min_staff_key.empty() ? "" : CSVUtils::trimQuotes(row.count(min_staff_key) ? row.at(min_staff_key) : "");
+        std::string cargo_weight_str = cargo_weight_key.empty() ? "" : CSVUtils::trimQuotes(row.count(cargo_weight_key) ? row.at(cargo_weight_key) : "");
+        std::string max_overlap_time_str = max_overlap_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(max_overlap_time_key) ? row.at(max_overlap_time_key) : "");
+        
+        // è·³è¿‡ç©ºè¡Œ
+        if (task_id_str.empty() && task_name.empty()) {
+            continue;
         }
         
-        // ¸ù¾İº½°àÀàĞÍÉèÖÃ»õÁ¿
-        if (flight_type == static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_ARRIVAL)) {
-            // ½ø¸ÛĞ¶»ú£ºÉèÖÃ½ø¸Û»õÁ¿
-            flight.setArrivalCargo(cargo_weight);
-            flight.setDepartureCargo(0.0);
-        } else if (flight_type == static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_DEPARTURE)) {
-            // ³ö¸Û×°»ú£ºÉèÖÃ³ö¸Û»õÁ¿
-            flight.setArrivalCargo(0.0);
-            flight.setDepartureCargo(cargo_weight);
+        // åˆ›å»ºLoadTaskå¯¹è±¡
+        zhuangxie_class::LoadTask task;
+        
+        // è®¾ç½®ä»»åŠ¡IDï¼ˆç›´æ¥ä½¿ç”¨CSVä¸­çš„å­—ç¬¦ä¸²ï¼Œå¦‚æœä¸ºç©ºåˆ™ä½¿ç”¨è¡Œå·ï¼‰
+        static int task_id_counter = 1;  // é™æ€è®¡æ•°å™¨ï¼Œç¡®ä¿å”¯ä¸€æ€§
+        if (!task_id_str.empty()) {
+            task.setTaskId(task_id_str);
+        } else {
+            // å¦‚æœä»»åŠ¡IDä¸ºç©ºï¼Œä½¿ç”¨è®¡æ•°å™¨ç”Ÿæˆå”¯ä¸€ID
+            task.setTaskId("task_" + std::to_string(task_id_counter++));
         }
         
-        // ÉèÖÃ»úÎ»
+        // è®¾ç½®ä»»åŠ¡åç§°
+        task.setTaskName(task_name);
+        
+        // è§£ææ—¶é—´ï¼ˆè½¬æ¢ä¸ºä»2020-01-01å¼€å§‹çš„ç§’æ•°ï¼‰
+        long task_start_time = 0;
+        long task_end_time = 0;
+        long arrival_time = 0;
+        long departure_time = 0;
+        
+        try {
+            if (!task_start_time_str.empty()) {
+                task_start_time = CSVUtils::parseDateTimeString(task_start_time_str);
+            }
+            
+            // è®¡ç®—ä»»åŠ¡ç»“æŸæ—¶é—´ = å¼€å§‹æ—¶é—´ + æ—¶é•¿ï¼ˆç§’ï¼‰
+            if (!task_duration_str.empty()) {
+                int duration_minutes = std::stoi(task_duration_str);
+                task_end_time = task_start_time + duration_minutes * 60;
+        } else {
+                task_end_time = task_start_time;
+            }
+            
+            if (!arrival_estimated_time_str.empty()) {
+                arrival_time = CSVUtils::parseDateTimeString(arrival_estimated_time_str);
+            }
+            if (!departure_estimated_time_str.empty()) {
+                departure_time = CSVUtils::parseDateTimeString(departure_estimated_time_str);
+            }
+        } catch (...) {
+            continue;
+        }
+        
+        // è®¾ç½®ä»»åŠ¡æ—¶é—´ï¼ˆä½¿ç”¨CSVçš„ä»»åŠ¡æ—¶é•¿ä½œä¸ºä¿éšœæ—¶é—´ï¼‰
+        task.setEarliestStartTime(task_start_time);
+        task.setLatestEndTime(task_end_time);
+        
+        // è®¾ç½®ä»»åŠ¡æ—¶é•¿
+        if (!task_duration_str.empty()) {
+            int duration_minutes = std::stoi(task_duration_str);
+            task.setDuration(duration_minutes * 60);
+        }
+        
+        // è®¾ç½®èˆªç­æ—¶é—´
+        task.setArrivalTime(arrival_time);
+        task.setDepartureTime(departure_time);
+        
+        // åˆ¤æ–­èˆªç­ç±»å‹ï¼ˆå…¨éƒ¨è®¾ä¸ºå›½å†…ï¼‰
+        int flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_ARRIVAL);
+        if (task_name.find("è¿›æ¸¯") != std::string::npos) {
+            flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_ARRIVAL);
+        } else if (task_name.find("å‡ºæ¸¯") != std::string::npos) {
+            flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_DEPARTURE);
+        } else if (flight_type_str.find("è¿‡ç«™") != std::string::npos) {
+            flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_TRANSIT);
+        }
+        task.setFlightType(flight_type_enum);
+        
+        // è®¾ç½®æœºä½
+        int stand_num = 0;
         if (!stand_str.empty()) {
             try {
-                int stand = std::stoi(stand_str);
-                flight.setStand(stand);
+                stand_num = std::stoi(stand_str);
             } catch (...) {
-                // ½âÎöÊ§°Ü£¬ºöÂÔ
+                // å¦‚æœè§£æå¤±è´¥ï¼Œå°è¯•ä»stand_positionsä¸­æŸ¥æ‰¾
+                // æš‚æ—¶åªè®¾ç½®è¿œæœºä½ä¿¡æ¯ï¼Œstand_numä¿æŒä¸º0
+            }
+        }
+        task.setStand(stand_num);
+        
+        // åˆ¤æ–­æ˜¯å¦è¿œæœºä½
+        bool is_remote = false;
+        if (!stand_str.empty()) {
+            auto it = stand_positions.find(stand_str);
+            if (it != stand_positions.end()) {
+                is_remote = it->second;
+            }
+        }
+        task.setRemoteStand(is_remote);
+        
+        // è®¾ç½®é€šå‹¤æ—¶é—´ï¼Œé»˜è®¤ä¸º8åˆ†é’Ÿ = 480ç§’
+        task.setTravelTime(8 * 60);
+        
+        // è®¾ç½®éœ€è¦çš„äººæ•°ï¼šä¼˜å…ˆè¯»å–äººæ•°ï¼Œæ— äººæ•°æ ¹æ®å¨ä½åˆ¤æ–­
+        int required_count = 0;
+        if (!min_staff_str.empty()) {
+            try {
+                required_count = std::stoi(min_staff_str);
+            } catch (...) {
+                required_count = 0;
             }
         }
         
-        // report_time_²»¿¼ÂÇ£¬±£³ÖÄ¬ÈÏÖµ0
+        // å¦‚æœæ²¡æœ‰äººæ•°å­—æ®µï¼Œä»å¨ä½æ¨ç®—äººæ•°
+        if (required_count == 0 && !cargo_weight_str.empty()) {
+            try {
+                double cargo_weight = std::stod(cargo_weight_str);
+                // æ ¹æ®å¨ä½åˆ¤æ–­æ‰€éœ€äººæ•°ï¼š2.5å¨ä»¥ä¸Šéœ€è¦6äººï¼Œå¦åˆ™3äºº
+                if (cargo_weight >= 2.5) {
+                    required_count = 6;
+        } else {
+                    required_count = 3;
+                }
+            } catch (...) {
+                required_count = 3;  // é»˜è®¤3äºº
+            }
+        }
+        
+        // å¦‚æœè¿˜æ˜¯æ²¡æœ‰äººæ•°ï¼Œä½¿ç”¨é»˜è®¤å€¼3äºº
+        if (required_count == 0) {
+            required_count = 3;
+        }
+        task.setRequiredCount(required_count);
+        
+        // LoadTask ç±»ä¸å†æœ‰ setMaxOverlapTime å’Œ setAllowOverlap æ–¹æ³•
+        // ä»»åŠ¡å…è®¸é‡å éƒ½æ˜¯Yï¼Œæœ€å¤§é‡å æ—¶é—´å°±æ˜¯ä»»åŠ¡æœ¬èº«çš„æ—¶é—´ï¼ˆå·²åœ¨setDurationä¸­å¤„ç†ï¼‰
+        
+        // è®¾ç½®å…¶ä»–ä»»åŠ¡å±æ€§
+        task.setPreferMainShift(true);  // é»˜è®¤ä¼˜å…ˆä¸»ç­
+        task.setCanNewEmployee(false);  // é»˜è®¤ä¸å…è®¸æ–°å‘˜å·¥
+        task.setAssigned(false);
+        task.setShortStaffed(false);
+        
+        // è®¾ç½®èµ„è´¨è¦æ±‚ï¼ˆç®€åŒ–å¤„ç†ï¼Œä½¿ç”¨é»˜è®¤å€¼ï¼‰
+        task.setRequiredQualification(0);  // å¯ä»¥æ ¹æ®éœ€è¦è®¾ç½®
+        
+        tasks.push_back(task);
     }
     
-    // ×ª»»Îªvector
-    for (auto& pair : flight_map) {
-        flights.push_back(pair.second);
+    return true;
+}
+
+/**
+ * @brief ä»referschedule.csvæ–‡ä»¶åŠ è½½LoadTaskå¯¹è±¡
+ * @param filename CSVæ–‡ä»¶è·¯å¾„
+ * @param tasks è¾“å‡ºå‚æ•°ï¼ŒLoadTaskå¯¹è±¡åˆ—è¡¨
+ * @param stand_pos_file å¯é€‰ï¼Œstand_pos.csvæ–‡ä»¶è·¯å¾„ï¼Œç”¨äºåˆ¤æ–­è¿œæœºä½
+ * @return æˆåŠŸè¿”å›trueï¼Œå¤±è´¥è¿”å›false
+ * 
+ * æ³¨æ„ï¼šæ­¤å‡½æ•°ç”¨äºå¤„ç†referschedule.csvæ ¼å¼ï¼Œä¸task.csvæ ¼å¼ä¸åŒ
+ * - ç¼ºå°‘"ä»»åŠ¡å¯¹åº”çš„èˆªç­æ‰€éœ€æœ€å°‘äººæ•°"å­—æ®µï¼Œæ‰€æœ‰ä»»åŠ¡ç»Ÿä¸€è®¾ç½®ä¸º3äºº
+ * - ç¼ºå°‘"ä»»åŠ¡è£…å¸è´§é‡"å­—æ®µ
+ * - ç¼ºå°‘"ä»»åŠ¡æœ€å¤§é‡å æ—¶é—´"å­—æ®µï¼Œé»˜è®¤ä¸º0ï¼ˆä¸å…è®¸é‡å ï¼‰
+ * - å¿½ç•¥"å‘˜å·¥ç¼–å·"å’Œ"è½¦ç‰Œå·"å­—æ®µ
+ */
+inline bool loadLoadTasksFromReferscheduleCSV(
+    const std::string& filename,
+    std::vector<zhuangxie_class::LoadTask>& tasks,
+    const std::string& stand_pos_file = "") {
+    
+    tasks.clear();
+    
+    // åŠ è½½æœºä½ä¿¡æ¯ï¼ˆå¦‚æœæä¾›äº†stand_pos_fileï¼‰
+    std::map<std::string, bool> stand_positions;
+    if (!stand_pos_file.empty()) {
+        stand_positions = loadStandPositionsFromCSV(stand_pos_file);
     }
     
-    return flights;
+    auto rows = CSVUtils::readCSV(filename, true);
+    if (rows.empty()) {
+        std::cerr << "WARNING: CSV file is empty or cannot be read: " << filename << std::endl;
+        return false;
+    }
+    
+    // è¯»å–è¡¨å¤´
+    std::ifstream header_file(filename);
+    std::string header_line;
+    if (std::getline(header_file, header_line)) {
+        if (header_line.length() >= 3 && 
+            static_cast<unsigned char>(header_line[0]) == 0xEF &&
+            static_cast<unsigned char>(header_line[1]) == 0xBB &&
+            static_cast<unsigned char>(header_line[2]) == 0xBF) {
+            header_line = header_line.substr(3);
+        }
+    }
+    header_file.close();
+    
+    auto header = CSVUtils::parseCSVLine(header_line);
+    auto data_map = CSVUtils::csvToMap(header, rows);
+    
+    for (const auto& row : data_map) {
+        // è¾…åŠ©å‡½æ•°ï¼šåœ¨rowä¸­æŸ¥æ‰¾åˆ—åï¼ˆå¤„ç†å¯èƒ½çš„å¼•å·æˆ–ç©ºæ ¼ï¼‰
+        auto findColumn = [&row](const std::vector<std::string>& possible_names) -> std::string {
+            for (const auto& name : possible_names) {
+                // ç›´æ¥åŒ¹é…
+                if (row.count(name)) {
+                    return name;
+                }
+                // å°è¯•trimQuotesååŒ¹é…
+                for (const auto& key : row) {
+                    if (CSVUtils::trimQuotes(key.first) == name || key.first.find(name) != std::string::npos) {
+                        return key.first;
+                    }
+                }
+            }
+            return "";  // æ‰¾ä¸åˆ°è¿”å›ç©ºå­—ç¬¦ä¸²
+        };
+        
+        // æŸ¥æ‰¾åˆ—å
+        std::string task_id_key = findColumn({"ä»»åŠ¡ID"});
+        std::string task_name_key = findColumn({"ä»»åŠ¡åç§°"});
+        std::string task_date_key = findColumn({"ä»»åŠ¡æ—¥æœŸ"});
+        std::string task_start_time_key = findColumn({"ä»»åŠ¡å¼€å§‹æ—¶é—´"});
+        std::string task_duration_key = findColumn({"ä»»åŠ¡æ—¶é•¿"});
+        std::string arrival_estimated_time_key = findColumn({"åˆ°è¾¾èˆªç­é¢„è¾¾æ—¶é—´"});
+        std::string departure_estimated_time_key = findColumn({"å‡ºå‘èˆªç­é¢„ç¦»æ—¶é—´"});
+        std::string arrival_flight_id_key = findColumn({"åˆ°è¾¾èˆªç­ID"});
+        std::string departure_flight_id_key = findColumn({"å‡ºå‘èˆªç­ID"});
+        std::string arrival_flight_number_key = findColumn({"åˆ°è¾¾èˆªç­å·"});
+        std::string departure_flight_number_key = findColumn({"å‡ºå‘èˆªç­å·"});
+        std::string flight_type_key = findColumn({"èˆªç­ç±»å‹"});
+        std::string stand_key = findColumn({"æœºä½"});
+        std::string terminal_key = findColumn({"èˆªç«™æ¥¼"});
+        std::string in_out_key = findColumn({"è¿›/å‡ºæ¸¯"});
+        
+        // æå–å­—æ®µ
+        std::string task_id_str = task_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_id_key) ? row.at(task_id_key) : "");
+        std::string task_name = task_name_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_name_key) ? row.at(task_name_key) : "");
+        std::string task_date_str = task_date_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_date_key) ? row.at(task_date_key) : "");
+        std::string task_start_time_str = task_start_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_start_time_key) ? row.at(task_start_time_key) : "");
+        std::string task_duration_str = task_duration_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_duration_key) ? row.at(task_duration_key) : "");
+        std::string arrival_estimated_time_str = arrival_estimated_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_estimated_time_key) ? row.at(arrival_estimated_time_key) : "");
+        std::string departure_estimated_time_str = departure_estimated_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_estimated_time_key) ? row.at(departure_estimated_time_key) : "");
+        std::string arrival_flight_id_str = arrival_flight_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_flight_id_key) ? row.at(arrival_flight_id_key) : "");
+        std::string departure_flight_id_str = departure_flight_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_flight_id_key) ? row.at(departure_flight_id_key) : "");
+        std::string arrival_flight_number_str = arrival_flight_number_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_flight_number_key) ? row.at(arrival_flight_number_key) : "");
+        std::string departure_flight_number_str = departure_flight_number_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_flight_number_key) ? row.at(departure_flight_number_key) : "");
+        std::string flight_type_str = flight_type_key.empty() ? "" : CSVUtils::trimQuotes(row.count(flight_type_key) ? row.at(flight_type_key) : "");
+        std::string stand_str = stand_key.empty() ? "" : CSVUtils::trimQuotes(row.count(stand_key) ? row.at(stand_key) : "");
+        std::string terminal_str = terminal_key.empty() ? "" : CSVUtils::trimQuotes(row.count(terminal_key) ? row.at(terminal_key) : "");
+        std::string in_out_str = in_out_key.empty() ? "" : CSVUtils::trimQuotes(row.count(in_out_key) ? row.at(in_out_key) : "");
+        
+        // è·³è¿‡ç©ºè¡Œ
+        if (task_id_str.empty() && task_name.empty()) {
+            continue;
+        }
+        
+        // åˆ›å»ºLoadTaskå¯¹è±¡
+        zhuangxie_class::LoadTask task;
+        
+        // è®¾ç½®ä»»åŠ¡IDï¼ˆç›´æ¥ä½¿ç”¨CSVä¸­çš„å­—ç¬¦ä¸²ï¼‰
+        if (!task_id_str.empty()) {
+            task.setTaskId(task_id_str);
+        } else {
+            // å¦‚æœä»»åŠ¡IDä¸ºç©ºï¼Œè·³è¿‡è¯¥è¡Œ
+            continue;
+        }
+        
+        // è®¾ç½®ä»»åŠ¡åç§°
+        task.setTaskName(task_name);
+        
+        // è®¾ç½®ä»»åŠ¡æ—¥æœŸ
+        task.setTaskDate(task_date_str);
+        
+        // è®¾ç½®èˆªç­ä¿¡æ¯
+        task.setArrivalFlightId(arrival_flight_id_str);
+        task.setDepartureFlightId(departure_flight_id_str);
+        task.setArrivalFlightNumber(arrival_flight_number_str);
+        task.setDepartureFlightNumber(departure_flight_number_str);
+        task.setTerminal(terminal_str);
+        
+        // è§£ææ—¶é—´ï¼ˆè½¬æ¢ä¸ºä»2020-01-01å¼€å§‹çš„ç§’æ•°ï¼‰
+        long earliest_start_time = 0;
+        long latest_end_time = 0;
+        long arrival_time = 0;
+        long departure_time = 0;
+        long duration_seconds = 0;
+        
+        try {
+            // æœ€æ—©å¼€å§‹æ—¶é—´ = ä»»åŠ¡å¼€å§‹æ—¶é—´ï¼ˆä»CSVè¯»å–ï¼‰
+            if (!task_start_time_str.empty()) {
+                earliest_start_time = CSVUtils::parseDateTimeString(task_start_time_str);
+            }
+            
+            // ä»»åŠ¡æ—¶é•¿ï¼ˆè½¬æ¢ä¸ºç§’ï¼‰
+            if (!task_duration_str.empty()) {
+                int duration_minutes = std::stoi(task_duration_str);
+                duration_seconds = duration_minutes * 60;
+            }
+            
+            // æœ€æ™šç»“æŸæ—¶é—´ = å‡ºå‘èˆªç­é¢„ç¦»æ—¶é—´ - 5åˆ†é’Ÿ
+            if (!departure_estimated_time_str.empty()) {
+                departure_time = CSVUtils::parseDateTimeString(departure_estimated_time_str);
+                latest_end_time = departure_time - 5 * 60;  // å‡å»5åˆ†é’Ÿï¼ˆ300ç§’ï¼‰
+            } else {
+                // å¦‚æœæ²¡æœ‰å‡ºå‘èˆªç­é¢„ç¦»æ—¶é—´ï¼Œä½¿ç”¨æœ€æ—©å¼€å§‹æ—¶é—´ + æ—¶é•¿ä½œä¸ºæœ€æ™šç»“æŸæ—¶é—´
+                latest_end_time = earliest_start_time + duration_seconds;
+            }
+            
+            if (!arrival_estimated_time_str.empty()) {
+                arrival_time = CSVUtils::parseDateTimeString(arrival_estimated_time_str);
+            }
+        } catch (...) {
+            continue;
+        }
+        
+        // è®¾ç½®ä»»åŠ¡æ—¶é—´
+        task.setEarliestStartTime(earliest_start_time);
+        task.setLatestEndTime(latest_end_time);
+        task.setDuration(duration_seconds);
+        task.setActualStartTime(0);  // åˆå§‹åŒ–ä¸º0ï¼Œè¡¨ç¤ºæœªåˆ†é…
+        
+        // è®¾ç½®èˆªç­æ—¶é—´
+        task.setArrivalTime(arrival_time);
+        task.setDepartureTime(departure_time);
+        
+        // åˆ¤æ–­èˆªç­ç±»å‹ï¼ˆæ ¹æ®ä»»åŠ¡åç§°å’Œ"è¿›/å‡ºæ¸¯"å­—æ®µï¼‰
+        int flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_ARRIVAL);
+        if (in_out_str == "è¿›" || task_name.find("è¿›æ¸¯") != std::string::npos) {
+            flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_ARRIVAL);
+        } else if (in_out_str == "å‡º" || task_name.find("å‡ºæ¸¯") != std::string::npos) {
+            flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_DEPARTURE);
+        } else if (flight_type_str.find("è¿‡ç«™") != std::string::npos) {
+            flight_type_enum = static_cast<int>(zhuangxie_class::FlightType::DOMESTIC_TRANSIT);
+        }
+        task.setFlightType(flight_type_enum);
+        
+        // è®¾ç½®æœºä½
+        int stand_num = 0;
+        if (!stand_str.empty()) {
+            try {
+                stand_num = std::stoi(stand_str);
+            } catch (...) {
+                // å¦‚æœè§£æå¤±è´¥ï¼Œstand_numä¿æŒä¸º0
+            }
+        }
+        task.setStand(stand_num);
+        
+        // åˆ¤æ–­æ˜¯å¦è¿œæœºä½
+        bool is_remote = false;
+        if (!stand_str.empty()) {
+            auto it = stand_positions.find(stand_str);
+            if (it != stand_positions.end()) {
+                is_remote = it->second;
+            }
+        }
+        task.setRemoteStand(is_remote);
+        
+        // è®¾ç½®é€šå‹¤æ—¶é—´ï¼Œé»˜è®¤ä¸º8åˆ†é’Ÿ = 480ç§’
+        task.setTravelTime(8 * 60);
+        
+        // è®¾ç½®éœ€è¦çš„äººæ•°ï¼šæ‰€æœ‰ä»»åŠ¡éƒ½è®¾ç½®ä¸º3äººï¼ˆreferschedule.csvä¸­æ²¡æœ‰äººæ•°å­—æ®µï¼‰
+        // æ³¨æ„ï¼šå¿½ç•¥"å‘˜å·¥ç¼–å·"å’Œ"è½¦ç‰Œå·"å­—æ®µ
+        task.setRequiredCount(3);
+        
+        // è®¾ç½®å…¶ä»–ä»»åŠ¡å±æ€§
+        task.setPreferMainShift(true);  // é»˜è®¤ä¼˜å…ˆä¸»ç­
+        task.setCanNewEmployee(false);  // é»˜è®¤ä¸å…è®¸æ–°å‘˜å·¥
+        task.setAssigned(false);
+        task.setShortStaffed(false);
+        
+        // è®¾ç½®èµ„è´¨è¦æ±‚ï¼ˆç®€åŒ–å¤„ç†ï¼Œä½¿ç”¨é»˜è®¤å€¼ï¼‰
+        task.setRequiredQualification(0);  // å¯ä»¥æ ¹æ®éœ€è¦è®¾ç½®
+        
+        tasks.push_back(task);
+    }
+    
+    return true;
+}
+
+/**
+ * @brief ä»task.csvåŠ è½½è´µå®¾ä»»åŠ¡
+ * @param filename task.csvæ–‡ä»¶è·¯å¾„
+ * @param tasks è¾“å‡ºçš„ä»»åŠ¡åˆ—è¡¨
+ * @return æ˜¯å¦æˆåŠŸåŠ è½½
+ */
+inline bool loadVIPTasksFromCSV(
+    const std::string& filename,
+    std::vector<vip_first_class::TaskDefinition>& tasks) {
+    
+    tasks.clear();
+    
+    auto rows = CSVUtils::readCSV(filename, true);
+    if (rows.empty()) {
+        std::cerr << "WARNING: CSV file is empty or cannot be read: " << filename << std::endl;
+        return false;
+    }
+    
+    // è¯»å–è¡¨å¤´
+    std::ifstream header_file(filename);
+    std::string header_line;
+    if (std::getline(header_file, header_line)) {
+        if (header_line.length() >= 3 && 
+            static_cast<unsigned char>(header_line[0]) == 0xEF &&
+            static_cast<unsigned char>(header_line[1]) == 0xBB &&
+            static_cast<unsigned char>(header_line[2]) == 0xBF) {
+            header_line = header_line.substr(3);
+        }
+    }
+    header_file.close();
+    
+    auto header = CSVUtils::parseCSVLine(header_line);
+    auto data_map = CSVUtils::csvToMap(header, rows);
+    
+    for (const auto& row : data_map) {
+        // è¾…åŠ©å‡½æ•°ï¼šåœ¨rowä¸­æŸ¥æ‰¾åˆ—åï¼ˆå¤„ç†å¯èƒ½çš„å¼•å·æˆ–ç©ºæ ¼ï¼‰
+        auto findColumn = [&row](const std::vector<std::string>& possible_names) -> std::string {
+            for (const auto& name : possible_names) {
+                // ç›´æ¥åŒ¹é…
+                if (row.count(name)) {
+                    return name;
+                }
+                // å°è¯•trimQuotesååŒ¹é…
+                for (const auto& key : row) {
+                    if (CSVUtils::trimQuotes(key.first) == name || key.first.find(name) != std::string::npos) {
+                        return key.first;
+                    }
+                }
+            }
+            return "";  // æ‰¾ä¸åˆ°è¿”å›ç©ºå­—ç¬¦ä¸²
+        };
+        
+        // æŸ¥æ‰¾åˆ—å
+        std::string task_id_key = findColumn({"ä»»åŠ¡ID"});
+        std::string task_name_key = findColumn({"ä»»åŠ¡åç§°"});
+        std::string task_date_key = findColumn({"ä»»åŠ¡æ—¥æœŸ"});
+        std::string task_start_time_key = findColumn({"ä»»åŠ¡å¼€å§‹æ—¶é—´"});
+        std::string task_duration_key = findColumn({"ä»»åŠ¡æ—¶é•¿"});
+        std::string arrival_flight_id_key = findColumn({"åˆ°è¾¾èˆªç­ID"});
+        std::string departure_flight_id_key = findColumn({"å‡ºå‘èˆªç­ID"});
+        std::string arrival_flight_number_key = findColumn({"åˆ°è¾¾èˆªç­å·"});
+        std::string departure_flight_number_key = findColumn({"å‡ºå‘èˆªç­å·"});
+        std::string terminal_key = findColumn({"èˆªç«™æ¥¼"});
+        std::string stand_key = findColumn({"æœºä½"});
+        std::string required_count_key = findColumn({"ä»»åŠ¡å¯¹åº”çš„èˆªç­æ‰€éœ€æœ€å°‘äººæ•°"});
+        
+        // æå–å­—æ®µ
+        std::string task_id_str = task_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_id_key) ? row.at(task_id_key) : "");
+        std::string task_name = task_name_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_name_key) ? row.at(task_name_key) : "");
+        std::string task_date_str = task_date_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_date_key) ? row.at(task_date_key) : "");
+        std::string task_start_time_str = task_start_time_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_start_time_key) ? row.at(task_start_time_key) : "");
+        std::string task_duration_str = task_duration_key.empty() ? "" : CSVUtils::trimQuotes(row.count(task_duration_key) ? row.at(task_duration_key) : "");
+        std::string arrival_flight_id_str = arrival_flight_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_flight_id_key) ? row.at(arrival_flight_id_key) : "");
+        std::string departure_flight_id_str = departure_flight_id_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_flight_id_key) ? row.at(departure_flight_id_key) : "");
+        std::string arrival_flight_number_str = arrival_flight_number_key.empty() ? "" : CSVUtils::trimQuotes(row.count(arrival_flight_number_key) ? row.at(arrival_flight_number_key) : "");
+        std::string departure_flight_number_str = departure_flight_number_key.empty() ? "" : CSVUtils::trimQuotes(row.count(departure_flight_number_key) ? row.at(departure_flight_number_key) : "");
+        std::string terminal_str = terminal_key.empty() ? "" : CSVUtils::trimQuotes(row.count(terminal_key) ? row.at(terminal_key) : "");
+        std::string stand_str = stand_key.empty() ? "" : CSVUtils::trimQuotes(row.count(stand_key) ? row.at(stand_key) : "");
+        std::string required_count_str = required_count_key.empty() ? "" : CSVUtils::trimQuotes(row.count(required_count_key) ? row.at(required_count_key) : "");
+        
+        // è·³è¿‡ç©ºè¡Œ
+        if (task_id_str.empty() && task_name.empty()) {
+            continue;
+        }
+        
+        // åˆ›å»ºTaskDefinitionå¯¹è±¡
+        vip_first_class::TaskDefinition task;
+        
+        // è®¾ç½®ä»»åŠ¡IDï¼ˆç›´æ¥ä½¿ç”¨CSVä¸­çš„å­—ç¬¦ä¸²ï¼‰
+        if (!task_id_str.empty()) {
+            task.setTaskId(task_id_str);
+        } else {
+            // å¦‚æœä»»åŠ¡IDä¸ºç©ºï¼Œè·³è¿‡è¯¥è¡Œ
+            continue;
+        }
+        
+        // è®¾ç½®ä»»åŠ¡åç§°
+        task.setTaskName(task_name);
+        
+        // è®¾ç½®ä»»åŠ¡æ—¥æœŸ
+        task.setTaskDate(task_date_str);
+        
+        // è®¾ç½®èˆªç­ä¿¡æ¯
+        task.setArrivalFlightId(arrival_flight_id_str);
+        task.setDepartureFlightId(departure_flight_id_str);
+        task.setArrivalFlightNumber(arrival_flight_number_str);
+        task.setDepartureFlightNumber(departure_flight_number_str);
+        task.setTerminal(terminal_str);
+        
+        // è§£ææ—¶é—´ï¼ˆè½¬æ¢ä¸ºä»2020-01-01å¼€å§‹çš„ç§’æ•°ï¼‰
+        long task_start_time = 0;
+        long duration_seconds = 0;
+        
+        try {
+            // ä»»åŠ¡å¼€å§‹æ—¶é—´
+            if (!task_start_time_str.empty()) {
+                task_start_time = CSVUtils::parseDateTimeString(task_start_time_str);
+            }
+            
+            // ä»»åŠ¡æ—¶é•¿ï¼ˆè½¬æ¢ä¸ºç§’ï¼‰
+            if (!task_duration_str.empty() && task_duration_str != "0") {
+                int duration_minutes = std::stoi(task_duration_str);
+                duration_seconds = duration_minutes * 60;
+                } else {
+                // å¦‚æœæ—¶é•¿ä¸ºç©ºæˆ–0ï¼Œä½¿ç”¨é»˜è®¤å€¼ï¼ˆ1å°æ—¶ï¼‰
+                duration_seconds = 60 * 60;
+                }
+            } catch (...) {
+            continue;
+        }
+        
+        // è®¾ç½®ä»»åŠ¡æ—¶é—´
+        task.setStartTime(task_start_time);  // ä¿ç•™ç”¨äºå…¼å®¹
+        task.setDuration(duration_seconds);
+        task.setActualStartTime(0);  // åˆå§‹åŒ–ä¸º0ï¼Œè¡¨ç¤ºæœªåˆ†é…
+        
+        // è®¾ç½®æœºä½
+        int stand_num = 0;
+        if (!stand_str.empty()) {
+            try {
+                stand_num = std::stoi(stand_str);
+            } catch (...) {
+                // å¦‚æœè§£æå¤±è´¥ï¼Œstand_numä¿æŒä¸º0
+            }
+        }
+        task.setStand(stand_num);
+        
+        // è®¾ç½®éœ€è¦çš„äººæ•°
+        int required_count = 1;  // é»˜è®¤1äºº
+        if (!required_count_str.empty()) {
+            try {
+                required_count = std::stoi(required_count_str);
+            } catch (...) {
+                // å¦‚æœè§£æå¤±è´¥ï¼Œä½¿ç”¨é»˜è®¤å€¼
+            }
+        }
+        task.setRequiredCount(required_count);
+        
+        // è®¾ç½®ä»»åŠ¡å±æ€§
+        task.setPreferMainShift(true);  // é»˜è®¤ä¼˜å…ˆä¸»ç­
+        task.setCanNewEmployee(false);  // é»˜è®¤ä¸å…è®¸æ–°å‘˜å·¥
+        task.setAssigned(false);
+        task.setShortStaffed(false);
+        
+        // ä»»åŠ¡æ˜¯å¦å…è®¸é‡å éƒ½æ˜¯Yï¼Œå¦‚æœæ˜¯Yå°±è®¤ä¸ºæœ€å¤§é‡å æ—¶é—´å°±æ˜¯ä»»åŠ¡æœ¬èº«çš„æ—¶é—´
+        task.setAllowOverlap(true);  // è®¾ç½®ä¸ºYï¼ˆtrueï¼‰
+        // setAllowOverlapä¼šè‡ªåŠ¨è®¾ç½®max_overlap_time_ = duration_ï¼ˆå¦‚æœduration_ > 0ï¼‰
+        // ä½†è¿™é‡Œduration_å·²ç»è®¾ç½®äº†ï¼Œæ‰€ä»¥éœ€è¦å†æ¬¡è°ƒç”¨setDurationæ¥è§¦å‘æ›´æ–°
+        if (duration_seconds > 0) {
+            task.setDuration(duration_seconds);  // è¿™ä¼šè§¦å‘max_overlap_time_çš„è®¾ç½®
+        }
+        
+        // è®¾ç½®èµ„è´¨è¦æ±‚ï¼ˆç®€åŒ–å¤„ç†ï¼Œä½¿ç”¨é»˜è®¤å€¼ï¼‰
+        task.setRequiredQualification(0);  // å¯ä»¥æ ¹æ®éœ€è¦è®¾ç½®
+        
+        // è®¾ç½®ä»»åŠ¡ç±»å‹ï¼ˆæ ¹æ®ä»»åŠ¡åç§°æ¨æ–­ï¼Œè¿™é‡Œç®€åŒ–å¤„ç†ï¼‰
+        // å¯ä»¥æ ¹æ®å®é™…éœ€æ±‚æ·»åŠ ä»»åŠ¡ç±»å‹æ¨æ–­é€»è¾‘
+        task.setTaskType(vip_first_class::TaskType::DISPATCH);  // é»˜è®¤ç±»å‹
+        
+        tasks.push_back(task);
+    }
+    
+    return true;
 }
 
 } // namespace CSVLoader

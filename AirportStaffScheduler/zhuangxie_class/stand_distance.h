@@ -1,8 +1,8 @@
 /**
  * @file stand_distance.h
- * @brief »úÎ»¾àÀë¹ÜÀíÀà
+ * @brief æœºä½è·ç¦»ç®¡ç†ç±»
  * 
- * ¹ÜÀí»úÎ»Ö®¼äµÄ¾àÀëºÍÂ·³ÌÊ±¼ä
+ * ç®¡ç†æœºä½ä¹‹é—´çš„è·ç¦»å’Œè·¯ç¨‹æ—¶é—´
  */
 
 #ifndef ZHUANGXIE_CLASS_STAND_DISTANCE_H
@@ -15,70 +15,70 @@ namespace zhuangxie_class {
 using namespace std;
 
 /**
- * @brief »úÎ»¾àÀë¹ÜÀíÀà
+ * @brief æœºä½è·ç¦»ç®¡ç†ç±»
  * 
- * ¹ÜÀí»úÎ»Ö®¼äµÄ¾àÀëºÍÂ·³ÌÊ±¼ä£¨Ãë£©
+ * ç®¡ç†æœºä½ä¹‹é—´çš„è·ç¦»å’Œè·¯ç¨‹æ—¶é—´ï¼ˆç§’ï¼‰
  */
 class StandDistance {
 public:
     /**
-     * @brief »ñÈ¡µ¥ÀıÊµÀı
-     * @return StandDistanceµ¥ÀıÒıÓÃ
+     * @brief è·å–å•ä¾‹å®ä¾‹
+     * @return StandDistanceå•ä¾‹å¼•ç”¨
      */
     static StandDistance& getInstance();
     
     /**
-     * @brief »ñÈ¡Á½¸ö»úÎ»Ö®¼äµÄÂ·³ÌÊ±¼ä
-     * @param stand1 ÆğÊ¼»úÎ»£¨1-24£©
-     * @param stand2 Ä¿±ê»úÎ»£¨1-24£©
-     * @return Â·³ÌÊ±¼ä£¨Ãë£©£¬Èç¹û»úÎ»ÎŞĞ§»òÎ´ÉèÖÃÔò·µ»ØÄ¬ÈÏÖµ£¨5·ÖÖÓ=300Ãë£©
+     * @brief è·å–ä¸¤ä¸ªæœºä½ä¹‹é—´çš„è·¯ç¨‹æ—¶é—´
+     * @param stand1 èµ·å§‹æœºä½ï¼ˆ1-24ï¼‰
+     * @param stand2 ç›®æ ‡æœºä½ï¼ˆ1-24ï¼‰
+     * @return è·¯ç¨‹æ—¶é—´ï¼ˆç§’ï¼‰ï¼Œå¦‚æœæœºä½æ— æ•ˆæˆ–æœªè®¾ç½®åˆ™è¿”å›é»˜è®¤å€¼ï¼ˆ5åˆ†é’Ÿ=300ç§’ï¼‰
      */
     long getTravelTime(int stand1, int stand2) const;
     
     /**
-     * @brief ÉèÖÃÁ½¸ö»úÎ»Ö®¼äµÄÂ·³ÌÊ±¼ä
-     * @param stand1 ÆğÊ¼»úÎ»£¨1-24£©
-     * @param stand2 Ä¿±ê»úÎ»£¨1-24£©
-     * @param time Â·³ÌÊ±¼ä£¨Ãë£©
+     * @brief è®¾ç½®ä¸¤ä¸ªæœºä½ä¹‹é—´çš„è·¯ç¨‹æ—¶é—´
+     * @param stand1 èµ·å§‹æœºä½ï¼ˆ1-24ï¼‰
+     * @param stand2 ç›®æ ‡æœºä½ï¼ˆ1-24ï¼‰
+     * @param time è·¯ç¨‹æ—¶é—´ï¼ˆç§’ï¼‰
      */
     void setTravelTime(int stand1, int stand2, long time);
     
     /**
-     * @brief ³õÊ¼»¯Ä¬ÈÏ¾àÀë¾ØÕó£¨¿É¸ù¾İÊµ¼ÊĞèÇóµ÷Õû£©
+     * @brief åˆå§‹åŒ–é»˜è®¤è·ç¦»çŸ©é˜µï¼ˆå¯æ ¹æ®å®é™…éœ€æ±‚è°ƒæ•´ï¼‰
      */
     void initializeDefaultDistances();
 
 private:
     /**
-     * @brief Ë½ÓĞ¹¹Ôìº¯Êı£¨µ¥ÀıÄ£Ê½£©
+     * @brief ç§æœ‰æ„é€ å‡½æ•°ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰
      */
     StandDistance();
     
     /**
-     * @brief Ë½ÓĞÎö¹¹º¯Êı
+     * @brief ç§æœ‰ææ„å‡½æ•°
      */
     ~StandDistance();
     
     /**
-     * @brief ½ûÖ¹¿½±´¹¹Ôì
+     * @brief ç¦æ­¢æ‹·è´æ„é€ 
      */
     StandDistance(const StandDistance&) = delete;
     
     /**
-     * @brief ½ûÖ¹¸³Öµ²Ù×÷
+     * @brief ç¦æ­¢èµ‹å€¼æ“ä½œ
      */
     StandDistance& operator=(const StandDistance&) = delete;
     
     /**
-     * @brief Éú³É»úÎ»¶ÔµÄ¼ü£¨±£Ö¤stand1 <= stand2£©
-     * @param stand1 »úÎ»1
-     * @param stand2 »úÎ»2
-     * @return »úÎ»¶ÔµÄ¼ü
+     * @brief ç”Ÿæˆæœºä½å¯¹çš„é”®ï¼ˆä¿è¯stand1 <= stand2ï¼‰
+     * @param stand1 æœºä½1
+     * @param stand2 æœºä½2
+     * @return æœºä½å¯¹çš„é”®
      */
     int makeKey(int stand1, int stand2) const;
     
-    map<int, long> distance_map_;  ///< »úÎ»¶Ôµ½Â·³ÌÊ±¼äµÄÓ³Éä
-    static const long DEFAULT_TRAVEL_TIME = 5 * 60;  ///< Ä¬ÈÏÂ·³ÌÊ±¼ä£¨5·ÖÖÓ=300Ãë£©
+    map<int, long> distance_map_;  ///< æœºä½å¯¹åˆ°è·¯ç¨‹æ—¶é—´çš„æ˜ å°„
+    static const long DEFAULT_TRAVEL_TIME = 5 * 60;  ///< é»˜è®¤è·¯ç¨‹æ—¶é—´ï¼ˆ5åˆ†é’Ÿ=300ç§’ï¼‰
 };
 
 }  // namespace zhuangxie_class

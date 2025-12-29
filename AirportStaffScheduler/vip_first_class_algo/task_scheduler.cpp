@@ -80,7 +80,7 @@ static bool isQualificationMatch(const string& employee_id, int required_qualifi
 // 辅助函数：检查员工在指定时间段是否空闲
 static bool isEmployeeAvailable(const string& employee_id, long task_start, long task_end, 
                                  bool task_allow_overlap, long task_max_overlap_time,
-                                 const map<long, TaskDefinition*>& task_ptr_map)
+                                 const map<string, TaskDefinition*>& task_ptr_map)
 {
     auto* employee = EmployeeManager::getInstance().getEmployee(employee_id);
     if (!employee) {
@@ -89,7 +89,7 @@ static bool isEmployeeAvailable(const string& employee_id, long task_start, long
     
     // 遍历员工的所有任务
     const auto& assigned_task_ids = employee->getAssignedTaskIds();
-    for (long assigned_task_id : assigned_task_ids) {
+    for (const string& assigned_task_id : assigned_task_ids) {
         auto task_it = task_ptr_map.find(assigned_task_id);
         if (task_it == task_ptr_map.end() || task_it->second == nullptr) {
             continue;
@@ -114,7 +114,7 @@ static bool isEmployeeAvailable(const string& employee_id, long task_start, long
 // 辅助函数：计算员工当日已分配任务的总时长（秒）
 static long calculateEmployeeDailyTaskTime(const string& employee_id, 
                                                 long current_task_start_time,
-                                                const map<long, TaskDefinition*>& task_ptr_map)
+                                                const map<string, TaskDefinition*>& task_ptr_map)
 {
     const long SECONDS_PER_DAY = 24 * 3600;  // 一天的秒数
     const long DEFAULT_AFTER_FLIGHT_TIME = 22 * 3600 + 30 * 60;  // 22:30 = 81000秒
@@ -131,7 +131,7 @@ static long calculateEmployeeDailyTaskTime(const string& employee_id,
     
     // 遍历员工的所有已分配任务
     const auto& assigned_task_ids = employee->getAssignedTaskIds();
-    for (long assigned_task_id : assigned_task_ids) {
+    for (const string& assigned_task_id : assigned_task_ids) {
         auto task_it = task_ptr_map.find(assigned_task_id);
         if (task_it == task_ptr_map.end() || task_it->second == nullptr) {
             continue;
@@ -184,7 +184,7 @@ static bool isTimeRangeContains(long outer_start, long outer_end,
 }
 
 // 辅助函数：检查任务是否是固定任务（通过员工ID和班次信息）
-static bool isTaskFixedForEmployee(long task_id, TaskType task_type, const string& employee_id,
+static bool isTaskFixedForEmployee(const string& task_id, TaskType task_type, const string& employee_id,
                                     const vector<Shift>& shifts)
 {
     // 获取任务的固定人选配置
@@ -273,15 +273,9 @@ void TaskScheduler::scheduleTasks(vector<TaskDefinition>& tasks,
     });
     
     // 2. 创建任务ID到TaskDefinition指针的映射，方便查找和更新
-    map<long, TaskDefinition*> task_ptr_map;
+    map<string, TaskDefinition*> task_ptr_map;
     for (auto& task : tasks) {
         task_ptr_map[task.getTaskId()] = &task;
-        // 调试：检查任务12-23是否在映射中
-        if (task.getTaskId() >= 12 && task.getTaskId() <= 23) {
-            cerr << "[DEBUG] 初始映射: 任务ID=" << task.getTaskId() 
-                 << ", 指针=" << static_cast<void*>(&task)
-                 << ", 名称=" << task.getTaskName() << endl;
-        }
     }
     cerr << "[DEBUG] 任务指针映射建立完成，共 " << task_ptr_map.size() << " 个任务" << endl;
     
@@ -293,50 +287,26 @@ void TaskScheduler::scheduleTasks(vector<TaskDefinition>& tasks,
     task_ptr_map.clear();
     for (auto& task : tasks) {
         task_ptr_map[task.getTaskId()] = &task;
-        // 调试：检查任务12-23在重新映射后的状态
-        if (task.getTaskId() >= 12 && task.getTaskId() <= 23) {
-            cerr << "[DEBUG] 厅内任务处理后重新映射: 任务ID=" << task.getTaskId() 
-                 << ", 指针=" << static_cast<void*>(&task)
-                 << ", 名称=" << task.getTaskName()
-                 << ", 已分配=" << task.isAssigned()
-                 << ", 已分配人数=" << task.getAssignedEmployeeCount() << endl;
-        }
     }
     cerr << "[DEBUG] 厅内任务处理后，任务指针映射已更新，共 " << task_ptr_map.size() << " 个任务" << endl;
     
     // 3. 使用任务ID集合来跟踪已处理的任务
-    set<long> processed_task_ids;
+    set<string> processed_task_ids;
     
     // 4. 遍历任务列表，逐个分配任务
     size_t current_index = 0;
     while (current_index < tasks.size()) {
         TaskDefinition& task = tasks[current_index];
-        long task_id = task.getTaskId();
-        
-        // 调试：检查任务12-23在主循环中的状态
-        if (task_id >= 12 && task_id <= 23) {
-            cerr << "[DEBUG] 主循环处理任务ID=" << task_id 
-                 << ", 名称=" << task.getTaskName()
-                 << ", 指针=" << static_cast<void*>(&task)
-                 << ", 已分配=" << task.isAssigned()
-                 << ", 已分配人数=" << task.getAssignedEmployeeCount()
-                 << ", 是否在处理列表中=" << (processed_task_ids.find(task_id) != processed_task_ids.end()) << endl;
-        }
+        string task_id = task.getTaskId();
         
         // 跳过已经处理过的任务
         if (processed_task_ids.find(task.getTaskId()) != processed_task_ids.end()) {
-            if (task_id >= 12 && task_id <= 23) {
-                cerr << "[DEBUG] 任务ID=" << task_id << " 已在处理列表中，跳过" << endl;
-            }
             current_index++;
             continue;
         }
         
         // 跳过已经分配的任务
         if (task.isAssigned() && task.getAssignedEmployeeCount() > 0) {
-            if (task_id >= 12 && task_id <= 23) {
-                cerr << "[DEBUG] 任务ID=" << task_id << " 已分配，标记为已处理" << endl;
-            }
             processed_task_ids.insert(task.getTaskId());
             current_index++;
             continue;
@@ -361,36 +331,6 @@ void TaskScheduler::scheduleTasks(vector<TaskDefinition>& tasks,
             }
         }
         if (is_hall_maintenance_task) {
-            // 调试：检查厅内保障任务的状态
-            if (task_id >= 12 && task_id <= 23) {
-                cerr << "[DEBUG] 任务ID=" << task_id << " 是厅内保障任务，已分配=" 
-                     << task.isAssigned() << ", 已分配人数=" << task.getAssignedEmployeeCount()
-                     << ", 任务指针=" << static_cast<void*>(&task) << endl;
-                // 验证指针映射中的指针是否一致
-                auto it = task_ptr_map.find(task_id);
-                if (it != task_ptr_map.end()) {
-                    cerr << "[DEBUG] 任务ID=" << task_id << " 在指针映射中，映射指针=" 
-                         << static_cast<void*>(it->second) << endl;
-                    if (it->second != &task) {
-                        cerr << "[ERROR] 任务ID=" << task_id 
-                             << " 指针不一致！映射指针=" << static_cast<void*>(it->second)
-                             << " != 当前任务指针=" << static_cast<void*>(&task) << endl;
-                    }
-                    // 验证映射中的任务状态
-                    if (it->second) {
-                        cerr << "[DEBUG] 映射中的任务状态: 已分配=" << it->second->isAssigned()
-                             << ", 已分配人数=" << it->second->getAssignedEmployeeCount() << endl;
-                    }
-                } else {
-                    cerr << "[ERROR] 任务ID=" << task_id << " 不在指针映射中！" << endl;
-                }
-                
-                // 如果任务未分配，输出错误信息
-                if (!task.isAssigned() || task.getAssignedEmployeeCount() == 0) {
-                    cerr << "[ERROR] 任务ID=" << task_id << " (" << task.getTaskName() 
-                         << ") 是厅内保障任务但未被分配！将跳过处理" << endl;
-                }
-            }
             processed_task_ids.insert(task.getTaskId());
             current_index++;
             continue;
@@ -582,7 +522,7 @@ void TaskScheduler::scheduleTasks(vector<TaskDefinition>& tasks,
             // 先收集所有可以撤销的任务，然后按优先级排序，选择优先级最低的
             struct ReplaceableTask {
                 string employee_id;
-                long task_id;
+                string task_id;
                 TaskDefinition* task_ptr;
                 long priority;
             };
@@ -613,7 +553,7 @@ void TaskScheduler::scheduleTasks(vector<TaskDefinition>& tasks,
                     
                     // 遍历该员工的所有任务
                     const auto& assigned_task_ids = employee->getAssignedTaskIds();
-                    for (long assigned_task_id : assigned_task_ids) {
+                    for (const string& assigned_task_id : assigned_task_ids) {
                         auto assigned_task_it = task_ptr_map.find(assigned_task_id);
                         if (assigned_task_it == task_ptr_map.end() || assigned_task_it->second == nullptr) {
                             continue;
@@ -757,13 +697,6 @@ void TaskScheduler::scheduleTasks(vector<TaskDefinition>& tasks,
                     task_ptr_map.clear();
                     for (auto& t : tasks) {
                         task_ptr_map[t.getTaskId()] = &t;
-                        // 调试：检查任务12-23在重新映射后的状态
-                        if (t.getTaskId() >= 12 && t.getTaskId() <= 23) {
-                            cerr << "[DEBUG] 重新映射后: 任务ID=" << t.getTaskId() 
-                                 << ", 指针=" << static_cast<void*>(&t)
-                                 << ", 已分配=" << t.isAssigned()
-                                 << ", 已分配人数=" << t.getAssignedEmployeeCount() << endl;
-                        }
                     }
                     cerr << "[DEBUG] 任务重新排序后，指针映射已更新，共 " << task_ptr_map.size() << " 个任务" << endl;
                     
@@ -858,7 +791,7 @@ void TaskScheduler::scheduleTasksFromCommon(
 
 void TaskScheduler::scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
                                                  const vector<Shift>& shifts,
-                                                 map<long, TaskDefinition*>& task_ptr_map)
+                                                 map<string, TaskDefinition*>& task_ptr_map)
 {
     // 获取厅内保障任务的4个固定人选
     const auto& hall_fixed_persons = TaskConfig::getInstance().getHallMaintenanceFixedPersons();
@@ -930,7 +863,7 @@ void TaskScheduler::scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
     
     // 收集所有厅内保障任务ID（包括国内厅内早班和1小时为粒度的任务）
     // 使用任务ID而不是指针，避免在添加操作间任务时指针失效
-    vector<long> hall_task_ids;
+    vector<string> hall_task_ids;
     static const TaskType hall_task_types[] = {
         TaskType::DOMESTIC_HALL_EARLY,      // 国内厅内早班（05:30-08:30）
         TaskType::DOMESTIC_HALL_0830_0930, TaskType::DOMESTIC_HALL_0930_1030,
@@ -970,7 +903,7 @@ void TaskScheduler::scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
     
     // 按时间排序（通过task_ptr_map获取指针）
     sort(hall_task_ids.begin(), hall_task_ids.end(), 
-              [&task_ptr_map](long id_a, long id_b) {
+              [&task_ptr_map](const string& id_a, const string& id_b) {
                   auto it_a = task_ptr_map.find(id_a);
                   auto it_b = task_ptr_map.find(id_b);
                   if (it_a == task_ptr_map.end() || it_a->second == nullptr ||
@@ -986,7 +919,7 @@ void TaskScheduler::scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
     bool first_task = true;
     bool first_shift_count_incremented = false;  // 记录是否已经增加过第一次值守次数
     
-    for (long task_id : hall_task_ids) {
+    for (const string& task_id : hall_task_ids) {
         // 通过task_ptr_map获取任务指针，确保使用最新指针（避免指针失效）
         auto task_it = task_ptr_map.find(task_id);
         if (task_it == task_ptr_map.end() || task_it->second == nullptr) {
@@ -1114,14 +1047,14 @@ void TaskScheduler::scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
     
     // 验证所有厅内保障任务的分配状态（通过task_ptr_map验证）
     cerr << "[DEBUG] 开始验证厅内保障任务的分配状态..." << endl;
-    for (long task_id : hall_task_ids) {
+    for (const string& task_id : hall_task_ids) {
         auto it = task_ptr_map.find(task_id);
         if (it != task_ptr_map.end() && it->second != nullptr) {
             TaskDefinition* mapped_task = it->second;
             int assigned_count = static_cast<int>(mapped_task->getAssignedEmployeeCount());
             cerr << "[DEBUG] 任务ID=" << task_id << " 验证通过: 已分配人数=" 
                  << assigned_count << ", 指针=" << static_cast<void*>(mapped_task) << endl;
-            if (assigned_count == 0 && task_id >= 12 && task_id <= 23) {
+            if (assigned_count == 0) {
                 cerr << "[ERROR] 任务ID=" << task_id << " (" << mapped_task->getTaskName() 
                      << ") 验证失败：分配后仍为0人！" << endl;
             }
@@ -1135,7 +1068,7 @@ void TaskScheduler::scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
 
 void TaskScheduler::scheduleOperationRoomTasks(vector<TaskDefinition>& tasks,
                                                const vector<Shift>& shifts,
-                                               map<long, TaskDefinition*>& task_ptr_map,
+                                               map<string, TaskDefinition*>& task_ptr_map,
                                                const vector<string>& off_duty_employees,
                                                long time_slot_start,
                                                long time_slot_end)
@@ -1167,7 +1100,7 @@ void TaskScheduler::scheduleOperationRoomTasks(vector<TaskDefinition>& tasks,
         operation_task->setPreferMainShift(true);
         
         // 生成任务ID（使用时间戳）
-        long task_id = time_slot_start * 1000 + static_cast<long>(TaskType::OPERATION_ROOM);
+        string task_id = "operation_" + to_string(time_slot_start) + "_" + to_string(static_cast<long>(TaskType::OPERATION_ROOM));
         operation_task->setTaskId(task_id);
         task_ptr_map[task_id] = operation_task;
     }

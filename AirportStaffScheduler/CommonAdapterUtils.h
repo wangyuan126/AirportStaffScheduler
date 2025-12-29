@@ -161,15 +161,8 @@ inline vip_first_class::TaskDefinition TaskToTaskDefinition(
     
     vip_first_class::TaskDefinition task_def;
     
-    // 转换任务ID（从string到long，如果失败则使用hash）
-    try {
-        long task_id = std::stol(task.getTaskId());
-        task_def.setTaskId(task_id);
-    } catch (...) {
-        // 如果转换失败，使用hash值
-        std::hash<std::string> hasher;
-        task_def.setTaskId(static_cast<long>(hasher(task.getTaskId())));
-    }
+    // 任务ID直接使用字符串（TaskDefinition现在使用string类型）
+    task_def.setTaskId(task.getTaskId());
     
     task_def.setTaskName(task.getTaskName());
     task_def.setTaskType(task_type);
@@ -224,7 +217,7 @@ inline Task TaskDefinitionToTask(const vip_first_class::TaskDefinition& task_def
     
     // 创建Task对象
     Task task(
-        std::to_string(task_def.getTaskId()),  // taskId
+        task_def.getTaskId(),  // taskId (已经是string类型)
         "",  // taskDefId
         task_def.getTaskName(),  // taskName
         start_time,  // taskStartTime

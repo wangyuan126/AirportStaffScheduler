@@ -1,25 +1,23 @@
 /**
  * @file load_scheduler.h
- * @brief ×°Ğ¶ÈÎÎñµ÷¶ÈÀà
+ * @brief è£…å¸ä»»åŠ¡è°ƒåº¦ç±»
  * 
- * ¶¨Òå×°Ğ¶ÅÅ°àÏµÍ³ÖĞµÄÈÎÎñµ÷¶È¹¦ÄÜ
+ * å®šä¹‰è£…å¸æ’ç­ç³»ç»Ÿä¸­çš„ä»»åŠ¡è°ƒåº¦åŠŸèƒ½
  */
 
 #ifndef ZHUANGXIE_CLASS_LOAD_SCHEDULER_H
 #define ZHUANGXIE_CLASS_LOAD_SCHEDULER_H
 
 #include "load_employee_info.h"
-#include "flight.h"
+#include "load_task.h"
 #include "stand_distance.h"
 #include "../vip_first_class_algo/shift.h"
-#include "../vip_first_class_algo/task_definition.h"
-#include "../CommonAdapterUtils.h"
 #include <vector>
 #include <string>
 #include <map>
 #include <set>
 
-// Ç°ÏòÉùÃ÷¹«¹²Àà
+// å‰å‘å£°æ˜å…¬å…±ç±»
 namespace AirportStaffScheduler {
     class Task;
     class Shift;
@@ -31,113 +29,70 @@ namespace zhuangxie_class {
 using namespace std;
 
 /**
- * @brief ×°Ğ¶ÈÎÎñµ÷¶ÈÀà
+ * @brief è£…å¸ä»»åŠ¡è°ƒåº¦ç±»
  * 
- * ¸ºÔğ½«º½°àÈÎÎñ·ÖÅä¸ø×°Ğ¶Ô±¹¤
+ * è´Ÿè´£å°†èˆªç­ä»»åŠ¡åˆ†é…ç»™è£…å¸å‘˜å·¥
  */
 class LoadScheduler {
 public:
     /**
-     * @brief ¹¹Ôìº¯Êı
+     * @brief æ„é€ å‡½æ•°
      */
     LoadScheduler();
     
     /**
-     * @brief Îö¹¹º¯Êı
+     * @brief ææ„å‡½æ•°
      */
     ~LoadScheduler();
     
     /**
-     * @brief °à´ÎÕ¼Î»Ê±¼ä¶Î
+     * @brief ç­æ¬¡å ä½æ—¶é—´æ®µï¼ˆå·²åºŸå¼ƒï¼Œä¸å†ä½¿ç”¨ï¼‰
      */
     struct ShiftBlockPeriod {
-        int shift_type;    ///< °à´ÎÀàĞÍ£¨1=Ö÷°à£¬2=¸±°à£©
-        long start_time;    ///< Õ¼Î»¿ªÊ¼Ê±¼ä
-        long end_time;      ///< Õ¼Î»½áÊøÊ±¼ä
+        int shift_type;    ///< ç­æ¬¡ç±»å‹ï¼ˆå·²åºŸå¼ƒï¼‰
+        long start_time;    ///< å ä½å¼€å§‹æ—¶é—´
+        long end_time;      ///< å ä½ç»“æŸæ—¶é—´
     };
     
     /**
-     * @brief µ÷¶ÈÈÎÎñ
-     * @param employees Ô±¹¤ÁĞ±í
-     * @param flights º½°àĞÅÏ¢ÁĞ±í
-     * @param shifts °à´ÎÁĞ±í£¬±íÊ¾½ñÈÕÉÏ°àµÄÇé¿ö£¨Ö÷°à¡¢¸±°à¡¢ĞİÏ¢£©
-     * @param tasks Êä³ö²ÎÊı£¬·ÖÅäºóµÄÈÎÎñÁĞ±í£¨ĞÎÊ½ºÍscheduleTasksÒ»ÖÂ£©
-     * @param default_travel_time Ä¬ÈÏÍ¨ÇÚÊ±¼ä£¨Ãë£©£¬Èç¹ûÈÎÎñÎ´Ö¸¶¨Í¨ÇÚÊ±¼äÔòÊ¹ÓÃ´ËÖµ
-     * @param block_periods °à´ÎÕ¼Î»Ê±¼ä¶ÎÁĞ±í£¨Æ£ÀÍ¶È¿ØÖÆ£©£¬¸ÃÊ±¼ä¶ÎÄÚ²»Ïò¸Ã°à´ÎÅÉ¹¤
-     * @param previous_tasks ÉÏÒ»´ÎÔ¤ÅÅ·½°¸£¨ÓÃÓÚ¼õÉÙµ÷Õû£©£¬¿ÉÒÔÎª¿Õ
+     * @brief è°ƒåº¦ä»»åŠ¡
+     * @param employees å‘˜å·¥åˆ—è¡¨ï¼ˆä»shiftsä¸­æå–ï¼‰
+     * @param tasks è¾“å…¥è¾“å‡ºå‚æ•°ï¼Œä»»åŠ¡åˆ—è¡¨ï¼ˆä»CSVåŠ è½½ï¼Œåˆ†é…åæ›´æ–°ï¼‰
+     * @param shifts ç­æ¬¡åˆ—è¡¨ï¼ˆå·²åºŸå¼ƒï¼Œä¸å†ä½¿ç”¨ï¼‰
+     * @param block_periods ç­æ¬¡å ä½æ—¶é—´æ®µåˆ—è¡¨ï¼ˆå·²åºŸå¼ƒï¼Œä¸å†ä½¿ç”¨ï¼‰
+     * @param previous_tasks ä¸Šä¸€æ¬¡é¢„æ’æ–¹æ¡ˆï¼ˆç”¨äºå‡å°‘è°ƒæ•´ï¼‰ï¼Œå¯ä»¥ä¸ºç©º
+     * @param group_name_to_employees ç­ç»„ååˆ°å‘˜å·¥IDåˆ—è¡¨çš„æ˜ å°„ï¼ˆä»shift.csvä¸­æå–ï¼‰
      */
     void scheduleLoadTasks(const vector<LoadEmployeeInfo>& employees,
-                          const vector<Flight>& flights,
+                          vector<LoadTask>& tasks,
                           const vector<vip_first_class::Shift>& shifts,
-                          vector<vip_first_class::TaskDefinition>& tasks,
-                          long default_travel_time = 480,  // Ä¬ÈÏ8·ÖÖÓ=480Ãë
                           const vector<ShiftBlockPeriod>& block_periods = vector<ShiftBlockPeriod>(),
-                          const vector<vip_first_class::TaskDefinition>* previous_tasks = nullptr);
+                          const vector<LoadTask>* previous_tasks = nullptr,
+                          const map<string, vector<string>>* group_name_to_employees = nullptr);
     
-    /**
-     * @brief µ÷¶È×°Ğ¶ÈÎÎñ£¨Ê¹ÓÃ¹«¹²Àà½Ó¿Ú£©
-     * @param staffs ¹«¹²StaffÁĞ±í£¨ÓÃÓÚÔ±¹¤ĞÅÏ¢£©
-     * @param tasks ¹«¹²TaskÁĞ±í£¨ÓÃÓÚÉú³É×°Ğ¶ÈÎÎñ£©
-     * @param common_shifts ¹«¹²ShiftÁĞ±í
-     * @param default_travel_time Ä¬ÈÏÍ¨ÇÚÊ±¼ä£¨Ãë£©
-     * @param block_periods °à´ÎÕ¼Î»Ê±¼ä¶ÎÁĞ±í£¨Æ£ÀÍ¶È¿ØÖÆ£©
-     */
-    void scheduleLoadTasksFromCommon(const std::vector<AirportStaffScheduler::Staff>& staffs,
-                                     const std::vector<AirportStaffScheduler::Task>& tasks,
-                                     const std::vector<AirportStaffScheduler::Shift>& common_shifts,
-                                     long default_travel_time = 480,
-                                     const vector<ShiftBlockPeriod>& block_periods = vector<ShiftBlockPeriod>());
-
 private:
     /**
-     * @brief ´Óº½°àĞÅÏ¢Éú³ÉÈÎÎñ
-     * @param flights º½°àĞÅÏ¢ÁĞ±í
-     * @param tasks Êä³ö²ÎÊı£¬Éú³ÉµÄÈÎÎñÁĞ±í
-     * @param default_travel_time Ä¬ÈÏÍ¨ÇÚÊ±¼ä£¨Ãë£©
-     * @param flight_task_map Êä³ö²ÎÊı£¬ÈÎÎñIDµ½º½°àË÷ÒıµÄÓ³Éä
+     * @brief æŒ‰ä»»åŠ¡ä¿éšœä¼˜å…ˆçº§æ’åºä»»åŠ¡
+     * @param tasks ä»»åŠ¡åˆ—è¡¨ï¼ˆä¼šè¢«ä¿®æ”¹ï¼‰
      */
-    void generateTasksFromFlights(const vector<Flight>& flights,
-                                  vector<vip_first_class::TaskDefinition>& tasks,
-                                  long default_travel_time,
-                                  map<long, size_t>& flight_task_map);
+    void sortTasksByPriority(vector<LoadTask>& tasks);
     
     /**
-     * @brief °´ÈÎÎñ±£ÕÏÓÅÏÈ¼¶ÅÅĞòÈÎÎñ
-     * @param tasks ÈÎÎñÁĞ±í£¨»á±»ĞŞ¸Ä£©
-     * @param flights º½°àĞÅÏ¢ÁĞ±í£¨ÓÃÓÚ»ñÈ¡±¨Ê±¡¢½ø¸ÛÊ±¼äµÈĞÅÏ¢£©
-     * @param flight_task_map ÈÎÎñIDµ½º½°àË÷ÒıµÄÓ³Éä
+     * @brief åˆ†é…ä»»åŠ¡ç»™å‘˜å·¥
+     * @param tasks ä»»åŠ¡åˆ—è¡¨
+     * @param employees å‘˜å·¥åˆ—è¡¨ï¼ˆä»shiftsä¸­æå–ï¼‰
+     * @param shifts ç­æ¬¡åˆ—è¡¨ï¼ˆå·²åºŸå¼ƒï¼Œä¸å†ä½¿ç”¨ï¼‰
+     * @param block_periods ç­æ¬¡å ä½æ—¶é—´æ®µåˆ—è¡¨ï¼ˆå·²åºŸå¼ƒï¼Œä¸å†ä½¿ç”¨ï¼‰
+     * @param previous_tasks ä¸Šä¸€æ¬¡é¢„æ’æ–¹æ¡ˆï¼ˆç”¨äºå‡å°‘è°ƒæ•´ï¼‰
+     * @param group_name_to_employees ç­ç»„ååˆ°å‘˜å·¥IDåˆ—è¡¨çš„æ˜ å°„ï¼ˆä»shift.csvä¸­æå–ï¼‰
      */
-    void sortTasksByPriority(vector<vip_first_class::TaskDefinition>& tasks,
-                             const vector<Flight>& flights,
-                             const map<long, size_t>& flight_task_map);
-    
-    /**
-     * @brief ·ÖÅäÈÎÎñ¸øÔ±¹¤
-     * @param tasks ÈÎÎñÁĞ±í
-     * @param employees Ô±¹¤ÁĞ±í
-     * @param shifts °à´ÎÁĞ±í
-     * @param flights º½°àÁĞ±í£¨ÓÃÓÚ»ñÈ¡»úÎ»ĞÅÏ¢£©
-     * @param block_periods °à´ÎÕ¼Î»Ê±¼ä¶ÎÁĞ±í
-     * @param previous_tasks ÉÏÒ»´ÎÔ¤ÅÅ·½°¸£¨ÓÃÓÚ¼õÉÙµ÷Õû£©
-     * @param flight_task_map ÈÎÎñIDµ½º½°àË÷ÒıµÄÓ³Éä£¨ÓÃÓÚ»ñÈ¡»úÎ»ĞÅÏ¢£©
-     */
-    void assignTasksToEmployees(vector<vip_first_class::TaskDefinition>& tasks,
+    void assignTasksToEmployees(vector<LoadTask>& tasks,
                                 const vector<LoadEmployeeInfo>& employees,
                                 const vector<vip_first_class::Shift>& shifts,
-                                const vector<Flight>& flights,
                                 const vector<ShiftBlockPeriod>& block_periods,
-                                const vector<vip_first_class::TaskDefinition>* previous_tasks,
-                                const map<long, size_t>& flight_task_map);
+                                const vector<LoadTask>* previous_tasks,
+                                const map<string, vector<string>>& group_name_to_employees);
     
-    /**
-     * @brief ¼ì²é°à´ÎÔÚÖ¸¶¨Ê±¼äÊÇ·ñ±»Õ¼Î»
-     * @param shift_type °à´ÎÀàĞÍ£¨1=Ö÷°à£¬2=¸±°à£©
-     * @param time Ê±¼äµã
-     * @param block_periods °à´ÎÕ¼Î»Ê±¼ä¶ÎÁĞ±í
-     * @return true±íÊ¾±»Õ¼Î»£¬false±íÊ¾Î´±»Õ¼Î»
-     */
-    bool isShiftBlocked(int shift_type, long time,
-                       const vector<ShiftBlockPeriod>& block_periods) const;
     
 };
 

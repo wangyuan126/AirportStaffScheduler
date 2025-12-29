@@ -195,35 +195,35 @@ public:
     
     /**
      * @brief 获取分配的任务ID列表
-     * @return 任务ID列表的常量引用
+     * @return 任务ID列表的常量引用（字符串类型）
      */
-    const vector<long>& getAssignedTaskIds() const { return assigned_task_ids_; }
+    const vector<string>& getAssignedTaskIds() const { return assigned_task_ids_; }
     
     /**
      * @brief 获取分配的任务ID列表（非常量版本）
-     * @return 任务ID列表的引用
+     * @return 任务ID列表的引用（字符串类型）
      */
-    vector<long>& getAssignedTaskIds() { return assigned_task_ids_; }
+    vector<string>& getAssignedTaskIds() { return assigned_task_ids_; }
     
     /**
      * @brief 添加分配的任务ID
-     * @param task_id 任务ID
+     * @param task_id 任务ID（字符串类型）
      */
-    void addAssignedTaskId(long task_id);
+    void addAssignedTaskId(const string& task_id);
     
     /**
      * @brief 移除分配的任务ID
-     * @param task_id 任务ID
+     * @param task_id 任务ID（字符串类型）
      * @return true表示移除成功，false表示该任务未分配给此员工
      */
-    bool removeAssignedTaskId(long task_id);
+    bool removeAssignedTaskId(const string& task_id);
     
     /**
      * @brief 检查是否已分配指定任务
-     * @param task_id 任务ID
+     * @param task_id 任务ID（字符串类型）
      * @return true表示已分配，false表示未分配
      */
-    bool isAssignedToTask(long task_id) const;
+    bool isAssignedToTask(const string& task_id) const;
     
     /**
      * @brief 获取分配的任务数量
@@ -245,7 +245,7 @@ private:
     long total_work_time_;                                 ///< 累计工作时长（秒）
     map<string, int> shift_type_counts_;       ///< 班次类型次数统计（键为"主班1"、"主班2"、"副班1"等）
     map<string, int> hall_task_counts_;        ///< 厅房任务次数统计（键为厅房名称）
-    vector<long> assigned_task_ids_;                 ///< 分配的任务ID列表
+    vector<string> assigned_task_ids_;                 ///< 分配的任务ID列表（字符串类型）
 };
 
 }  // namespace vip_first_class

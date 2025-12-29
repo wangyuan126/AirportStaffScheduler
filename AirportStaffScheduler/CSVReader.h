@@ -1,8 +1,8 @@
 /**
  * @file CSVReader.h
- * @brief CSVÎÄ¼ş¶ÁÈ¡¹¤¾ß
+ * @brief CSVæ–‡ä»¶è¯»å–å·¥å…·
  * 
- * Ìá¹©´ÓCSVÎÄ¼ş¶ÁÈ¡Êı¾İ²¢×ª»»ÎªËã·¨ËùĞè¸ñÊ½µÄ¹¤¾ßº¯Êı
+ * æä¾›ä»CSVæ–‡ä»¶è¯»å–æ•°æ®å¹¶è½¬æ¢ä¸ºç®—æ³•æ‰€éœ€æ ¼å¼çš„å·¥å…·å‡½æ•°
  */
 
 #pragma once
@@ -19,9 +19,9 @@ namespace AirportStaffScheduler {
 namespace CSVUtils {
 
 /**
- * @brief ½âÎöCSVĞĞ
- * @param line CSVĞĞ×Ö·û´®
- * @return ½âÎöºóµÄ×Ö¶ÎÁĞ±í
+ * @brief è§£æCSVè¡Œ
+ * @param line CSVè¡Œå­—ç¬¦ä¸²
+ * @return è§£æåçš„å­—æ®µåˆ—è¡¨
  */
 inline std::vector<std::string> parseCSVLine(const std::string& line) {
     std::vector<std::string> fields;
@@ -32,7 +32,7 @@ inline std::vector<std::string> parseCSVLine(const std::string& line) {
         char c = line[i];
         
         if (c == '"') {
-            // ´¦Àí×ªÒåµÄÒıºÅ
+            // å¤„ç†è½¬ä¹‰çš„å¼•å·
             if (in_quotes && i + 1 < line.length() && line[i + 1] == '"') {
                 field += '"';
                 ++i;
@@ -46,23 +46,23 @@ inline std::vector<std::string> parseCSVLine(const std::string& line) {
             field += c;
         }
     }
-    fields.push_back(field);  // ×îºóÒ»¸ö×Ö¶Î
+    fields.push_back(field);  // æœ€åä¸€ä¸ªå­—æ®µ
     
     return fields;
 }
 
 /**
- * @brief ¶ÁÈ¡CSVÎÄ¼ş
- * @param filename CSVÎÄ¼şÂ·¾¶
- * @param skip_header ÊÇ·ñÌø¹ıµÚÒ»ĞĞ£¨±íÍ·£©
- * @return ĞĞÁĞ±í£¬Ã¿ĞĞÊÇÒ»¸ö×Ö¶ÎÁĞ±í
+ * @brief è¯»å–CSVæ–‡ä»¶
+ * @param filename CSVæ–‡ä»¶è·¯å¾„
+ * @param skip_header æ˜¯å¦è·³è¿‡ç¬¬ä¸€è¡Œï¼ˆè¡¨å¤´ï¼‰
+ * @return è¡Œåˆ—è¡¨ï¼Œæ¯è¡Œæ˜¯ä¸€ä¸ªå­—æ®µåˆ—è¡¨
  */
 inline std::vector<std::vector<std::string>> readCSV(const std::string& filename, bool skip_header = true) {
     std::vector<std::vector<std::string>> rows;
     std::ifstream file(filename);
     
     if (!file.is_open()) {
-        std::cerr << "´íÎó£ºÎŞ·¨´ò¿ªCSVÎÄ¼ş: " << filename << std::endl;
+        std::cerr << "é”™è¯¯ï¼šæ— æ³•æ‰“å¼€CSVæ–‡ä»¶: " << filename << std::endl;
         return rows;
     }
     
@@ -70,7 +70,7 @@ inline std::vector<std::vector<std::string>> readCSV(const std::string& filename
     bool first_line = true;
     
     while (std::getline(file, line)) {
-        // Ìø¹ıBOM£¨Èç¹û´æÔÚ£©
+        // è·³è¿‡BOMï¼ˆå¦‚æœå­˜åœ¨ï¼‰
         if (first_line && line.length() >= 3 && 
             static_cast<unsigned char>(line[0]) == 0xEF &&
             static_cast<unsigned char>(line[1]) == 0xBB &&
@@ -78,7 +78,7 @@ inline std::vector<std::vector<std::string>> readCSV(const std::string& filename
             line = line.substr(3);
         }
         
-        // È¥³ıĞĞÎ²µÄ\r£¨Windows»»ĞĞ·û£©
+        // å»é™¤è¡Œå°¾çš„\rï¼ˆWindowsæ¢è¡Œç¬¦ï¼‰
         if (!line.empty() && line.back() == '\r') {
             line.pop_back();
         }
@@ -100,10 +100,10 @@ inline std::vector<std::vector<std::string>> readCSV(const std::string& filename
 }
 
 /**
- * @brief ½«×Ö¶ÎÁĞ±í×ª»»ÎªÓ³Éä±í£¨Ê¹ÓÃ±íÍ·×÷Îª¼ü£©
- * @param header ±íÍ·×Ö¶ÎÁĞ±í
- * @param rows Êı¾İĞĞÁĞ±í
- * @return Ã¿ĞĞÊı¾İÓ³Éäµ½×Ö¶ÎÃûµÄÓ³Éä±íÁĞ±í
+ * @brief å°†å­—æ®µåˆ—è¡¨è½¬æ¢ä¸ºæ˜ å°„è¡¨ï¼ˆä½¿ç”¨è¡¨å¤´ä½œä¸ºé”®ï¼‰
+ * @param header è¡¨å¤´å­—æ®µåˆ—è¡¨
+ * @param rows æ•°æ®è¡Œåˆ—è¡¨
+ * @return æ¯è¡Œæ•°æ®æ˜ å°„åˆ°å­—æ®µåçš„æ˜ å°„è¡¨åˆ—è¡¨
  */
 inline std::vector<std::map<std::string, std::string>> csvToMap(
     const std::vector<std::string>& header,
@@ -123,12 +123,12 @@ inline std::vector<std::map<std::string, std::string>> csvToMap(
 }
 
 /**
- * @brief È¥³ı×Ö·û´®Ê×Î²¿Õ¸ñºÍÒıºÅ
+ * @brief å»é™¤å­—ç¬¦ä¸²é¦–å°¾ç©ºæ ¼å’Œå¼•å·
  */
 inline std::string trimQuotes(const std::string& str) {
     std::string result = str;
     
-    // È¥³ıÊ×Î²¿Õ¸ñ
+    // å»é™¤é¦–å°¾ç©ºæ ¼
     while (!result.empty() && (result.front() == ' ' || result.front() == '\t')) {
         result.erase(result.begin());
     }
@@ -136,7 +136,7 @@ inline std::string trimQuotes(const std::string& str) {
         result.pop_back();
     }
     
-    // È¥³ıÊ×Î²ÒıºÅ
+    // å»é™¤é¦–å°¾å¼•å·
     if (result.length() >= 2 && result.front() == '"' && result.back() == '"') {
         result = result.substr(1, result.length() - 2);
     }
@@ -145,9 +145,10 @@ inline std::string trimQuotes(const std::string& str) {
 }
 
 /**
- * @brief ½âÎöÊ±¼ä×Ö·û´®£¨¸ñÊ½£ºYYYY-MM-DD HH:MM:SS »ò HH:MM£©
- * @param time_str Ê±¼ä×Ö·û´®
- * @return ´Ó2020-01-01 00:00:00¿ªÊ¼µÄÃëÊı
+ * @brief è§£ææ—¶é—´å­—ç¬¦ä¸²ï¼ˆæ ¼å¼ï¼šYYYY-MM-DD HH:MM:SS æˆ– HH:MMï¼‰
+ * @param time_str æ—¶é—´å­—ç¬¦ä¸²
+ * @return ä»å½“å¤©00:00:00å¼€å§‹çš„ç§’æ•°ï¼ˆåªè®¡ç®—å°æ—¶å’Œåˆ†é’Ÿï¼Œå¿½ç•¥æ—¥æœŸï¼‰
+ * @note è¿™ä¸ªå‡½æ•°åªè¿”å›ä»å½“å¤©00:00:00å¼€å§‹çš„ç§’æ•°ï¼Œä¸åŒ…å«æ—¥æœŸåç§»
  */
 inline long parseDateTimeString(const std::string& time_str) {
     std::string trimmed = trimQuotes(time_str);
@@ -155,14 +156,14 @@ inline long parseDateTimeString(const std::string& time_str) {
         return 0;
     }
     
-    // Èç¹ûÊÇ "º½ºó" »òÀàËÆ±êÊ¶
-    if (trimmed.find("º½ºó") != std::string::npos) {
+    // å¦‚æœæ˜¯ "èˆªå" æˆ–ç±»ä¼¼æ ‡è¯†
+    if (trimmed.find("èˆªå") != std::string::npos) {
         return -1;
     }
     
-    // ³¢ÊÔ½âÎö YYYY-MM-DD HH:MM:SS ¸ñÊ½
+    // å°è¯•è§£æ YYYY-MM-DD HH:MM:SS æ ¼å¼
     if (trimmed.find("-") != std::string::npos && trimmed.find(":") != std::string::npos) {
-        // ÌáÈ¡Ê±¼ä²¿·Ö
+        // æå–æ—¶é—´éƒ¨åˆ†
         size_t space_pos = trimmed.find(" ");
         if (space_pos != std::string::npos) {
             std::string time_part = trimmed.substr(space_pos + 1);
@@ -172,13 +173,25 @@ inline long parseDateTimeString(const std::string& time_str) {
                 size_t colon_pos2 = time_part.find(":", colon_pos + 1);
                 if (colon_pos2 != std::string::npos) {
                     int minutes = std::stoi(time_part.substr(colon_pos + 1, colon_pos2 - colon_pos - 1));
-                    return hours * 3600 + minutes * 60;
+                    int seconds = 0;
+                    // å°è¯•è§£æç§’æ•°éƒ¨åˆ†
+                    if (colon_pos2 + 1 < time_part.length()) {
+                        std::string secs_str = time_part.substr(colon_pos2 + 1);
+                        if (!secs_str.empty()) {
+                            try {
+                                seconds = std::stoi(secs_str);
+                            } catch (...) {
+                                seconds = 0;
+                            }
+                        }
+                    }
+                    return hours * 3600 + minutes * 60 + seconds;
                 }
             }
         }
     }
     
-    // ³¢ÊÔ½âÎö HH:MM ¸ñÊ½
+    // å°è¯•è§£æ HH:MM æ ¼å¼
     size_t colon_pos = trimmed.find(":");
     if (colon_pos != std::string::npos) {
         int hours = std::stoi(trimmed.substr(0, colon_pos));

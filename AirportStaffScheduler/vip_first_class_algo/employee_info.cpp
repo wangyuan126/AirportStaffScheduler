@@ -20,10 +20,10 @@ EmployeeInfo::~EmployeeInfo()
 {
 }
 
-void EmployeeInfo::addAssignedTaskId(long task_id)
+void EmployeeInfo::addAssignedTaskId(const string& task_id)
 {
     // 检查是否已存在
-    for (long id : assigned_task_ids_) {
+    for (const string& id : assigned_task_ids_) {
         if (id == task_id) {
             return;  // 已经存在，不重复添加
         }
@@ -31,7 +31,7 @@ void EmployeeInfo::addAssignedTaskId(long task_id)
     assigned_task_ids_.push_back(task_id);
 }
 
-bool EmployeeInfo::removeAssignedTaskId(long task_id)
+bool EmployeeInfo::removeAssignedTaskId(const string& task_id)
 {
     auto it = std::find(assigned_task_ids_.begin(), assigned_task_ids_.end(), task_id);
     if (it != assigned_task_ids_.end()) {
@@ -41,7 +41,7 @@ bool EmployeeInfo::removeAssignedTaskId(long task_id)
     return false;
 }
 
-bool EmployeeInfo::isAssignedToTask(long task_id) const
+bool EmployeeInfo::isAssignedToTask(const string& task_id) const
 {
     return std::find(assigned_task_ids_.begin(), assigned_task_ids_.end(), task_id) 
            != assigned_task_ids_.end();

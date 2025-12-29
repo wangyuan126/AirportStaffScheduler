@@ -12,6 +12,7 @@
 #include "shift.h"
 #include "task_definition.h"
 #include "task_type.h"
+#include "../CSVDataLoader.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -126,6 +127,74 @@ static std::string formatTime(int64_t seconds) {
     return oss.str();
 }
 
+// 辅助函数：将秒数和任务日期转换为日期时间字符串（YYYY-MM-DD HH:MM:SS格式）
+// 基准日期：2020-01-01 00:00:00
+static std::string formatDateTime(int64_t seconds, const std::string& task_date = "") {
+    if (seconds <= 0) {
+        return "";
+    }
+    
+    // 如果提供了任务日期，使用任务日期作为日期部分
+    if (!task_date.empty()) {
+        // 从任务日期中提取日期部分（YYYY-MM-DD）
+        std::string date_part = task_date;
+        // 移除可能的引号
+        if (date_part.front() == '"' && date_part.back() == '"') {
+            date_part = date_part.substr(1, date_part.length() - 2);
+        }
+        
+        // 计算时间部分（从当天00:00:00开始的秒数）
+        int64_t days = seconds / 86400;
+        int64_t remaining_seconds = seconds % 86400;
+        
+        // 如果秒数超过一天，需要调整日期
+        // 这里简化处理：假设任务日期就是正确的日期
+        int hours = remaining_seconds / 3600;
+        int minutes = (remaining_seconds % 3600) / 60;
+        int secs = remaining_seconds % 60;
+        
+        std::ostringstream oss;
+        oss << date_part << " "
+            << std::setfill('0') << std::setw(2) << hours << ":"
+            << std::setfill('0') << std::setw(2) << minutes << ":"
+            << std::setfill('0') << std::setw(2) << secs;
+        return oss.str();
+    }
+    
+    // 如果没有提供任务日期，使用基准日期计算
+    int64_t days = seconds / 86400;
+    int64_t remaining_seconds = seconds % 86400;
+    
+    // 使用基准日期2020-01-01
+    int year = 2020;
+    int month = 1;
+    int day = 1;
+    
+    // 累加天数（简化处理，每月30天）
+    day += static_cast<int>(days);
+    while (day > 30) {
+        day -= 30;
+        month++;
+        if (month > 12) {
+            month = 1;
+            year++;
+        }
+    }
+    
+    int hours = static_cast<int>(remaining_seconds / 3600);
+    int minutes = static_cast<int>((remaining_seconds % 3600) / 60);
+    int secs = static_cast<int>(remaining_seconds % 60);
+    
+    std::ostringstream oss;
+    oss << year << "-" 
+        << std::setfill('0') << std::setw(2) << month << "-"
+        << std::setfill('0') << std::setw(2) << day << " "
+        << std::setfill('0') << std::setw(2) << hours << ":"
+        << std::setfill('0') << std::setw(2) << minutes << ":"
+        << std::setfill('0') << std::setw(2) << secs;
+    return oss.str();
+}
+
 // 辅助函数：导出任务分配结果到CSV文件
 static void exportToCSV(const std::vector<TaskDefinition>& tasks, const std::string& filename) {
     std::ofstream file(filename);
@@ -133,7 +202,6 @@ static void exportToCSV(const std::vector<TaskDefinition>& tasks, const std::str
         std::cerr << "错误：无法创建CSV文件 " << filename << std::endl;
         return;
     }
-    cout<<"1111！"<<endl;
     // 写入CSV表头
     file << "任务ID,任务名称,任务类型,开始时间,结束时间,需要人数,已分配人数,是否已分配,是否缺人,分配的员工ID\n";
     
@@ -166,16 +234,17 @@ static void exportToCSV(const std::vector<TaskDefinition>& tasks, const std::str
 
 // 辅助结构：员工任务时间段
 struct EmployeeTaskSlot {
-    int64_t task_id;
+    std::string task_id;
     std::string task_name;
     int64_t start_time;
     int64_t end_time;
+    const TaskDefinition* task_ptr;  // 指向任务的指针，用于获取更多信息
     
-    EmployeeTaskSlot(int64_t id, const std::string& name, int64_t start, int64_t end)
-        : task_id(id), task_name(name), start_time(start), end_time(end) {}
+    EmployeeTaskSlot(const std::string& id, const std::string& name, int64_t start, int64_t end, const TaskDefinition* task = nullptr)
+        : task_id(id), task_name(name), start_time(start), end_time(end), task_ptr(task) {}
 };
 
-// 辅助函数：导出员工时间表（甘特图格式）到CSV文件
+// 辅助函数：导出员工时间表（按照soln_shift.csv格式）到CSV文件
 static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks, 
                                          const std::vector<Shift>& shifts,
                                          const std::string& filename) {
@@ -185,16 +254,41 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
         return;
     }
     
+    // 写入CSV表头（按照soln_shift.csv格式）
+    file << "班期日期,班期开始时间,班期结束时间,人员编号,人员姓名,车辆（车牌号）,车辆类型,任务ID,任务名称,任务日期,任务开始时间,任务结束时间,到达航班ID,出发航班ID,到达航班号,出发航班号,航站楼,区域,机位,其他位置,双机航班号,是否加班\n";
+    
     // 收集每个员工的任务时间段
     std::map<std::string, std::vector<EmployeeTaskSlot>> employee_schedule;
     
     // 遍历所有任务，收集员工的任务分配
     for (const auto& task : tasks) {
         const auto& assigned_ids = task.getAssignedEmployeeIds();
+        if (assigned_ids.empty()) {
+            continue;  // 跳过未分配的任务
+        }
         for (const auto& employee_id : assigned_ids) {
+            // 使用实际开始时间和结束时间
+            int64_t start_time = task.getActualStartTime() > 0 ? task.getActualStartTime() : task.getStartTime();
+            int64_t end_time = task.getActualEndTime();
+            
+            // 如果实际结束时间为0，尝试使用开始时间+时长
+            if (end_time <= 0 && start_time > 0) {
+                end_time = start_time + task.getDuration();
+            }
+            
+            // 如果还是0，使用原始结束时间
+            if (end_time <= 0) {
+                end_time = task.getEndTime();
+            }
+            
+            // 如果结束时间仍然无效，跳过这个任务
+            if (end_time <= 0 && start_time <= 0) {
+                continue;
+            }
+            
             employee_schedule[employee_id].push_back(
                 EmployeeTaskSlot(task.getTaskId(), task.getTaskName(), 
-                                task.getStartTime(), task.getEndTime())
+                                start_time, end_time, &task)
             );
         }
     }
@@ -207,36 +301,18 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
                   });
     }
     
-    // 获取所有员工的ID并排序（主班、副班、休息分开）
+    // 获取所有员工的ID（从EmployeeManager）
     std::vector<std::string> all_employee_ids;
-    
-    // 先添加主班员工
-    for (int i = 1; i <= 8; ++i) {
-        std::string emp_id = "main" + std::to_string(i);
-        if (EmployeeManager::getInstance().hasEmployee(emp_id)) {
-            all_employee_ids.push_back(emp_id);
+    // 遍历所有shifts，收集员工ID
+    for (const auto& shift : shifts) {
+        const auto& position_map = shift.getPositionToEmployeeId();
+        for (const auto& pos_pair : position_map) {
+            const std::string& emp_id = pos_pair.second;
+            if (std::find(all_employee_ids.begin(), all_employee_ids.end(), emp_id) == all_employee_ids.end()) {
+                all_employee_ids.push_back(emp_id);
+            }
         }
     }
-    
-    // 再添加副班员工
-    for (int i = 1; i <= 8; ++i) {
-        std::string emp_id = "sub" + std::to_string(i);
-        if (EmployeeManager::getInstance().hasEmployee(emp_id)) {
-            all_employee_ids.push_back(emp_id);
-        }
-    }
-    
-    // 最后添加休息员工（如果有任务分配）
-    for (int i = 1; i <= 8; ++i) {
-        std::string emp_id = "rest" + std::to_string(i);
-        if (EmployeeManager::getInstance().hasEmployee(emp_id) && 
-            employee_schedule.find(emp_id) != employee_schedule.end()) {
-            all_employee_ids.push_back(emp_id);
-        }
-    }
-    
-    // 写入CSV表头
-    file << "员工ID,员工姓名,班次类型,任务ID,任务名称,开始时间,结束时间,持续时间(分钟)\n";
     
     // 写入每个员工的时间表
     for (const auto& employee_id : all_employee_ids) {
@@ -245,44 +321,138 @@ static void exportEmployeeScheduleToCSV(const std::vector<TaskDefinition>& tasks
             continue;
         }
         
-        // 确定班次类型
-        std::string shift_type_str = "未知";
-        if (employee_id.find("main") == 0) {
-            shift_type_str = "主班";
-        } else if (employee_id.find("sub") == 0) {
-            shift_type_str = "副班";
-        } else if (employee_id.find("rest") == 0) {
-            shift_type_str = "休息";
-        }
-        
         // 获取该员工的任务列表
         auto schedule_it = employee_schedule.find(employee_id);
+        
+        // 如果没有任务，跳过（根据要求：如果是休息就不输出）
         if (schedule_it == employee_schedule.end() || schedule_it->second.empty()) {
-            // 没有任务，只输出员工信息
-            file << employee_id << ","
-                 << employee->getEmployeeName() << ","
-                 << shift_type_str << ","
-                 << ",,,,\n";
-        } else {
-            // 有任务，输出每个任务时间段
-            for (const auto& task_slot : schedule_it->second) {
-                file << employee_id << ","
-                     << employee->getEmployeeName() << ","
-                     << shift_type_str << ","
-                     << task_slot.task_id << ","
-                     << task_slot.task_name << ","
-                     << formatTime(task_slot.start_time) << ","
-                     << formatTime(task_slot.end_time) << ",";
-                
-                // 计算持续时间（分钟）
-                if (task_slot.end_time < 0) {
-                    file << "航后\n";
-                } else {
-                    int64_t duration_seconds = task_slot.end_time - task_slot.start_time;
-                    int64_t duration_minutes = duration_seconds / 60;
-                    file << duration_minutes << "\n";
-                }
+            continue;
+        }
+        
+        // 获取班期日期（从第一个任务的日期推断）
+        std::string shift_date = "";
+        if (!schedule_it->second.empty() && schedule_it->second[0].task_ptr) {
+            shift_date = schedule_it->second[0].task_ptr->getTaskDate();
+        }
+        
+        // 获取班期开始时间（第一个任务的开始时间）
+        int64_t shift_start_time = schedule_it->second[0].start_time;
+        std::string shift_start_str = formatDateTime(shift_start_time, shift_date);
+        
+        // 获取班期结束时间（最晚的任务的结束时间）
+        int64_t shift_end_time = 0;
+        for (const auto& task_slot : schedule_it->second) {
+            if (task_slot.end_time > shift_end_time) {
+                shift_end_time = task_slot.end_time;
             }
+        }
+        std::string shift_end_str = formatDateTime(shift_end_time, shift_date);
+        
+        // 输出每个任务
+        for (const auto& task_slot : schedule_it->second) {
+            if (!task_slot.task_ptr) {
+                continue;
+            }
+            
+            const TaskDefinition& task = *(task_slot.task_ptr);
+            
+            // 班期日期
+            file << "\"" << shift_date << "\",";
+            
+            // 班期开始时间
+            file << "\"" << shift_start_str << "\",";
+            
+            // 班期结束时间
+            file << "\"" << shift_end_str << "\",";
+            
+            // 人员编号
+            file << "\"" << employee_id << "\",";
+            
+            // 人员姓名
+            file << "\"" << employee->getEmployeeName() << "\",";
+            
+            // 车辆（车牌号）- 不输出
+            file << "\"\",";
+            
+            // 车辆类型 - 不输出
+            file << "\"\",";
+            
+            // 任务ID
+            file << "\"" << task.getTaskId() << "\",";
+            
+            // 任务名称
+            file << "\"" << task.getTaskName() << "\",";
+            
+            // 任务日期
+            file << "\"" << task.getTaskDate() << "\",";
+            
+            // 任务开始时间（实际开始时间）
+            std::string task_start_str = formatDateTime(task_slot.start_time, task.getTaskDate());
+            file << "\"" << task_start_str << "\",";
+            
+            // 任务结束时间（实际开始时间 + 时长）
+            std::string task_end_str = formatDateTime(task_slot.end_time, task.getTaskDate());
+            file << "\"" << task_end_str << "\",";
+            
+            // 到达航班ID
+            std::string arrival_flight_id = task.getArrivalFlightId();
+            if (arrival_flight_id.empty()) {
+                file << "\"\",";
+            } else {
+                file << "\"" << arrival_flight_id << "\",";
+            }
+            
+            // 出发航班ID
+            std::string departure_flight_id = task.getDepartureFlightId();
+            if (departure_flight_id.empty()) {
+                file << "\"\",";
+            } else {
+                file << "\"" << departure_flight_id << "\",";
+            }
+            
+            // 到达航班号
+            std::string arrival_flight_number = task.getArrivalFlightNumber();
+            if (arrival_flight_number.empty()) {
+                file << "\"\",";
+            } else {
+                file << "\"" << arrival_flight_number << "\",";
+            }
+            
+            // 出发航班号
+            std::string departure_flight_number = task.getDepartureFlightNumber();
+            if (departure_flight_number.empty()) {
+                file << "\"\",";
+            } else {
+                file << "\"" << departure_flight_number << "\",";
+            }
+            
+            // 航站楼
+            std::string terminal = task.getTerminal();
+            if (terminal.empty()) {
+                file << "\"\",";
+            } else {
+                file << "\"" << terminal << "\",";
+            }
+            
+            // 区域 - 不输出
+            file << "\"\",";
+            
+            // 机位
+            int stand = task.getStand();
+            if (stand == 0) {
+                file << "\"\",";
+            } else {
+                file << "\"" << stand << "\",";
+            }
+            
+            // 其他位置 - 不输出
+            file << "\"\",";
+            
+            // 双机航班号 - 不输出
+            file << "\"\",";
+            
+            // 是否加班 - 全部都是"否"
+            file << "\"否\"\n";
         }
     }
     
@@ -418,7 +588,7 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
                 }
                 
                 // 在时间线上标记任务（使用任务ID的最后一个字符作为标识）
-                char task_char = '0' + (task_slot.task_id % 10);
+                char task_char = task_slot.task_id.empty() ? '?' : task_slot.task_id.back();
                 for (int pos = start_pos; pos < end_pos && pos < TIME_SLOTS; ++pos) {
                     if (timeline[pos] == "  ") {
                         timeline[pos] = std::string(1, task_char) + " ";
@@ -471,170 +641,153 @@ static void exportGanttChartText(const std::vector<TaskDefinition>& tasks,
 int main() {
     std::cout << "开始任务调度测试..." << std::endl;
     
-    // 1. 初始化员工信息
-    // 主班员工：main1-8
-    // 副班员工：sub1-8
-    // 休息员工：rest1-8（虽然休息，但需要记录）
-    for (int i = 1; i <= 8; ++i) {
-        // 主班员工
-        EmployeeInfo main_emp;
-        main_emp.setEmployeeId("main" + std::to_string(i));
-        main_emp.setEmployeeName("主班" + std::to_string(i));
-        main_emp.setQualificationMask(15);  // 所有资质（1+2+4+8=15）
-        EmployeeManager::getInstance().addOrUpdateEmployee("main" + std::to_string(i), main_emp);
-        
-        // 副班员工
-        EmployeeInfo sub_emp;
-        sub_emp.setEmployeeId("sub" + std::to_string(i));
-        sub_emp.setEmployeeName("副班" + std::to_string(i));
-        sub_emp.setQualificationMask(15);  // 所有资质
-        EmployeeManager::getInstance().addOrUpdateEmployee("sub" + std::to_string(i), sub_emp);
-        
-        // 休息员工（虽然休息，但也创建员工信息）
-        EmployeeInfo rest_emp;
-        rest_emp.setEmployeeId("rest" + std::to_string(i));
-        rest_emp.setEmployeeName("休息" + std::to_string(i));
-        rest_emp.setQualificationMask(15);  // 所有资质
-        EmployeeManager::getInstance().addOrUpdateEmployee("rest" + std::to_string(i), rest_emp);
-    }
+    // 设置输入文件路径
+    std::string input_dir = "../input/";
+    std::string vip_shift_csv = input_dir + "vip_first_class_shift.csv";
+    std::string vip_task_csv = input_dir + "vip_first_class_task.csv";
     
-    // 2. 创建Shift对象
-    // 主班Shift：位置1-8对应main1-8
-    Shift main_shift;
-    main_shift.setShiftType(1);  // 主班
-    for (int i = 1; i <= 8; ++i) {
-        main_shift.setEmployeeIdAtPosition(i, "main" + std::to_string(i));
-    }
+    // 1. 从CSV加载班次信息
+    std::cout << "Step 1: Loading shifts from CSV..." << std::endl;
+    std::cout << "CSV file path: " << vip_shift_csv << std::endl;
     
-    // 副班Shift：位置1-8对应sub1-8
-    Shift sub_shift;
-    sub_shift.setShiftType(2);  // 副班
-    for (int i = 1; i <= 8; ++i) {
-        sub_shift.setEmployeeIdAtPosition(i, "sub" + std::to_string(i));
+    // 检查文件是否存在
+    std::ifstream test_file(vip_shift_csv);
+    if (!test_file.is_open()) {
+        std::cerr << "ERROR: Cannot open file: " << vip_shift_csv << std::endl;
+        std::cerr << "Please check if the file exists and the path is correct." << std::endl;
+        return 1;
     }
-    
-    // 休息Shift：位置1-8对应rest1-8
-    Shift rest_shift;
-    rest_shift.setShiftType(0);  // 休息
-    for (int i = 1; i <= 8; ++i) {
-        rest_shift.setEmployeeIdAtPosition(i, "rest" + std::to_string(i));
-    }
+    test_file.close();
     
     std::vector<Shift> shifts;
-    shifts.push_back(main_shift);
-    shifts.push_back(sub_shift);
-    shifts.push_back(rest_shift);
-    
-    // 3. 根据Task.txt创建任务列表
-    std::vector<TaskDefinition> tasks;
-    
-    // 从Task.txt定义的任务
-    struct TaskData {
-        std::string name;
-        std::string start_time;
-        std::string end_time;
-        int required_count;
-    };
-    
-    // 从Task.txt定义的任务
-    // 外场任务使用模拟时间（实际应用中需要根据航班信息计算）
-    std::vector<TaskData> task_data_list = {
-        {"调度", "08:30", "航后", 1},
-        {"国内前台", "08:30", "航后", 1},
-        {"国内前台协助", "07:00", "航后", 1},
-        {"国内前台协助2", "06:30", "航后", 1},
-        {"国内前台早班", "05:30", "08:30", 2},
-        {"国际前台早班", "06:00", "14:00", 1},
-        {"国际前台晚班", "14:00", "航后", 1},
-        {"国际厅内早班", "06:00", "14:00", 2},
-        {"国际厅内晚班", "14:00", "航后", 2},
-        {"国内厅内早班", "05:30", "08:30", 2},
-        {"国内厅内08:30-09:30", "08:30", "09:30", 2},
-        {"国内厅内09:30-10:30", "09:30", "10:30", 2},
-        {"国内厅内10:30-11:30", "10:30", "11:30", 3},
-        {"国内厅内11:30-12:30", "11:30", "12:30", 3},
-        {"国内厅内12:30-13:30", "12:30", "13:30", 3},
-        {"国内厅内13:30-14:30", "13:30", "14:30", 2},
-        {"国内厅内14:30-15:30", "14:30", "15:30", 2},
-        {"国内厅内15:30-16:30", "15:30", "16:30", 2},
-        {"国内厅内16:30-17:30", "16:30", "17:30", 3},
-        {"国内厅内17:30-18:30", "17:30", "18:30", 3},
-        {"国内厅内18:30-19:30", "18:30", "19:30", 3},
-        {"国内厅内19:30-20:30", "19:30", "20:30", 2},
-        {"国内厅内20:30-航后", "20:30", "航后", 2},
-        // 外场任务（使用模拟时间，实际应用中需要根据航班信息计算）
-        // 假设起飞时间10:00，则开始时间为09:00（起飞前60分钟），结束时间为10:30（登机结束后约15-20分钟）
-        {"外场（国内出港-少人）", "09:00", "10:30", 2},
-        {"外场（国内出港-多人）", "09:30", "11:00", 4},
-        // 假设落地时间11:00，则开始时间为10:45（落地前15分钟），结束时间为11:20（登机结束后约15-20分钟）
-        {"外场（国内进港-少人）", "10:45", "11:20", 2},
-        {"外场（国内进港-多人）", "11:00", "11:40", 4},
-        // 假设起飞时间14:00，则开始时间为13:00（起飞前60分钟），结束时间为14:30
-        {"外场（国际出港-少人）", "13:00", "14:30", 2},
-        {"外场（国际出港-少人）", "13:25", "14:30", 2},
-        {"外场（国际出港-少人）", "18:00", "19:30", 2},
-        {"外场（国际出港-少人）", "15:00", "17:30", 2},
-        {"外场（国际出港-多人）", "20:30", "22:00", 4},
-        {"外场（国际出港-少人）", "13:00", "14:30", 2},
-        {"外场（国际出港-少人）", "13:25", "14:30", 2},
-        {"外场（国际出港-少人）", "18:00", "19:30", 2},
-        {"外场（国际出港-少人）", "15:00", "17:30", 2},
-        {"外场（国际出港-多人）", "20:30", "22:00", 4},
-        // 假设落地时间15:00，则开始时间为14:45（落地前15分钟），结束时间为15:20
-        {"外场（国际进港-少人）", "14:45", "15:20", 2},
-        {"外场（国际进港-多人）", "15:00", "15:40", 4}
-    };
-    
-    int64_t task_id = 1;
-    for (const auto& task_data : task_data_list) {
-        TaskDefinition task;
-        task.setTaskId(task_id++);
-        task.setTaskName(task_data.name);
-        task.setTaskType(parseTaskType(task_data.name));
-        task.setStartTime(parseTimeString(task_data.start_time));
-        
-        if (task_data.end_time.find("航后") != std::string::npos) {
-            task.setAfterFlight();  // 设置为航后
+    try {
+        shifts = AirportStaffScheduler::CSVLoader::loadShiftsFromCSV(vip_shift_csv);
+        if (shifts.empty()) {
+            std::cerr << "WARNING: CSV file contains no valid shift data" << std::endl;
+            std::cerr << "This might be due to encoding issues or empty file." << std::endl;
         } else {
-            task.setEndTime(parseTimeString(task_data.end_time));
+            std::cout << "Successfully loaded " << shifts.size() << " shifts from CSV" << std::endl;
         }
         
-        task.setRequiredCount(task_data.required_count);
-        task.setPreferMainShift(true);  // 默认优先主班
-        
-        // 设置资质要求：外场任务需要外场资质（2），其他任务需要所有资质（15）
-        if (task_data.name.find("外场") != std::string::npos) {
-            task.setRequiredQualification(2);  // 外场资质
-            task.setCanNewEmployee(false);  // 外场任务新员工不可
-        } else {
-            task.setRequiredQualification(15);  // 所有资质
-            task.setCanNewEmployee(true);  // 默认允许新员工
+        // 从班次信息中提取员工信息并创建EmployeeInfo对象
+        for (const auto& shift : shifts) {
+            const auto& position_map = shift.getPositionToEmployeeId();
+            for (const auto& pos_pair : position_map) {
+                const std::string& emp_id = pos_pair.second;
+                // 如果员工不存在，创建员工信息
+                if (!EmployeeManager::getInstance().hasEmployee(emp_id)) {
+                    EmployeeInfo emp;
+                    emp.setEmployeeId(emp_id);
+                    // 从员工ID推断员工姓名（简化处理）
+                    std::string emp_name = emp_id;
+                    if (emp_id.find("main") == 0) {
+                        emp_name = "主班" + emp_id.substr(4);
+                    } else if (emp_id.find("sub") == 0) {
+                        emp_name = "副班" + emp_id.substr(3);
+                    } else if (emp_id.find("rest") == 0) {
+                        emp_name = "休息" + emp_id.substr(4);
+                    }
+                    emp.setEmployeeName(emp_name);
+                    emp.setQualificationMask(15);  // 所有资质（1+2+4+8=15）
+                    EmployeeManager::getInstance().addOrUpdateEmployee(emp_id, emp);
+                }
+            }
         }
-        
-        task.setAllowOverlap(false);  // 默认不允许重叠
-        task.setMaxOverlapTime(0);
-        
-        tasks.push_back(task);
+        std::cout << "Created/updated " << EmployeeManager::getInstance().getEmployeeCount() 
+                  << " employees from shifts" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "ERROR: Failed to load shifts: " << e.what() << std::endl;
+        std::cerr << "Using empty shift list..." << std::endl;
     }
     
-    // 4. 初始化TaskConfig（如果还没有初始化）
+    // 2. 从CSV加载VIP任务
+    std::cout << "Step 2: Loading VIP tasks from CSV..." << std::endl;
+    std::cout << "CSV file path: " << vip_task_csv << std::endl;
+    
+    // 检查文件是否存在
+    std::ifstream test_task_file(vip_task_csv);
+    if (!test_task_file.is_open()) {
+        std::cerr << "ERROR: Cannot open file: " << vip_task_csv << std::endl;
+        std::cerr << "Please check if the file exists and the path is correct." << std::endl;
+        return 1;
+    }
+    test_task_file.close();
+    
+    std::vector<TaskDefinition> tasks;
+    try {
+        bool success = AirportStaffScheduler::CSVLoader::loadVIPTasksFromCSV(vip_task_csv, tasks);
+        if (!success || tasks.empty()) {
+            std::cerr << "WARNING: CSV file contains no valid task data" << std::endl;
+            std::cerr << "This might be due to encoding issues or empty file." << std::endl;
+        } else {
+            std::cout << "Successfully loaded " << tasks.size() << " tasks from CSV" << std::endl;
+        }
+        
+        // 设置任务类型（根据任务名称推断）
+        for (auto& task : tasks) {
+            task.setTaskType(parseTaskType(task.getTaskName()));
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "ERROR: Failed to load tasks: " << e.what() << std::endl;
+        std::cerr << "Using empty task list..." << std::endl;
+    }
+    
+    // 检查是否有数据
+    if (shifts.empty()) {
+        std::cerr << "ERROR: No shifts loaded. Cannot proceed with scheduling." << std::endl;
+        return 1;
+    }
+    if (tasks.empty()) {
+        std::cerr << "ERROR: No tasks loaded. Cannot proceed with scheduling." << std::endl;
+        return 1;
+    }
+    if (EmployeeManager::getInstance().getEmployeeCount() == 0) {
+        std::cerr << "ERROR: No employees in manager. Cannot proceed with scheduling." << std::endl;
+        return 1;
+    }
+    
+    // 3. 初始化TaskConfig（如果还没有初始化）
     TaskConfig::getInstance().initializeTaskPriorities();
     
-    // 5. 调用任务调度
+    // 4. 调用任务调度
+    std::cout << "Step 3: Starting task scheduling..." << std::endl;
+    std::cout << "Total tasks before scheduling: " << tasks.size() << std::endl;
+    std::cout << "Total shifts: " << shifts.size() << std::endl;
+    std::cout << "Total employees in manager: " << EmployeeManager::getInstance().getEmployeeCount() << std::endl;
+    
     TaskScheduler scheduler;
     scheduler.scheduleTasks(tasks, shifts);
     
-    // 6. 导出结果到CSV
+    // 检查任务分配情况
+    int assigned_count = 0;
+    int total_required = 0;
+    int total_assigned = 0;
+    for (const auto& task : tasks) {
+        int assigned = task.getAssignedEmployeeCount();
+        int required = task.getRequiredCount();
+        total_required += required;
+        total_assigned += assigned;
+        if (assigned > 0) {
+            assigned_count++;
+        }
+    }
+    std::cout << "Scheduling completed:" << std::endl;
+    std::cout << "  Tasks with assignments: " << assigned_count << " / " << tasks.size() << std::endl;
+    std::cout << "  Total required staff: " << total_required << std::endl;
+    std::cout << "  Total assigned staff: " << total_assigned << std::endl;
+    
+    // 5. 导出结果到CSV
+    std::cout << "Step 4: Exporting results to CSV file..." << std::endl;
     exportToCSV(tasks, "task_assignment_result.csv");
     
-    // 7. 导出员工时间表（甘特图格式）
-    exportEmployeeScheduleToCSV(tasks, shifts, "employee_schedule.csv");
+    // 7. 导出员工时间表（按照soln_shift.csv格式）
+    exportEmployeeScheduleToCSV(tasks, shifts, "result.csv");
     exportGanttChartText(tasks, shifts, "employee_schedule_gantt.txt");
     
     std::cout << "\n任务调度测试完成！" << std::endl;
     std::cout << "已生成以下文件：" << std::endl;
     std::cout << "  1. task_assignment_result.csv - 任务分配结果" << std::endl;
-    std::cout << "  2. employee_schedule.csv - 员工时间表（详细列表）" << std::endl;
+    std::cout << "  2. result.csv - 员工时间表（soln_shift.csv格式）" << std::endl;
     std::cout << "  3. employee_schedule_gantt.txt - 员工时间表（甘特图文本）" << std::endl;
     
     return 0;

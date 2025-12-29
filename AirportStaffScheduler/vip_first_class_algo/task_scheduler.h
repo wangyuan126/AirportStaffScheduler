@@ -88,7 +88,7 @@ private:
      */
     void scheduleHallMaintenanceTasks(vector<TaskDefinition>& tasks,
                                       const vector<Shift>& shifts,
-                                      map<long, TaskDefinition*>& task_ptr_map);
+                                      map<string, TaskDefinition*>& task_ptr_map);
     
     /**
      * @brief 为不值守的员工分配操作间任务
@@ -101,7 +101,7 @@ private:
      */
     void scheduleOperationRoomTasks(vector<TaskDefinition>& tasks,
                                     const vector<Shift>& shifts,
-                                    map<long, TaskDefinition*>& task_ptr_map,
+                                    map<string, TaskDefinition*>& task_ptr_map,
                                     const vector<string>& off_duty_employees,
                                     long time_slot_start,
                                     long time_slot_end);

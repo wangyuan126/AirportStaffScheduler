@@ -1,15 +1,14 @@
 /**
  * @file test_load_scheduler.cpp
- * @brief ×°Ğ¶ÈÎÎñµ÷¶ÈÆ÷²âÊÔ³ÌĞò
+ * @brief è£…å¸ä»»åŠ¡è°ƒåº¦å™¨æµ‹è¯•ç¨‹åº
  * 
- * ²âÊÔLoadSchedulerµÄ¹¦ÄÜ£¬°üÀ¨ÈÎÎñÉú³É¡¢·ÖÅäºÍµ÷¶È
+ * æµ‹è¯•LoadSchedulerçš„åŠŸèƒ½ï¼ŒåŒ…æ‹¬ä»»åŠ¡ç”Ÿæˆã€åˆ†é…å’Œè°ƒåº¦
  */
 
 #include "load_scheduler.h"
 #include "load_employee_info.h"
-#include "flight.h"
+#include "load_task.h"
 #include "../vip_first_class_algo/shift.h"
-#include "../vip_first_class_algo/task_definition.h"
 #include "../CSVDataLoader.h"
 #include <iostream>
 #include <fstream>
@@ -22,16 +21,15 @@
 #include <cstdint>
 
 using namespace zhuangxie_class;
-using namespace vip_first_class;
 using namespace std;
 
-// ¸¨Öúº¯Êı£º½«Ê±¼ä×Ö·û´®£¨Èç"08:30"£©×ª»»Îª´Ó2020-01-01 00:00:00¿ªÊ¼µÄÃëÊı
+// è¾…åŠ©å‡½æ•°ï¼šå°†æ—¶é—´å­—ç¬¦ä¸²ï¼ˆå¦‚"08:30"ï¼‰è½¬æ¢ä¸ºä»2020-01-01 00:00:00å¼€å§‹çš„ç§’æ•°
 static int64_t parseTimeString(const string& time_str) {
-    if (time_str.find("º½ºó") != string::npos) {
-        return -1;  // º½ºóÈÎÎñ
+    if (time_str.find("èˆªå") != string::npos) {
+        return -1;  // èˆªåä»»åŠ¡
     }
     
-    // ½âÎöHH:MM¸ñÊ½
+    // è§£æHH:MMæ ¼å¼
     size_t colon_pos = time_str.find(':');
     if (colon_pos == string::npos) {
         return 0;
@@ -40,14 +38,14 @@ static int64_t parseTimeString(const string& time_str) {
     int hours = stoi(time_str.substr(0, colon_pos));
     int minutes = stoi(time_str.substr(colon_pos + 1));
     
-    // ×ª»»ÎªÃëÊı£¨´Ó2020-01-01 00:00:00¿ªÊ¼£©
+    // è½¬æ¢ä¸ºç§’æ•°ï¼ˆä»2020-01-01 00:00:00å¼€å§‹ï¼‰
     return hours * 3600 + minutes * 60;
 }
 
-// ¸¨Öúº¯Êı£º½«ÃëÊı×ª»»ÎªÊ±¼ä×Ö·û´®£¨ÓÃÓÚCSVÊä³ö£©
+// è¾…åŠ©å‡½æ•°ï¼šå°†ç§’æ•°è½¬æ¢ä¸ºæ—¶é—´å­—ç¬¦ä¸²ï¼ˆç”¨äºCSVè¾“å‡ºï¼‰
 static string formatTime(int64_t seconds) {
     if (seconds < 0) {
-        return "º½ºó";
+        return "èˆªå";
     }
     
     int64_t hours = seconds / 3600;
@@ -59,30 +57,133 @@ static string formatTime(int64_t seconds) {
     return oss.str();
 }
 
-// ¸¨Öúº¯Êı£ºµ¼³öÈÎÎñ·ÖÅä½á¹ûµ½CSVÎÄ¼ş
-static void exportToCSV(const vector<TaskDefinition>& tasks, const string& filename) {
+// è¾…åŠ©å‡½æ•°ï¼šå°†ç§’æ•°å’Œä»»åŠ¡æ—¥æœŸè½¬æ¢ä¸ºæ—¥æœŸæ—¶é—´å­—ç¬¦ä¸²ï¼ˆYYYY-MM-DD HH:MM:SSæ ¼å¼ï¼‰
+// æ³¨æ„ï¼šseconds æ˜¯ä»å½“å¤©00:00:00å¼€å§‹çš„ç§’æ•°ï¼ˆparseDateTimeStringè¿”å›çš„å€¼ï¼‰
+// åŸºå‡†æ—¥æœŸï¼š2020-01-01 00:00:00
+static string formatDateTime(int64_t seconds, const string& task_date = "") {
+    if (seconds <= 0) {
+        return "";
+    }
+    
+    // å¦‚æœæä¾›äº†ä»»åŠ¡æ—¥æœŸï¼Œä½¿ç”¨ä»»åŠ¡æ—¥æœŸä½œä¸ºæ—¥æœŸéƒ¨åˆ†
+    if (!task_date.empty()) {
+        // ä»ä»»åŠ¡æ—¥æœŸä¸­æå–æ—¥æœŸéƒ¨åˆ†ï¼ˆYYYY-MM-DDï¼‰
+        string date_part = task_date;
+        // ç§»é™¤å¯èƒ½çš„å¼•å·
+        if (date_part.length() >= 2 && date_part.front() == '"' && date_part.back() == '"') {
+            date_part = date_part.substr(1, date_part.length() - 2);
+        }
+        
+        // seconds æ˜¯ä»å½“å¤©00:00:00å¼€å§‹çš„ç§’æ•°ï¼ˆparseDateTimeStringè¿”å›çš„å€¼ï¼‰
+        // ç›´æ¥è®¡ç®—æ—¶é—´éƒ¨åˆ†
+        int64_t total_seconds = seconds;
+        
+        // å¤„ç†è·¨å¤©çš„æƒ…å†µï¼šå¦‚æœç§’æ•°è¶…è¿‡ä¸€å¤©ï¼Œéœ€è¦è°ƒæ•´æ—¥æœŸ
+        int64_t days = total_seconds / 86400;
+        int64_t remaining_seconds = total_seconds % 86400;
+        
+        // å¦‚æœè·¨å¤©äº†ï¼Œéœ€è¦è°ƒæ•´æ—¥æœŸï¼ˆç®€åŒ–å¤„ç†ï¼šç›´æ¥åŠ å¤©æ•°ï¼‰
+        if (days > 0) {
+            // è§£æä»»åŠ¡æ—¥æœŸ
+            size_t dash1 = date_part.find('-');
+            size_t dash2 = date_part.find('-', dash1 + 1);
+            if (dash1 != string::npos && dash2 != string::npos) {
+                int year = stoi(date_part.substr(0, dash1));
+                int month = stoi(date_part.substr(dash1 + 1, dash2 - dash1 - 1));
+                int day = stoi(date_part.substr(dash2 + 1));
+                
+                // ç´¯åŠ å¤©æ•°ï¼ˆç®€åŒ–å¤„ç†ï¼Œæ¯æœˆ30å¤©ï¼‰
+                day += static_cast<int>(days);
+                while (day > 30) {
+                    day -= 30;
+                    month++;
+                    if (month > 12) {
+                        month = 1;
+                        year++;
+                    }
+                }
+                
+                ostringstream date_oss;
+                date_oss << year << "-"
+                         << setfill('0') << setw(2) << month << "-"
+                         << setfill('0') << setw(2) << day;
+                date_part = date_oss.str();
+            }
+        }
+        
+        int hours = static_cast<int>(remaining_seconds / 3600);
+        int minutes = static_cast<int>((remaining_seconds % 3600) / 60);
+        int secs = static_cast<int>(remaining_seconds % 60);
+        
+        ostringstream oss;
+        oss << date_part << " "
+            << setfill('0') << setw(2) << hours << ":"
+            << setfill('0') << setw(2) << minutes << ":"
+            << setfill('0') << setw(2) << secs;
+        return oss.str();
+    }
+    
+    // å¦‚æœæ²¡æœ‰æä¾›ä»»åŠ¡æ—¥æœŸï¼Œä½¿ç”¨åŸºå‡†æ—¥æœŸè®¡ç®—
+    int64_t days = seconds / 86400;
+    int64_t remaining_seconds = seconds % 86400;
+    
+    // ä½¿ç”¨åŸºå‡†æ—¥æœŸ2020-01-01
+    int year = 2020;
+    int month = 1;
+    int day = 1;
+    
+    // ç´¯åŠ å¤©æ•°ï¼ˆç®€åŒ–å¤„ç†ï¼Œæ¯æœˆ30å¤©ï¼‰
+    day += days;
+    while (day > 30) {
+        day -= 30;
+        month++;
+        if (month > 12) {
+            month = 1;
+            year++;
+        }
+    }
+    
+    int hours = remaining_seconds / 3600;
+    int minutes = (remaining_seconds % 3600) / 60;
+    int secs = remaining_seconds % 60;
+    
+    ostringstream oss;
+    oss << year << "-" 
+        << setfill('0') << setw(2) << month << "-"
+        << setfill('0') << setw(2) << day << " "
+        << setfill('0') << setw(2) << hours << ":"
+        << setfill('0') << setw(2) << minutes << ":"
+        << setfill('0') << setw(2) << secs;
+    return oss.str();
+}
+
+// è¾…åŠ©å‡½æ•°ï¼šå¯¼å‡ºä»»åŠ¡åˆ†é…ç»“æœåˆ°CSVæ–‡ä»¶
+static void exportToCSV(const vector<LoadTask>& tasks, const string& filename) {
     ofstream file(filename);
     if (!file.is_open()) {
-        cerr << "´íÎó£ºÎŞ·¨´´½¨CSVÎÄ¼ş " << filename << endl;
+        cerr << "é”™è¯¯ï¼šæ— æ³•åˆ›å»ºCSVæ–‡ä»¶ " << filename << endl;
         return;
     }
     
-    // Ğ´ÈëCSV±íÍ·
-    file << "ÈÎÎñID,ÈÎÎñÃû³Æ,ÈÎÎñÀàĞÍ,¿ªÊ¼Ê±¼ä,½áÊøÊ±¼ä,ĞèÒªÈËÊı,ÒÑ·ÖÅäÈËÊı,ÊÇ·ñÒÑ·ÖÅä,ÊÇ·ñÈ±ÈË,·ÖÅäµÄÔ±¹¤ID\n";
+    // å†™å…¥CSVè¡¨å¤´
+    file << "ä»»åŠ¡ID,ä»»åŠ¡åç§°,ä»»åŠ¡ç±»å‹,æœ€æ—©å¼€å§‹æ—¶é—´,æœ€æ™šç»“æŸæ—¶é—´,ä»»åŠ¡æ—¶é•¿,å®é™…å¼€å§‹æ—¶é—´,å®é™…ç»“æŸæ—¶é—´,éœ€è¦äººæ•°,å·²åˆ†é…äººæ•°,æ˜¯å¦å·²åˆ†é…,æ˜¯å¦ç¼ºäºº,åˆ†é…çš„å‘˜å·¥ID\n";
     
-    // Ğ´ÈëÃ¿¸öÈÎÎñµÄÏêÏ¸ĞÅÏ¢
+    // å†™å…¥æ¯ä¸ªä»»åŠ¡çš„è¯¦ç»†ä¿¡æ¯
     for (const auto& task : tasks) {
         file << task.getTaskId() << ","
              << task.getTaskName() << ","
-             << static_cast<int>(task.getTaskType()) << ","
-             << formatTime(task.getStartTime()) << ","
-             << formatTime(task.getEndTime()) << ","
+             << task.getFlightType() << ","
+             << formatTime(task.getEarliestStartTime()) << ","
+             << formatTime(task.getLatestEndTime()) << ","
+             << task.getDuration() << ","
+             << formatTime(task.getActualStartTime()) << ","
+             << formatTime(task.getActualEndTime()) << ","
              << task.getRequiredCount() << ","
              << task.getAssignedEmployeeCount() << ","
-             << (task.isAssigned() ? "ÊÇ" : "·ñ") << ","
-             << (task.isShortStaffed() ? "ÊÇ" : "·ñ") << ",";
+             << (task.isAssigned() ? "æ˜¯" : "å¦") << ","
+             << (task.isShortStaffed() ? "æ˜¯" : "å¦") << ",";
         
-        // Ğ´Èë·ÖÅäµÄÔ±¹¤IDÁĞ±í
+        // å†™å…¥åˆ†é…çš„å‘˜å·¥IDåˆ—è¡¨
         const auto& assigned_ids = task.getAssignedEmployeeIds();
         for (size_t i = 0; i < assigned_ids.size(); ++i) {
             if (i > 0) {
@@ -94,85 +195,199 @@ static void exportToCSV(const vector<TaskDefinition>& tasks, const string& filen
     }
     
     file.close();
-    cout << "ÈÎÎñ·ÖÅä½á¹ûÒÑµ¼³öµ½: " << filename << endl;
+    cout << "ä»»åŠ¡åˆ†é…ç»“æœå·²å¯¼å‡ºåˆ°: " << filename << endl;
 }
 
-// ¸¨Öúº¯Êı£ºµ¼³öÔ±¹¤ÈÎÎñÊ±¼ä±íµ½CSV
-static void exportEmployeeScheduleToCSV(const vector<TaskDefinition>& tasks,
+// è¾…åŠ©å‡½æ•°ï¼šå¯¼å‡ºå‘˜å·¥ä»»åŠ¡æ—¶é—´è¡¨åˆ°CSVï¼ˆæŒ‰ç…§soln_shift.csvæ ¼å¼ï¼‰
+static void exportEmployeeScheduleToCSV(const vector<LoadTask>& tasks,
                                        const vector<LoadEmployeeInfo>& employees,
+                                       const vector<vip_first_class::Shift>& shifts,
                                        const string& filename) {
-    ofstream file(filename);
+    // å°è¯•ä»¥äºŒè¿›åˆ¶æ¨¡å¼æ‰“å¼€æ–‡ä»¶ï¼Œé¿å…Windowsä¸‹çš„æ¢è¡Œç¬¦é—®é¢˜
+    ofstream file(filename, ios::out | ios::trunc);
     if (!file.is_open()) {
-        cerr << "´íÎó£ºÎŞ·¨´´½¨CSVÎÄ¼ş " << filename << endl;
+        cerr << "é”™è¯¯ï¼šæ— æ³•åˆ›å»ºCSVæ–‡ä»¶ " << filename << endl;
+        cerr << "è¯·æ£€æŸ¥æ–‡ä»¶è·¯å¾„å’Œæƒé™" << endl;
         return;
     }
     
-    // Ğ´ÈëCSV±íÍ·
-    file << "Ô±¹¤ID,Ô±¹¤ĞÕÃû,×°Ğ¶×é,ÈÎÎñID,ÈÎÎñÃû³Æ,¿ªÊ¼Ê±¼ä,½áÊøÊ±¼ä\n";
+    // å†™å…¥CSVè¡¨å¤´ï¼ˆæŒ‰ç…§soln_shift.csvæ ¼å¼ï¼‰
+    file << "ç­æœŸæ—¥æœŸ,ç­æœŸå¼€å§‹æ—¶é—´,ç­æœŸç»“æŸæ—¶é—´,äººå‘˜ç¼–å·,äººå‘˜å§“å,è½¦è¾†ï¼ˆè½¦ç‰Œå·ï¼‰,è½¦è¾†ç±»å‹,ä»»åŠ¡ID,ä»»åŠ¡åç§°,ä»»åŠ¡æ—¥æœŸ,ä»»åŠ¡å¼€å§‹æ—¶é—´,ä»»åŠ¡ç»“æŸæ—¶é—´,åˆ°è¾¾èˆªç­ID,å‡ºå‘èˆªç­ID,åˆ°è¾¾èˆªç­å·,å‡ºå‘èˆªç­å·,èˆªç«™æ¥¼,åŒºåŸŸ,æœºä½,å…¶ä»–ä½ç½®,åŒæœºèˆªç­å·,æ˜¯å¦åŠ ç­\n";
     
-    // ´´½¨ÈÎÎñIDµ½ÈÎÎñµÄÓ³Éä
-    map<int64_t, const TaskDefinition*> task_map;
+    // åˆ›å»ºä»»åŠ¡IDåˆ°ä»»åŠ¡çš„æ˜ å°„
+    map<string, const LoadTask*> task_map;
     for (const auto& task : tasks) {
         task_map[task.getTaskId()] = &task;
     }
     
-    // ±éÀúËùÓĞÔ±¹¤
+    // éå†æ‰€æœ‰å‘˜å·¥
     for (const auto& emp : employees) {
         const auto& assigned_task_ids = emp.getEmployeeInfo().getAssignedTaskIds();
         
         if (assigned_task_ids.empty()) {
-            // Èç¹ûÃ»ÓĞ·ÖÅäÈÎÎñ£¬Ò²Êä³öÒ»ĞĞ
-            file << emp.getEmployeeId() << ","
-                 << emp.getEmployeeName() << ","
-                 << emp.getLoadGroup() << ","
-                 << ",,,\n";
-        } else {
-            // °´ÈÎÎñ¿ªÊ¼Ê±¼äÅÅĞò
-            vector<pair<int64_t, int64_t>> task_times;  // {task_id, start_time}
-            for (int64_t task_id : assigned_task_ids) {
+            // å¦‚æœæ²¡æœ‰åˆ†é…ä»»åŠ¡ï¼ˆä¼‘æ¯ï¼‰ï¼Œä¸è¾“å‡ºæˆ–è¾“å‡ºç©ºè¡Œ
+            // æ ¹æ®ç”¨æˆ·è¦æ±‚ï¼šå¦‚æœæ˜¯ä¼‘æ¯å°±ä¸è¾“å‡º
+            continue;
+        }
+        
+            // æŒ‰ä»»åŠ¡å¼€å§‹æ—¶é—´æ’åº
+        vector<pair<string, long>> task_times;  // {task_id, start_time}
+        for (const string& task_id : assigned_task_ids) {
                 auto it = task_map.find(task_id);
                 if (it != task_map.end() && it->second != nullptr) {
-                    task_times.push_back({task_id, it->second->getStartTime()});
+                long start_time = it->second->getActualStartTime();
+                if (start_time > 0) {
+                    task_times.push_back({task_id, start_time});
                 }
+            }
+        }
+        
+        if (task_times.empty()) {
+            continue;
             }
             
             sort(task_times.begin(), task_times.end(), 
-                 [](const pair<int64_t, int64_t>& a, const pair<int64_t, int64_t>& b) {
+             [](const pair<string, long>& a, const pair<string, long>& b) {
                      return a.second < b.second;
                  });
             
-            // Êä³öÃ¿¸öÈÎÎñ
+        // è®¡ç®—ç­æœŸå¼€å§‹æ—¶é—´å’Œç»“æŸæ—¶é—´
+        long shift_start_time = task_times.front().second;  // ç¬¬ä¸€ä¸ªä»»åŠ¡çš„å¼€å§‹æ—¶é—´
+        long shift_end_time = 0;
+        
+        // éå†æ‰€æœ‰ä»»åŠ¡ï¼Œæ‰¾åˆ°æœ€æ™šçš„ç»“æŸæ—¶é—´ï¼ˆç¡®ä¿æ˜¯é‚£ä¸ªäººæœ€æ™šçš„ä»»åŠ¡çš„ç»“æŸæ—¶é—´ï¼‰
+        for (const auto& task_time : task_times) {
+            auto it = task_map.find(task_time.first);
+            if (it != task_map.end() && it->second != nullptr) {
+                long end_time = it->second->getActualEndTime();
+                // å¦‚æœå®é™…ç»“æŸæ—¶é—´ä¸º0ï¼Œå°è¯•ä½¿ç”¨å®é™…å¼€å§‹æ—¶é—´ + æ—¶é•¿
+                if (end_time == 0) {
+                    long actual_start = it->second->getActualStartTime();
+                    long duration = it->second->getDuration();
+                    if (actual_start > 0 && duration > 0) {
+                        end_time = actual_start + duration;
+                    }
+                }
+                // æ›´æ–°æœ€æ™šçš„ç»“æŸæ—¶é—´
+                if (end_time > shift_end_time) {
+                    shift_end_time = end_time;
+                }
+            }
+        }
+        
+        // è·å–ç¬¬ä¸€ä¸ªä»»åŠ¡çš„æ—¥æœŸï¼ˆç”¨äºç­æœŸæ—¥æœŸï¼‰
+        string first_task_date = "";
+        auto first_task_it = task_map.find(task_times.front().first);
+        if (first_task_it != task_map.end() && first_task_it->second != nullptr) {
+            first_task_date = first_task_it->second->getTaskDate();
+        }
+        
+            // è¾“å‡ºæ¯ä¸ªä»»åŠ¡
             for (const auto& task_time : task_times) {
-                int64_t task_id = task_time.first;
+            const string& task_id = task_time.first;
                 auto it = task_map.find(task_id);
                 if (it != task_map.end() && it->second != nullptr) {
-                    const TaskDefinition& task = *(it->second);
-                    file << emp.getEmployeeId() << ","
-                         << emp.getEmployeeName() << ","
-                         << emp.getLoadGroup() << ","
-                         << task_id << ","
-                         << task.getTaskName() << ","
-                         << formatTime(task.getStartTime()) << ","
-                         << formatTime(task.getEndTime()) << "\n";
+                const LoadTask& task = *(it->second);
+                
+                // ç­æœŸæ—¥æœŸï¼ˆä½¿ç”¨ç¬¬ä¸€ä¸ªä»»åŠ¡çš„æ—¥æœŸï¼‰
+                file << "\"" << first_task_date << "\",";
+                
+                // ç­æœŸå¼€å§‹æ—¶é—´ï¼ˆç¬¬ä¸€ä¸ªä»»åŠ¡çš„å¼€å§‹æ—¶é—´ï¼‰
+                string shift_start_str = formatDateTime(shift_start_time, first_task_date);
+                file << "\"" << shift_start_str << "\",";
+                
+                // ç­æœŸç»“æŸæ—¶é—´ï¼ˆæœ€åä¸€ä¸ªä»»åŠ¡çš„ç»“æŸæ—¶é—´ï¼‰
+                string shift_end_str = formatDateTime(shift_end_time, first_task_date);
+                file << "\"" << shift_end_str << "\",";
+                
+                // äººå‘˜ç¼–å·
+                file << "\"" << emp.getEmployeeId() << "\",";
+                
+                // äººå‘˜å§“å
+                file << "\"" << emp.getEmployeeName() << "\",";
+                
+                // è½¦è¾†ï¼ˆè½¦ç‰Œå·ï¼‰- ä¸è¾“å‡º
+                file << "\"\",";
+                
+                // è½¦è¾†ç±»å‹ - ä¸è¾“å‡º
+                file << "\"\",";
+                
+                // ä»»åŠ¡ID
+                file << "\"" << task.getTaskId() << "\",";
+                
+                // ä»»åŠ¡åç§°
+                file << "\"" << task.getTaskName() << "\",";
+                
+                // ä»»åŠ¡æ—¥æœŸ
+                file << "\"" << task.getTaskDate() << "\",";
+                
+                // ä»»åŠ¡å¼€å§‹æ—¶é—´ï¼ˆå®é™…å¼€å§‹æ—¶é—´ï¼‰
+                string task_start_str = formatDateTime(task.getActualStartTime(), task.getTaskDate());
+                file << "\"" << task_start_str << "\",";
+                
+                // ä»»åŠ¡ç»“æŸæ—¶é—´ï¼ˆå®é™…å¼€å§‹æ—¶é—´ + æ—¶é•¿ï¼‰
+                string task_end_str = formatDateTime(task.getActualEndTime(), task.getTaskDate());
+                file << "\"" << task_end_str << "\",";
+                
+                // åˆ°è¾¾èˆªç­IDï¼ˆå¦‚æœæ— å°±ä¸è¾“å‡ºï¼‰
+                string arrival_flight_id = task.getArrivalFlightId();
+                file << "\"" << (arrival_flight_id.empty() ? "" : arrival_flight_id) << "\",";
+                
+                // å‡ºå‘èˆªç­IDï¼ˆå¦‚æœæ— å°±ä¸è¾“å‡ºï¼‰
+                string departure_flight_id = task.getDepartureFlightId();
+                file << "\"" << (departure_flight_id.empty() ? "" : departure_flight_id) << "\",";
+                
+                // åˆ°è¾¾èˆªç­å·ï¼ˆå¦‚æœæ— å°±ä¸è¾“å‡ºï¼‰
+                string arrival_flight_number = task.getArrivalFlightNumber();
+                file << "\"" << (arrival_flight_number.empty() ? "" : arrival_flight_number) << "\",";
+                
+                // å‡ºå‘èˆªç­å·ï¼ˆå¦‚æœæ— å°±ä¸è¾“å‡ºï¼‰
+                string departure_flight_number = task.getDepartureFlightNumber();
+                file << "\"" << (departure_flight_number.empty() ? "" : departure_flight_number) << "\",";
+                
+                // èˆªç«™æ¥¼ï¼ˆå¦‚æœæ— å°±ä¸è¾“å‡ºï¼‰
+                string terminal = task.getTerminal();
+                file << "\"" << (terminal.empty() ? "" : terminal) << "\",";
+                
+                // åŒºåŸŸ - ä¸è¾“å‡º
+                file << "\"\",";
+                
+                // æœºä½ï¼ˆå¦‚æœæ— å°±ä¸è¾“å‡ºï¼‰
+                int stand = task.getStand();
+                if (stand > 0) {
+                    file << "\"" << stand << "\",";
+                } else {
+                    file << "\"\",";
                 }
+                
+                // å…¶ä»–ä½ç½® - ä¸è¾“å‡º
+                file << "\"\",";
+                
+                // åŒæœºèˆªç­å· - ä¸è¾“å‡º
+                file << "\"\",";
+                
+                // æ˜¯å¦åŠ ç­ - å…¨éƒ¨éƒ½æ˜¯å¦
+                file << "\"å¦\",";
+                
+                file << "\n";
             }
         }
     }
     
     file.close();
-    cout << "Ô±¹¤ÈÎÎñÊ±¼ä±íÒÑµ¼³öµ½: " << filename << endl;
+    cout << "å‘˜å·¥ä»»åŠ¡æ—¶é—´è¡¨å·²å¯¼å‡ºåˆ°: " << filename << endl;
 }
 
 int main(int argc, char* argv[]) {
-    // È·±£Êä³öÁ¢¼´Ë¢ĞÂ
+    // ç¡®ä¿è¾“å‡ºç«‹å³åˆ·æ–°
     std::ios::sync_with_stdio(true);
-    std::cout.setf(std::ios::unitbuf);  // ÎŞ»º³åÊä³ö
+    std::cout.setf(std::ios::unitbuf);  // æ— ç¼“å†²è¾“å‡º
     
     cout << "=== Loading CSV Test Program ===" << endl;
     cout << "Starting load scheduler test..." << endl;
     cout.flush();
     
-    // È·¶¨CSVÎÄ¼şÂ·¾¶
+    // ç¡®å®šCSVæ–‡ä»¶è·¯å¾„
     std::string input_dir = "../input/";
     if (argc > 1) {
         input_dir = argv[1];
@@ -185,404 +400,101 @@ int main(int argc, char* argv[]) {
     std::string shift_csv = input_dir + "shift.csv";
     std::string task_csv = input_dir + "task.csv";
     
-    // 1. ´ÓCSV¼ÓÔØÔ±¹¤ÁĞ±í
-    cout << "Step 1: Loading employees from CSV..." << endl;
-    cout << "CSV file path: " << staff_csv << endl;
-    cout.flush();
-    
-    vector<LoadEmployeeInfo> employees;
-    try {
-        employees = AirportStaffScheduler::CSVLoader::loadLoadEmployeesFromCSV(staff_csv);
-        if (employees.empty()) {
-            throw std::runtime_error("CSV file contains no valid employee data");
-        }
-        cout << "Successfully loaded " << employees.size() << " employees from CSV" << endl;
-    } catch (const std::exception& e) {
-        cerr << "ERROR: Failed to load employees: " << e.what() << endl;
-        cerr << "Using default test data..." << endl;
-        
-        // Ê¹ÓÃÄ¬ÈÏ²âÊÔÊı¾İ×÷Îªºó±¸
-        employees.clear();
-        // ´´½¨Ö÷°àÔ±¹¤£¨3¸ö×é£¬Ã¿×é3ÈË£©
-        for (int group = 1; group <= 3; ++group) {
-            for (int pos = 1; pos <= 3; ++pos) {
-                LoadEmployeeInfo emp;
-                ostringstream oss;
-                oss << "main" << group << "_" << pos;
-                emp.setEmployeeId(oss.str());
-                emp.setEmployeeName("Ö÷°àÔ±¹¤" + to_string(group) + "-" + to_string(pos));
-                emp.setLoadGroup(group);
-                emp.setQualificationMask(15);  // ËùÓĞ×ÊÖÊ
-                employees.push_back(emp);
-            }
-        }
-        // ´´½¨¸±°àÔ±¹¤£¨3¸ö×é£¬Ã¿×é3ÈË£©
-        for (int group = 1; group <= 3; ++group) {
-            for (int pos = 1; pos <= 3; ++pos) {
-                LoadEmployeeInfo emp;
-                ostringstream oss;
-                oss << "sub" << group << "_" << pos;
-                emp.setEmployeeId(oss.str());
-                emp.setEmployeeName("¸±°àÔ±¹¤" + to_string(group) + "-" + to_string(pos));
-                emp.setLoadGroup(group);
-                emp.setQualificationMask(15);  // ËùÓĞ×ÊÖÊ
-                employees.push_back(emp);
-            }
-        }
-    }
-    
-    cout << "Total employees: " << employees.size() << endl;
-    cout.flush();
-    
-    // 2. ´ÓCSV¼ÓÔØ°à´ÎÁĞ±í
-    cout << "Step 2: Loading shifts from CSV..." << endl;
+    // 1. ä»shift.csvåŠ è½½ç­æ¬¡åˆ—è¡¨å’Œå‘˜å·¥ä¿¡æ¯
+    cout << "Step 1: Loading shifts and employees from CSV..." << endl;
     cout << "CSV file path: " << shift_csv << endl;
     cout.flush();
     
-    vector<Shift> shifts;
+    vector<vip_first_class::Shift> shifts;
+    vector<LoadEmployeeInfo> employees;
+    map<string, vector<string>> group_name_to_employees;
+    
     try {
         shifts = AirportStaffScheduler::CSVLoader::loadShiftsFromCSV(shift_csv);
         if (shifts.empty()) {
             throw std::runtime_error("CSV file contains no valid shift data");
         }
+        
+        // ä»shift.csvä¸­è¯»å–å‘˜å·¥ä¿¡æ¯å’Œç­ç»„ä¿¡æ¯
+        bool success = AirportStaffScheduler::CSVLoader::loadEmployeesFromShiftCSV(
+            shift_csv, employees, group_name_to_employees);
+        if (!success || employees.empty()) {
+            throw std::runtime_error("Failed to load employees from shift.csv");
+        }
+        
+        cout << "Successfully loaded " << employees.size() << " employees from shift.csv" << endl;
+        cout << "Found " << group_name_to_employees.size() << " groups" << endl;
     } catch (const std::exception& e) {
-        cerr << "ERROR: Failed to load shifts: " << e.what() << endl;
+        cerr << "ERROR: Failed to load shifts/employees: " << e.what() << endl;
         cerr << "Using default test data..." << endl;
         
-        // Ê¹ÓÃÄ¬ÈÏ²âÊÔÊı¾İ×÷Îªºó±¸
+        // ä½¿ç”¨é»˜è®¤æµ‹è¯•æ•°æ®ä½œä¸ºåå¤‡
         shifts.clear();
-        // Ö÷°à1
-        Shift main_shift1;
-        main_shift1.setShiftType(1);  // Ö÷°à
-        main_shift1.setEmployeeIdAtPosition(1, "main1_1");
-        main_shift1.setEmployeeIdAtPosition(2, "main1_2");
-        main_shift1.setEmployeeIdAtPosition(3, "main1_3");
-        shifts.push_back(main_shift1);
-        // Ö÷°à2
-        Shift main_shift2;
-        main_shift2.setShiftType(1);  // Ö÷°à
-        main_shift2.setEmployeeIdAtPosition(1, "main2_1");
-        main_shift2.setEmployeeIdAtPosition(2, "main2_2");
-        main_shift2.setEmployeeIdAtPosition(3, "main2_3");
-        shifts.push_back(main_shift2);
-        // Ö÷°à3
-        Shift main_shift3;
-        main_shift3.setShiftType(1);  // Ö÷°à
-        main_shift3.setEmployeeIdAtPosition(1, "main3_1");
-        main_shift3.setEmployeeIdAtPosition(2, "main3_2");
-        main_shift3.setEmployeeIdAtPosition(3, "main3_3");
-        shifts.push_back(main_shift3);
-        // ¸±°à1
-        Shift sub_shift1;
-        sub_shift1.setShiftType(2);  // ¸±°à
-        sub_shift1.setEmployeeIdAtPosition(1, "sub1_1");
-        sub_shift1.setEmployeeIdAtPosition(2, "sub1_2");
-        sub_shift1.setEmployeeIdAtPosition(3, "sub1_3");
-        shifts.push_back(sub_shift1);
-        // ¸±°à2
-        Shift sub_shift2;
-        sub_shift2.setShiftType(2);  // ¸±°à
-        sub_shift2.setEmployeeIdAtPosition(1, "sub2_1");
-        sub_shift2.setEmployeeIdAtPosition(2, "sub2_2");
-        sub_shift2.setEmployeeIdAtPosition(3, "sub2_3");
-        shifts.push_back(sub_shift2);
-        // ¸±°à3
-        Shift sub_shift3;
-        sub_shift3.setShiftType(2);  // ¸±°à
-        sub_shift3.setEmployeeIdAtPosition(1, "sub3_1");
-        sub_shift3.setEmployeeIdAtPosition(2, "sub3_2");
-        sub_shift3.setEmployeeIdAtPosition(3, "sub3_3");
-        shifts.push_back(sub_shift3);
+        employees.clear();
+        group_name_to_employees.clear();
+        
+        // åˆ›å»ºä¸»ç­å‘˜å·¥ï¼ˆ3ä¸ªç»„ï¼Œæ¯ç»„3äººï¼‰
+        for (int group = 1; group <= 3; ++group) {
+            string group_name = "1." + to_string(group);
+            for (int pos = 1; pos <= 3; ++pos) {
+                LoadEmployeeInfo emp;
+                ostringstream oss;
+                oss << "main" << group << "_" << pos;
+                emp.setEmployeeId(oss.str());
+                emp.setEmployeeName("ä¸»ç­å‘˜å·¥" + to_string(group) + "-" + to_string(pos));
+                emp.setLoadGroup(group);
+                emp.setQualificationMask(15);  // æ‰€æœ‰èµ„è´¨
+                employees.push_back(emp);
+                group_name_to_employees[group_name].push_back(oss.str());
+            }
+        }
+        // åˆ›å»ºå‰¯ç­å‘˜å·¥ï¼ˆ3ä¸ªç»„ï¼Œæ¯ç»„3äººï¼‰
+        for (int group = 1; group <= 3; ++group) {
+            string group_name = "2." + to_string(group);
+            for (int pos = 1; pos <= 3; ++pos) {
+                LoadEmployeeInfo emp;
+                ostringstream oss;
+                oss << "sub" << group << "_" << pos;
+                emp.setEmployeeId(oss.str());
+                emp.setEmployeeName("å‰¯ç­å‘˜å·¥" + to_string(group) + "-" + to_string(pos));
+                emp.setLoadGroup(group);
+                emp.setQualificationMask(15);  // æ‰€æœ‰èµ„è´¨
+                employees.push_back(emp);
+                group_name_to_employees[group_name].push_back(oss.str());
+            }
+        }
     }
     
+    cout << "Total employees: " << employees.size() << endl;
     cout << "Total shifts: " << shifts.size() << endl;
     cout.flush();
     
-    // 3. ´ÓCSV¼ÓÔØº½°àÁĞ±í
-    cout << "Step 3: Loading flights from CSV..." << endl;
+    // 3. ä»task.csvåŠ è½½ä»»åŠ¡åˆ—è¡¨ï¼ˆLoadTaskå¯¹è±¡ï¼‰
+    cout << "Step 3: Loading tasks from task.csv..." << endl;
     cout << "CSV file path: " << task_csv << endl;
     cout.flush();
     
-    vector<Flight> flights;
+    vector<LoadTask> tasks;
+    std::string stand_pos_csv = input_dir + "stand_pos.csv";
     try {
-        flights = AirportStaffScheduler::CSVLoader::loadFlightsFromTaskCSV(task_csv);
-        if (flights.empty()) {
-            throw std::runtime_error("CSV file contains no valid flight data");
+        bool success = AirportStaffScheduler::CSVLoader::loadLoadTasksFromCSV(task_csv, tasks, stand_pos_csv);
+        if (!success || tasks.empty()) {
+            throw std::runtime_error("CSV file contains no valid task data");
         }
+        cout << "Successfully loaded " << tasks.size() << " tasks from task.csv" << endl;
     } catch (const std::exception& e) {
-        cerr << "ERROR: Failed to load flights: " << e.what() << endl;
-        cerr << "Using default test data..." << endl;
-        
-        // Ê¹ÓÃÄ¬ÈÏ²âÊÔÊı¾İ×÷Îªºó±¸
-        flights.clear();
-        // º½°à1£º¹úÄÚ½ø¸Û
-    Flight flight1;
-    flight1.setFlightTypeEnum(FlightType::DOMESTIC_ARRIVAL);
-    flight1.setArrivalTime(parseTimeString("08:30"));
-    flight1.setDepartureTime(parseTimeString("10:00"));  // ¼ÙÉèÓĞÆğ·ÉÊ±¼ä
-    flight1.setStand(5);
-    flight1.setReportTime(parseTimeString("08:25"));  // ÒÑ±¨Ê±
-    flight1.setArrivalCargo(1.5);  // 1.5¶Ö
-    flight1.setDepartureCargo(0);
-    flight1.setRemoteStand(false);
-    flight1.setVipTravelTime(480);  // 8·ÖÖÓ
-    flights.push_back(flight1);
-    
-    // º½°à2£º¹úÄÚ³ö¸Û
-    Flight flight2;
-    flight2.setFlightTypeEnum(FlightType::DOMESTIC_DEPARTURE);
-    flight2.setArrivalTime(parseTimeString("09:00"));
-    flight2.setDepartureTime(parseTimeString("11:00"));
-    flight2.setStand(8);
-    flight2.setReportTime(0);  // Î´±¨Ê±
-    flight2.setArrivalCargo(0);
-    flight2.setDepartureCargo(2.5);  // 2.5¶Ö£¬ĞèÒª6ÈË
-    flight2.setRemoteStand(false);
-    flight2.setVipTravelTime(480);
-    flights.push_back(flight2);
-    
-    // º½°à3£º¹úÄÚ¹ıÕ¾£¨¶Ì¹ıÕ¾£©
-    Flight flight3;
-    flight3.setFlightTypeEnum(FlightType::DOMESTIC_TRANSIT);
-    flight3.setArrivalTime(parseTimeString("10:30"));
-    flight3.setDepartureTime(parseTimeString("11:00"));  // 30·ÖÖÓ£¬¶Ì¹ıÕ¾
-    flight3.setStand(12);
-    flight3.setReportTime(parseTimeString("10:20"));  // ÒÑ±¨Ê±
-    flight3.setArrivalCargo(1.0);
-    flight3.setDepartureCargo(1.5);
-    flight3.setRemoteStand(false);
-    flight3.setVipTravelTime(480);
-    flights.push_back(flight3);
-    
-    // º½°à4£º¹ú¼Ê½ø¸Û
-    Flight flight4;
-    flight4.setFlightTypeEnum(FlightType::INTERNATIONAL_ARRIVAL);
-    flight4.setArrivalTime(parseTimeString("12:00"));
-    flight4.setDepartureTime(parseTimeString("14:00"));
-    flight4.setStand(15);
-    flight4.setReportTime(parseTimeString("11:55"));  // ÒÑ±¨Ê±
-    flight4.setArrivalCargo(1.0);
-    flight4.setDepartureCargo(0);
-    flight4.setRemoteStand(true);  // Ô¶»úÎ»
-    flight4.setVipTravelTime(480);
-    flights.push_back(flight4);
-    
-    // º½°à5£º¹ú¼Ê¹ıÕ¾£¨³¤¹ıÕ¾£©
-    Flight flight5;
-    flight5.setFlightTypeEnum(FlightType::INTERNATIONAL_TRANSIT);
-    flight5.setArrivalTime(parseTimeString("13:00"));
-    flight5.setDepartureTime(parseTimeString("15:00"));  // 120·ÖÖÓ£¬³¤¹ıÕ¾
-    flight5.setStand(20);
-    flight5.setReportTime(parseTimeString("12:50"));  // ÒÑ±¨Ê±
-    flight5.setArrivalCargo(2.0);
-    flight5.setDepartureCargo(2.5);
-    flight5.setRemoteStand(false);
-    flight5.setVipTravelTime(480);
-    flights.push_back(flight5);
-    
-    // º½°à6£º¹úÄÚ³ö¸Û£¨Ô¶»úÎ»£¬»õÁ¿´ó£©
-    Flight flight6;
-    flight6.setFlightTypeEnum(FlightType::DOMESTIC_DEPARTURE);
-    flight6.setArrivalTime(parseTimeString("14:00"));
-    flight6.setDepartureTime(parseTimeString("16:00"));
-    flight6.setStand(3);
-    flight6.setReportTime(0);  // Î´±¨Ê±
-    flight6.setArrivalCargo(0);
-    flight6.setDepartureCargo(3.0);  // 3¶Ö£¬ĞèÒª6ÈË
-    flight6.setRemoteStand(true);  // Ô¶»úÎ»
-    flight6.setVipTravelTime(600);  // 10·ÖÖÓ£¨×Ô¶¨ÒåÍ¨ÇÚÊ±¼ä£©
-    flights.push_back(flight6);
-
-    // º½°à7£º¹úÄÚ½ø¸Û£¨ÒÑ±¨Ê±£¬»õÁ¿Õı³££©
-    Flight flight7;
-    flight7.setFlightTypeEnum(FlightType::DOMESTIC_ARRIVAL);
-    flight7.setArrivalTime(parseTimeString("09:30"));
-    flight7.setDepartureTime(parseTimeString("11:30"));
-    flight7.setStand(6);
-    flight7.setReportTime(parseTimeString("09:25"));
-    flight7.setArrivalCargo(1.2);
-    flight7.setDepartureCargo(0);
-    flight7.setRemoteStand(false);
-    flight7.setVipTravelTime(480);
-    flights.push_back(flight7);
-    
-    // º½°à8£º¹úÄÚ³ö¸Û£¨Î´±¨Ê±£¬»õÁ¿Õı³££©
-    Flight flight8;
-    flight8.setFlightTypeEnum(FlightType::DOMESTIC_DEPARTURE);
-    flight8.setArrivalTime(parseTimeString("10:00"));
-    flight8.setDepartureTime(parseTimeString("12:30"));
-    flight8.setStand(9);
-    flight8.setReportTime(0);
-    flight8.setArrivalCargo(0);
-    flight8.setDepartureCargo(1.8);
-    flight8.setRemoteStand(false);
-    flight8.setVipTravelTime(480);
-    flights.push_back(flight8);
-    
-    // º½°à9£º¹úÄÚ¹ıÕ¾£¨¶Ì¹ıÕ¾£¬ÒÑ±¨Ê±£©
-    Flight flight9;
-    flight9.setFlightTypeEnum(FlightType::DOMESTIC_TRANSIT);
-    flight9.setArrivalTime(parseTimeString("11:30"));
-    flight9.setDepartureTime(parseTimeString("12:00"));  // 30·ÖÖÓ£¬¶Ì¹ıÕ¾
-    flight9.setStand(11);
-    flight9.setReportTime(parseTimeString("11:20"));
-    flight9.setArrivalCargo(0.8);
-    flight9.setDepartureCargo(1.0);
-    flight9.setRemoteStand(false);
-    flight9.setVipTravelTime(480);
-    flights.push_back(flight9);
-    
-    // º½°à10£º¹ú¼Ê½ø¸Û£¨ÒÑ±¨Ê±£¬»õÁ¿´ó£©
-    Flight flight10;
-    flight10.setFlightTypeEnum(FlightType::INTERNATIONAL_ARRIVAL);
-    flight10.setArrivalTime(parseTimeString("13:30"));
-    flight10.setDepartureTime(parseTimeString("15:30"));
-    flight10.setStand(16);
-    flight10.setReportTime(parseTimeString("13:25"));
-    flight10.setArrivalCargo(2.8);  // ĞèÒª6ÈË
-    flight10.setDepartureCargo(0);
-    flight10.setRemoteStand(false);
-    flight10.setVipTravelTime(480);
-    flights.push_back(flight10);
-    
-    // º½°à11£º¹ú¼Ê³ö¸Û£¨Î´±¨Ê±£¬»õÁ¿Õı³££©
-    Flight flight11;
-    flight11.setFlightTypeEnum(FlightType::INTERNATIONAL_DEPARTURE);
-    flight11.setArrivalTime(parseTimeString("14:30"));
-    flight11.setDepartureTime(parseTimeString("17:00"));
-    flight11.setStand(18);
-    flight11.setReportTime(0);
-    flight11.setArrivalCargo(0);
-    flight11.setDepartureCargo(1.5);  // ¹ú¼ÊÍ¨³£ĞèÒª6ÈË
-    flight11.setRemoteStand(false);
-    flight11.setVipTravelTime(480);
-    flights.push_back(flight11);
-    
-    // º½°à12£º¹úÄÚ¹ıÕ¾£¨³¤¹ıÕ¾£¬ÒÑ±¨Ê±£©
-    Flight flight12;
-    flight12.setFlightTypeEnum(FlightType::DOMESTIC_TRANSIT);
-    flight12.setArrivalTime(parseTimeString("15:30"));
-    flight12.setDepartureTime(parseTimeString("17:30"));  // 120·ÖÖÓ£¬³¤¹ıÕ¾
-    flight12.setStand(2);
-    flight12.setReportTime(parseTimeString("15:20"));
-    flight12.setArrivalCargo(1.5);
-    flight12.setDepartureCargo(2.2);  // ×Ü»õÁ¿3.7t£¬ĞèÒª6ÈË
-    flight12.setRemoteStand(false);
-    flight12.setVipTravelTime(480);
-    flights.push_back(flight12);
-    
-    // º½°à13£º¹úÄÚ½ø¸Û£¨Ô¶»úÎ»£¬ÒÑ±¨Ê±£©
-    Flight flight13;
-    flight13.setFlightTypeEnum(FlightType::DOMESTIC_ARRIVAL);
-    flight13.setArrivalTime(parseTimeString("16:00"));
-    flight13.setDepartureTime(parseTimeString("18:00"));
-    flight13.setStand(22);
-    flight13.setReportTime(parseTimeString("15:55"));
-    flight13.setArrivalCargo(1.0);
-    flight13.setDepartureCargo(0);
-    flight13.setRemoteStand(true);  // Ô¶»úÎ»
-    flight13.setVipTravelTime(480);
-    flights.push_back(flight13);
-    
-    // º½°à14£º¹ú¼Ê¹ıÕ¾£¨³¤¹ıÕ¾£¬Î´±¨Ê±£©
-    Flight flight14;
-    flight14.setFlightTypeEnum(FlightType::INTERNATIONAL_TRANSIT);
-    flight14.setArrivalTime(parseTimeString("16:30"));
-    flight14.setDepartureTime(parseTimeString("18:30"));  // 120·ÖÖÓ£¬³¤¹ıÕ¾
-    flight14.setStand(21);
-    flight14.setReportTime(0);
-    flight14.setArrivalCargo(2.0);
-    flight14.setDepartureCargo(2.5);  // ×Ü»õÁ¿4.5t£¬ĞèÒª6ÈË
-    flight14.setRemoteStand(false);
-    flight14.setVipTravelTime(480);
-    flights.push_back(flight14);
-    
-    // º½°à15£º¹úÄÚ³ö¸Û£¨ÒÑ±¨Ê±£¬»õÁ¿Õı³££©
-    Flight flight15;
-    flight15.setFlightTypeEnum(FlightType::DOMESTIC_DEPARTURE);
-    flight15.setArrivalTime(parseTimeString("17:00"));
-    flight15.setDepartureTime(parseTimeString("19:00"));
-    flight15.setStand(4);
-    flight15.setReportTime(parseTimeString("16:55"));
-    flight15.setArrivalCargo(0);
-    flight15.setDepartureCargo(1.6);
-    flight15.setRemoteStand(false);
-    flight15.setVipTravelTime(480);
-    flights.push_back(flight15);
-    
-    // º½°à16£º¹úÄÚ½ø¸Û£¨Î´±¨Ê±£¬»õÁ¿Õı³££©
-    Flight flight16;
-    flight16.setFlightTypeEnum(FlightType::DOMESTIC_ARRIVAL);
-    flight16.setArrivalTime(parseTimeString("18:00"));
-    flight16.setDepartureTime(parseTimeString("20:00"));
-    flight16.setStand(7);
-    flight16.setReportTime(0);
-    flight16.setArrivalCargo(1.3);
-    flight16.setDepartureCargo(0);
-    flight16.setRemoteStand(false);
-    flight16.setVipTravelTime(480);
-    flights.push_back(flight16);
-    
-    // º½°à17£º¹ú¼Ê³ö¸Û£¨Ô¶»úÎ»£¬ÒÑ±¨Ê±£¬»õÁ¿´ó£©
-    Flight flight17;
-    flight17.setFlightTypeEnum(FlightType::INTERNATIONAL_DEPARTURE);
-    flight17.setArrivalTime(parseTimeString("18:30"));
-    flight17.setDepartureTime(parseTimeString("20:30"));
-    flight17.setStand(23);
-    flight17.setReportTime(parseTimeString("18:25"));
-    flight17.setArrivalCargo(0);
-    flight17.setDepartureCargo(3.5);  // ĞèÒª6ÈË
-    flight17.setRemoteStand(true);  // Ô¶»úÎ»
-    flight17.setVipTravelTime(600);  // 10·ÖÖÓ
-    flights.push_back(flight17);
-    
-    // º½°à18£º¹úÄÚ¹ıÕ¾£¨¶Ì¹ıÕ¾£¬Î´±¨Ê±£©
-    Flight flight18;
-    flight18.setFlightTypeEnum(FlightType::DOMESTIC_TRANSIT);
-    flight18.setArrivalTime(parseTimeString("19:00"));
-    flight18.setDepartureTime(parseTimeString("19:30"));  // 30·ÖÖÓ£¬¶Ì¹ıÕ¾
-    flight18.setStand(13);
-    flight18.setReportTime(0);
-    flight18.setArrivalCargo(0.9);
-    flight18.setDepartureCargo(1.1);  // ×Ü»õÁ¿2.0t£¬ĞèÒª6ÈË
-    flight18.setRemoteStand(false);
-    flight18.setVipTravelTime(480);
-    flights.push_back(flight18);
-    
-    // º½°à19£º¹ú¼Ê½ø¸Û£¨ÒÑ±¨Ê±£¬»õÁ¿Õı³££©
-    Flight flight19;
-    flight19.setFlightTypeEnum(FlightType::INTERNATIONAL_ARRIVAL);
-    flight19.setArrivalTime(parseTimeString("19:30"));
-    flight19.setDepartureTime(parseTimeString("21:30"));
-    flight19.setStand(17);
-    flight19.setReportTime(parseTimeString("19:25"));
-    flight19.setArrivalCargo(1.2);
-    flight19.setDepartureCargo(0);
-    flight19.setRemoteStand(false);
-    flight19.setVipTravelTime(480);
-    flights.push_back(flight19);
-    
-    // º½°à20£º¹úÄÚ³ö¸Û£¨ÒÑ±¨Ê±£¬»õÁ¿Õı³££©
-    Flight flight20;
-    flight20.setFlightTypeEnum(FlightType::DOMESTIC_DEPARTURE);
-    flight20.setArrivalTime(parseTimeString("20:00"));
-    flight20.setDepartureTime(parseTimeString("22:00"));
-    flight20.setStand(10);
-    flight20.setReportTime(parseTimeString("19:55"));
-    flight20.setArrivalCargo(0);
-    flight20.setDepartureCargo(1.4);
-    flight20.setRemoteStand(false);
-    flight20.setVipTravelTime(480);
-    flights.push_back(flight20);
+        cerr << "ERROR: Failed to load tasks: " << e.what() << endl;
+        cerr << "Using empty task list..." << endl;
+        tasks.clear();
     }
     
-    cout << "Total flights: " << flights.size() << endl;
+    cout << "Total tasks: " << tasks.size() << endl;
     cout.flush();
     
-    // 4. ´´½¨°à´ÎÕ¼Î»Ê±¼ä¶Î£¨Æ£ÀÍ¶È¿ØÖÆ²âÊÔ£©
+    // 4. åˆ›å»ºç­æ¬¡å ä½æ—¶é—´æ®µï¼ˆç–²åŠ³åº¦æ§åˆ¶æµ‹è¯•ï¼‰
     vector<LoadScheduler::ShiftBlockPeriod> block_periods;
     LoadScheduler::ShiftBlockPeriod block1;
-    block1.shift_type = 1;  // Ö÷°à
+    block1.shift_type = 1;  // ä¸»ç­
     block1.start_time = parseTimeString("12:00");
     block1.end_time = parseTimeString("13:00");
     block_periods.push_back(block1);
@@ -590,15 +502,14 @@ int main(int argc, char* argv[]) {
     cout << "Block periods: " << block_periods.size() << endl;
     cout.flush();
     
-    // 5. µ÷ÓÃÈÎÎñµ÷¶È
+    // 5. è°ƒç”¨ä»»åŠ¡è°ƒåº¦
     cout << "Step 4: Starting task scheduling..." << endl;
     cout.flush();
     
     LoadScheduler scheduler;
-    vector<TaskDefinition> tasks;
-    scheduler.scheduleLoadTasks(employees, flights, shifts, tasks, 480, block_periods, nullptr);
+    scheduler.scheduleLoadTasks(employees, tasks, shifts, block_periods, nullptr, &group_name_to_employees);
     
-    // 6. Êä³öÍ³¼ÆĞÅÏ¢
+    // 6. è¾“å‡ºç»Ÿè®¡ä¿¡æ¯
     int total_tasks = tasks.size();
     int assigned_tasks = 0;
     int unassigned_tasks = 0;
@@ -629,17 +540,15 @@ int main(int argc, char* argv[]) {
     cout << "Assignment rate: " << (total_required > 0 ? (total_assigned * 100.0 / total_required) : 0) << "%" << endl;
     cout.flush();
     
-    // 7. µ¼³ö½á¹ûµ½CSV
-    cout << "\nStep 5: Exporting results to CSV files..." << endl;
+    // 7. å¯¼å‡ºç»“æœåˆ°CSVï¼ˆåªè¾“å‡ºä¸€ä¸ªæ–‡ä»¶ï¼Œæ ¼å¼ä¸soln_shift.csvä¸€è‡´ï¼‰
+    cout << "\nStep 5: Exporting results to CSV file..." << endl;
     cout.flush();
     
-    exportToCSV(tasks, "load_task_assignment_result.csv");
-    exportEmployeeScheduleToCSV(tasks, employees, "load_employee_schedule.csv");
+    exportEmployeeScheduleToCSV(tasks, employees, shifts, "result.csv");
     
     cout << "\n=== Test Completed Successfully ===" << endl;
-    cout << "Generated files:" << endl;
-    cout << "  1. load_task_assignment_result.csv - Task assignment results" << endl;
-    cout << "  2. load_employee_schedule.csv - Employee schedule" << endl;
+    cout << "Generated file:" << endl;
+    cout << "  result.csv - Employee schedule (soln_shift.csv format)" << endl;
     cout.flush();
     
     return 0;

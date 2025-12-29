@@ -38,6 +38,7 @@
                 "-I${workspaceFolder}/AirportStaffScheduler/vip_first_class_algo",
                 "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\test_load_scheduler.cpp",
                 "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\load_scheduler.cpp",
+                "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\load_task.cpp",
                 "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\load_employee_info.cpp",
                 "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\flight.cpp",
                 "${workspaceFolder}\\AirportStaffScheduler\\zhuangxie_class\\stand_distance.cpp",
